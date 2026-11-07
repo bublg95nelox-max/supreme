@@ -1,0 +1,394 @@
+{
+	default_hide_dependency_lines: false
+	default_quest_shape: ""
+	filename: "the_copper_age"
+	group: "72E1283473A995A4"
+	icon: {
+		id: "create:copper_casing"
+	}
+	id: "31661C695EDB8A71"
+	order_index: 1
+	quest_links: [ ]
+	quests: [
+		{
+			dependencies: ["5FCF8B2D37D9B26F"]
+			icon: {
+				id: "create:fluid_tank"
+			}
+			id: "2D340F2E9BC715F4"
+			rewards: [
+				{
+					exclude_from_claim_all: true
+					id: "544513F3317AF89C"
+					table_id: 7135599725476690766L
+					type: "random"
+				}
+				{
+					exclude_from_claim_all: true
+					id: "7A8388A9EDA5FA45"
+					table_id: 7135599725476690766L
+					type: "random"
+				}
+				{
+					id: "1FAC1746E8A422DE"
+					table_id: 7135599725476690766L
+					type: "random"
+				}
+			]
+			shape: "rsquare"
+			size: 1.5d
+			tasks: [
+				{
+					count: 8L
+					id: "0ADF4E68AD319E89"
+					item: { count: 1, id: "create:fluid_tank" }
+					type: "item"
+				}
+				{
+					id: "7085F754FDBB331F"
+					item: { count: 1, id: "create:hose_pulley" }
+					type: "item"
+				}
+				{
+					count: 12L
+					id: "02F69B6EAD2C6867"
+					item: { count: 1, id: "create:fluid_pipe" }
+					type: "item"
+				}
+				{
+					count: 3L
+					id: "01D52C7D28D5F317"
+					item: { count: 1, id: "create:mechanical_pump" }
+					type: "item"
+				}
+				{
+					id: "6FC597A11CA067B3"
+					item: { count: 1, id: "create:spout" }
+					type: "item"
+				}
+				{
+					id: "539535D29042EE24"
+					item: { count: 1, id: "create:item_drain" }
+					type: "item"
+				}
+			]
+			x: 0.0d
+			y: 0.0d
+		}
+		{
+			dependencies: ["2D340F2E9BC715F4"]
+			icon: {
+				id: "create:steam_engine"
+			}
+			id: "5B529559F80AFED0"
+			rewards: [{
+				exclude_from_claim_all: true
+				id: "56637CF1B43A9A8F"
+				table_id: 7135599725476690766L
+				type: "choice"
+			}]
+			tasks: [
+				{
+					id: "2B98B46001884FA5"
+					item: { count: 1, id: "create:steam_engine" }
+					type: "item"
+				}
+				{
+					count: 4L
+					id: "716B2A6CF6358FB7"
+					item: { count: 1, id: "create:fluid_tank" }
+					type: "item"
+				}
+				{
+					count: 4L
+					id: "25A058FF9D404213"
+					item: { count: 1, id: "minecraft:campfire" }
+					type: "item"
+				}
+			]
+			x: 0.9d
+			y: 1.7999999999999998d
+		}
+		{
+			dependencies: ["5B529559F80AFED0"]
+			id: "0BA7D7070792D58C"
+			rewards: [{
+				exclude_from_claim_all: true
+				id: "1AE14C7E66BF7219"
+				table_id: 3971786258777070132L
+				type: "random"
+			}]
+			tasks: [{
+				id: "664AA2B84A48BC25"
+				item: { count: 1, id: "create:blaze_cake" }
+				type: "item"
+			}]
+			x: 2.55d
+			y: 2.25d
+		}
+		{
+			dependencies: ["2D340F2E9BC715F4"]
+			icon: {
+				id: "create_enchantment_industry:experience_lantern"
+			}
+			id: "53A001A49A115E65"
+			rewards: [
+				{
+					exclude_from_claim_all: true
+					id: "1FACC7B1316660A4"
+					table_id: 7135599725476690766L
+					type: "choice"
+				}
+				{
+					exclude_from_claim_all: true
+					id: "501C309E2485C4E7"
+					table_id: 7135599725476690766L
+					type: "random"
+				}
+				{
+					exclude_from_claim_all: true
+					id: "289A94371AD15463"
+					table_id: 7135599725476690766L
+					type: "random"
+				}
+				{
+					exclude_from_claim_all: true
+					id: "173135D29808D872"
+					table_id: 7135599725476690766L
+					type: "random"
+				}
+			]
+			tasks: [
+				{
+					id: "7BFF4F0EAD4F4E4C"
+					item: { count: 1, id: "create_enchantment_industry:experience_lantern" }
+					type: "item"
+				}
+				{
+					id: "75298F183F7A36D4"
+					item: { count: 1, id: "create_enchantment_industry:mechanical_grindstone" }
+					type: "item"
+				}
+				{
+					id: "6543F74A0CBC0F40"
+					item: { count: 1, id: "create_enchantment_industry:printer" }
+					type: "item"
+				}
+				{
+					id: "044E56B5FE74F383"
+					item: { count: 1, id: "create:fluid_valve" }
+					type: "item"
+				}
+				{
+					id: "0527949EEEAC46D0"
+					item: { count: 1, id: "create:copper_valve_handle" }
+					type: "item"
+				}
+				{
+					id: "6690BD1D3D1CC37A"
+					item: { count: 1, id: "create_enchantment_industry:experience_hatch" }
+					type: "item"
+				}
+			]
+			x: 1.95d
+			y: 0.0d
+		}
+		{
+			dependencies: ["53A001A49A115E65"]
+			icon: {
+				id: "create_enchantment_industry:blaze_enchanter"
+			}
+			id: "5E3B89D9CF1E4F8C"
+			rewards: [
+				{
+					exclude_from_claim_all: true
+					id: "27E1525B00D0A5D7"
+					table_id: 7135599725476690766L
+					type: "choice"
+				}
+				{
+					exclude_from_claim_all: true
+					id: "247F96BA1A11FC00"
+					table_id: 3971786258777070132L
+					type: "choice"
+				}
+				{
+					exclude_from_claim_all: true
+					id: "19D9E62DE3D24D13"
+					table_id: 7135599725476690766L
+					type: "random"
+				}
+				{
+					exclude_from_claim_all: true
+					id: "508BB7265F141BFC"
+					table_id: 7135599725476690766L
+					type: "random"
+				}
+				{
+					exclude_from_claim_all: true
+					id: "252C1D7527F8B5A6"
+					table_id: 3971786258777070132L
+					type: "random"
+				}
+			]
+			tasks: [
+				{
+					id: "579CD394D42D7C5A"
+					item: { count: 1, id: "create_enchantment_industry:blaze_enchanter" }
+					type: "item"
+				}
+				{
+					id: "2EB827A5B783BD6A"
+					item: { count: 1, id: "create_enchantment_industry:blaze_forger" }
+					type: "item"
+				}
+				{
+					id: "2515C70772A1260F"
+					item: { count: 1, id: "create_enchantment_industry:enchanting_template" }
+					type: "item"
+				}
+			]
+			x: 3.4499999999999997d
+			y: -0.75d
+		}
+		{
+			dependencies: ["5E3B89D9CF1E4F8C"]
+			icon: {
+				id: "create_enchantment_industry:experience_cake"
+			}
+			id: "61A1B955037F5781"
+			rewards: [
+				{
+					exclude_from_claim_all: true
+					id: "75FA264881620A31"
+					table_id: 7135599725476690766L
+					type: "random"
+				}
+				{
+					exclude_from_claim_all: true
+					id: "5270FD7A85AB3735"
+					table_id: 7135599725476690766L
+					type: "random"
+				}
+				{
+					exclude_from_claim_all: true
+					id: "2F7EFBC613C0BE8B"
+					table_id: 7135599725476690766L
+					type: "random"
+				}
+				{
+					exclude_from_claim_all: true
+					id: "15DC57A89F89911D"
+					table_id: 3971786258777070132L
+					type: "random"
+				}
+				{
+					exclude_from_claim_all: true
+					id: "2B962F5495AEB792"
+					table_id: 3971786258777070132L
+					type: "random"
+				}
+				{
+					exclude_from_claim_all: true
+					id: "1E40FB652D52D5F8"
+					table_id: 3971786258777070132L
+					type: "random"
+				}
+			]
+			tasks: [
+				{
+					id: "726DB7DA161CBDDC"
+					item: { count: 1, id: "create_enchantment_industry:experience_cake" }
+					type: "item"
+				}
+				{
+					id: "14A43012C2761AB3"
+					item: { count: 1, id: "create_enchantment_industry:super_enchanting_template" }
+					type: "item"
+				}
+			]
+			x: 5.1d
+			y: -0.3d
+		}
+		{
+			dependencies: ["2D340F2E9BC715F4"]
+			icon: {
+				id: "create:portable_fluid_interface"
+			}
+			id: "4912C85A00C9461E"
+			rewards: [
+				{
+					exclude_from_claim_all: true
+					id: "29A80BE9887B3820"
+					table_id: 7135599725476690766L
+					type: "random"
+				}
+				{
+					exclude_from_claim_all: true
+					id: "04A51ECA11F43DBC"
+					table_id: 3971786258777070132L
+					type: "random"
+				}
+			]
+			tasks: [
+				{
+					count: 4L
+					id: "47968990907EB207"
+					item: { count: 1, id: "create:portable_fluid_interface" }
+					type: "item"
+				}
+				{
+					count: 2L
+					id: "177D3A0FB7A6F465"
+					item: { count: 1, id: "create:smart_fluid_pipe" }
+					type: "item"
+				}
+			]
+			x: 0.6d
+			y: -1.95d
+		}
+		{
+			dependencies: ["2D340F2E9BC715F4"]
+			icon: {
+				components: {
+					"create:banktank_air": 900
+				}
+				id: "create:copper_backtank"
+			}
+			id: "625D78A142A0565E"
+			rewards: [
+				{
+					exclude_from_claim_all: true
+					id: "6DC8497FAEE85B8C"
+					table_id: 7135599725476690766L
+					type: "random"
+				}
+				{
+					exclude_from_claim_all: true
+					id: "214DF6E5E5DAFF09"
+					table_id: 7135599725476690766L
+					type: "random"
+				}
+			]
+			tasks: [
+				{
+					id: "369D818F725C5A57"
+					item: { count: 1, id: "create:copper_diving_helmet" }
+					type: "item"
+				}
+				{
+					id: "0BD7F8C6C2DE29FD"
+					item: { count: 1, id: "create:copper_diving_boots" }
+					type: "item"
+				}
+				{
+					id: "0F5069AA5B7F5A40"
+					item: { components: { "create:banktank_air": 900 }, count: 1, id: "create:copper_backtank" }
+					type: "item"
+				}
+			]
+			x: -1.95d
+			y: 0.0d
+		}
+	]
+}

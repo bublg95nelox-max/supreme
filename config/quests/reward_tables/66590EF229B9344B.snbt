@@ -1,0 +1,35 @@
+{
+	id: "66590EF229B9344B"
+	loot_size: 1
+	order_index: 4
+	rewards: [
+		{ id: "739EFC4F05F9136E", item: { components: { "quark:tome_enchantments": { levels: { "farmersdelight:backstabbing": 3 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "58B95F1D8C91FB48", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:bane_of_arthropods": 5 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "7D8BAC6AACDF014A", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:breach": 4 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "4A8216F3DE73933F", item: { components: { "quark:tome_enchantments": { levels: { "create:capacity": 3 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "6B706DABDA235A0B", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:density": 5 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "5992BCB73C348F8A", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:efficiency": 5 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "155AAB27C638212D", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:feather_falling": 4 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "7DF6D0779A0C2A7E", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:fire_aspect": 2 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "3217948031FB0E66", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:fortune": 3 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "52FD1CDD1175D3BC", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:impaling": 5 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "44AE8B7E48C3E4BE", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:knockback": 2 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "68D87F57E1782729", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:looting": 3 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "0E9CDEDE8EE31B3D", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:loyalty": 3 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "57993C9E5F444F09", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:luck_of_the_sea": 3 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "4DEA75A5AE7F3A04", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:lure": 3 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "26C1695AC8C83A9E", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:piercing": 4 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "6B1F4629D26E21E5", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:power": 5 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "42394988E3BD7E23", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:protection": 4 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "20C94F6BF4E2D44D", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:punch": 2 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "00E56F0DEA259D05", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:quick_charge": 3 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "2F22D1B15DB1E5F8", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:respiration": 3 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "4CD0A7F32A07472D", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:riptide": 3 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "50FEA19EFA628D0F", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:sharpness": 5 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "5F71F8808B460010", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:smite": 5 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "46CF4D90FD477106", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:sweeping_edge": 3 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "3BF28770AEA03442", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:thorns": 3 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "1EA8B5059756F872", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:unbreaking": 3 } } }, count: 1, id: "quark:ancient_tome" } }
+		{ id: "3DEFA20C8EB31F22", item: { components: { "quark:tome_enchantments": { levels: { "minecraft:wind_burst": 3 } } }, count: 1, id: "quark:ancient_tome" } }
+	]
+}

@@ -1,0 +1,123 @@
+{
+	default_hide_dependency_lines: false
+	default_quest_shape: ""
+	filename: "introduction"
+	group: ""
+	icon: {
+		id: "ftbquests:book"
+	}
+	id: "245A4F185E1B81C3"
+	images: [{
+		click_action: "open_uri:https://www.youtube.com/watch?v=rR8W-f9YhYA"
+		height: 1.5d
+		id: "15DF95B2084BA1A5"
+		image: "create:textures/gui/logo.png"
+		order: 10
+		rotation: 0.0d
+		width: 1.5d
+		x: 0.0d
+		y: -1.65d
+	}]
+	order_index: 0
+	quest_links: [ ]
+	quests: [
+		{
+			icon: {
+				id: "create:goggles"
+			}
+			icon_scale: 0.9d
+			id: "2622FDB116FA61DB"
+			shape: "gear"
+			size: 1.5d
+			tasks: [{
+				icon: {
+					components: {
+						"ftbquests:missing_item": "supplementaries:hourglass"
+					}
+					id: "ftbquests:missing_item"
+				}
+				id: "7B5595271AECE5FE"
+				stat: "minecraft:play_time"
+				type: "stat"
+				value: 1200
+			}]
+			x: 0.0d
+			y: 0.0d
+		}
+		{
+			icon: {
+				id: "minecraft:crafting_table"
+			}
+			id: "6184FB979CADB8CF"
+			rewards: [{
+				id: "5BADA8DDB21CA797"
+				item: {
+					count: 1
+					id: "minecraft:crafting_table"
+				}
+				type: "item"
+			}]
+			tasks: [{
+				id: "7D91851A08BFE5CC"
+				type: "checkmark"
+			}]
+			x: 1.2d
+			y: 2.85d
+		}
+		{
+			icon: {
+				id: "minecraft:cartography_table"
+			}
+			id: "344010DF14146C14"
+			rewards: [{
+				id: "5C77118D1F661409"
+				item: {
+					count: 1
+					id: "minecraft:cartography_table"
+				}
+				type: "item"
+			}]
+			tasks: [{
+				id: "2C5DE18367FBA566"
+				type: "checkmark"
+			}]
+			x: -1.2d
+			y: 2.85d
+		}
+		{
+			icon: {
+				id: "lootr:lootr_chest"
+			}
+			id: "77E2BD70D3702127"
+			rewards: [{
+				count: 2
+				id: "6BE5F057D8B86E09"
+				item: {
+					count: 1
+					id: "minecraft:golden_carrot"
+				}
+				type: "item"
+			}]
+			tasks: [{
+				advancement: "lootr:1chest"
+				criterion: ""
+				id: "1719B8375FA340F6"
+				type: "advancement"
+			}]
+			x: 0.0d
+			y: 2.85d
+		}
+		{
+			icon: {
+				id: "minecraft:ender_pearl"
+			}
+			id: "1451D41EF37C713D"
+			tasks: [{
+				id: "591DE305547E3062"
+				type: "checkmark"
+			}]
+			x: 0.0d
+			y: 1.7999999999999998d
+		}
+	]
+}

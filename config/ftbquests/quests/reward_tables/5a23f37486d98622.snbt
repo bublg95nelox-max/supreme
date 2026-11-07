@@ -1,0 +1,56 @@
+{
+	id: "5A23F37486D98622"
+	loot_size: 1
+	order_index: 5
+	rewards: [
+		{
+			count: 6
+			id: "391697733302EFEC"
+			item: {
+				count: 1
+				id: "create:sturdy_sheet"
+			}
+		}
+		{
+			count: 4
+			id: "2D525B7438AA3569"
+			item: {
+				count: 1
+				id: "create:railway_casing"
+			}
+		}
+		{
+			count: 24
+			id: "122D0D210A3B13C2"
+			item: {
+				count: 1
+				id: "create:track"
+			}
+		}
+		{ id: "6CE9605A1B162426", item: { count: 1, id: "create:precision_mechanism" } }
+		{
+			count: 8
+			id: "6AE83AC07D88A0FA"
+			item: {
+				count: 1
+				id: "create:electron_tube"
+			}
+		}
+		{
+			count: 2
+			id: "2FC76C2193164B09"
+			item: {
+				count: 1
+				id: "railways:fuel_tank"
+			}
+		}
+		{
+			count: 12
+			id: "3A5CCECCA356AA0C"
+			item: {
+				count: 1
+				id: "railways:riveted_locometal"
+			}
+		}
+	]
+}
