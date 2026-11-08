@@ -7,8 +7,16 @@
     "installer_url": ""
   },
   "java_version": 21,
-  "total_files": 106,
+  "total_files": 107,
   "files": [
+    {
+      "path": "mods/baguettelib-1.21.1-NeoForge-2.0.7.jar",
+      "sha256": "a1af3ae5c2945240bff3afa779621d9d8e21fb23bb6b1433f584e746735bae24",
+      "size": 85738,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/baguettelib-1.21.1-NeoForge-2.0.7.jar",
+      "required": true,
+      "overwrite": true
+    },
     {
       "path": "mods/gravestonecurioscompat-1.21.1-NeoForge-4.2.0.jar",
       "sha256": "ad1959bca2a0b49270828e20d34a8b7545e6c2bec168ace8274cca49bc55e2b7",
