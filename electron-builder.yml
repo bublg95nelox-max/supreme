@@ -28,8 +28,6 @@ win:
   target: 
     - target: 'nsis'
       arch: 'x64'
-    - target: 'portable'
-      arch: 'x64'
   extraResources:
     - from: 'build/win-python'
       to: 'python'
@@ -43,12 +41,10 @@ nsis:
   allowToChangeInstallationDirectory: true
   deleteAppDataOnUninstall: false
 
-# Linux Configuration (Arch Linux / AppImage & Portable tar.gz)
+# Linux Configuration (Portable tar.gz)
 linux: 
   icon: 'build/icons'
   target:
-    - target: 'AppImage'
-      arch: 'x64'
     - target: 'tar.gz'
       arch: 'x64'
   maintainer: 'Lowuncher Team'

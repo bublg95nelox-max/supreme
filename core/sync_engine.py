@@ -11,7 +11,12 @@ import hashlib
 from pathlib import Path
 from typing import Callable, Optional, Dict, Any, List, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import requests
+try:
+    import requests
+except ImportError:
+    requests = None
+import urllib.request
+import urllib.error
 from urllib.parse import urlparse, unquote
 
 logger = logging.getLogger("lowuncher.sync")
@@ -115,9 +120,14 @@ class SyncEngine:
                 raise ValueError("manifest должен использовать HTTPS URL или локальный file:// URL")
             sep = "&" if "?" in manifest_url else "?"
             url_with_cb = f"{manifest_url}{sep}_cb={int(time.time())}"
-            resp = requests.get(url_with_cb, headers=self.headers, timeout=(10, 15))
-            resp.raise_for_status()
-            manifest = resp.json()
+            if requests is not None:
+                resp = requests.get(url_with_cb, headers=self.headers, timeout=(10, 15))
+                resp.raise_for_status()
+                manifest = resp.json()
+            else:
+                req = urllib.request.Request(url_with_cb, headers=self.headers)
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    manifest = json.loads(resp.read().decode("utf-8"))
 
         if not isinstance(manifest, dict) or "minecraft_version" not in manifest or "files" not in manifest:
             raise ValueError("Некорректная структура manifest.json: отсутствует minecraft_version или files")
@@ -242,11 +252,21 @@ class SyncEngine:
                             if progress_tracker:
                                 progress_tracker(len(chunk))
                 else:
-                    with requests.get(url, stream=True, headers=self.headers, timeout=(15, 30)) as r:
-                        r.raise_for_status()
-                        with open(temp_download, "wb") as f:
-                            for chunk in r.iter_content(chunk_size=65536):
-                                if chunk:
+                    if requests is not None:
+                        with requests.get(url, stream=True, headers=self.headers, timeout=(15, 30)) as r:
+                            r.raise_for_status()
+                            with open(temp_download, "wb") as f:
+                                for chunk in r.iter_content(chunk_size=65536):
+                                    if chunk:
+                                        f.write(chunk)
+                                        downloaded += len(chunk)
+                                        if progress_tracker:
+                                            progress_tracker(len(chunk))
+                    else:
+                        req = urllib.request.Request(url, headers=self.headers)
+                        with urllib.request.urlopen(req, timeout=30) as r:
+                            with open(temp_download, "wb") as f:
+                                while chunk := r.read(65536):
                                     f.write(chunk)
                                     downloaded += len(chunk)
                                     if progress_tracker:

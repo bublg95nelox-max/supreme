@@ -44,6 +44,7 @@ from core.auth import AuthManager
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("lowuncher.bridge")
 
+DEFAULT_MANIFEST_URL = "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/manifest.json"
 DEFAULT_MODPACK_URL = "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.5/modpack-supreme-1.21.1.zip"
 MODPACK_VERSION = "1.0.5"
 
@@ -308,31 +309,33 @@ def handle_run(args):
 
     # 2. Modpack Synchronization
     emit_event("progress", {"percent": 40, "status": "Синхронизация файлов сборки..."})
-    if getattr(args, 'manifest_url', None):
-        sync_engine = SyncEngine(game_dir)
-        def on_sync_progress(curr, total, status):
-            pct = 40 + int((curr / max(1, total)) * 25)
-            emit_event("progress", {"percent": min(65, pct), "status": status})
-        try:
-            sync_engine.sync(args.manifest_url, progress_callback=on_sync_progress)
-            emit_event("progress", {"percent": 65, "status": "Файлы сборки синхронизированы"})
-        except (TimeoutError, OSError) as e:
-            logger.warning(f"Modpack sync skipped because network is unavailable: {e}")
-            emit_event("progress", {"percent": 65, "status": "Синхронизация пропущена: сеть недоступна"})
-        except Exception:
-            logger.exception("Modpack synchronization failed")
-            emit_event("error", {"message": "Синхронизация сборки не прошла проверку целостности"})
-            raise
-    else:
-        def on_modpack_progress(curr, total, status):
-            pct = 40 + int((curr / max(1, total)) * 25)
-            emit_event("progress", {"percent": min(65, pct), "status": status})
-        ensure_modpack(
-            game_dir=game_dir,
-            modpack_url=getattr(args, 'modpack_url', None),
-            progress_callback=on_modpack_progress,
-        )
-        emit_event("progress", {"percent": 65, "status": "Файлы сборки готовы"})
+    # 2. Modpack Synchronization via GitHub Repository Manifest
+    emit_event("progress", {"percent": 40, "status": "Синхронизация файлов сборки..."})
+    manifest_url = getattr(args, 'manifest_url', None) or DEFAULT_MANIFEST_URL
+    sync_engine = SyncEngine(game_dir)
+    def on_sync_progress(curr, total, status):
+        pct = 40 + int((curr / max(1, total)) * 25)
+        emit_event("progress", {"percent": min(65, pct), "status": status})
+    try:
+        sync_engine.sync(manifest_url, progress_callback=on_sync_progress)
+        emit_event("progress", {"percent": 65, "status": "Файлы сборки синхронизированы"})
+    except (TimeoutError, OSError, urllib.error.URLError) as e:
+        current_mods = list((game_dir / "mods").glob("*.jar")) if (game_dir / "mods").is_dir() else []
+        if len(current_mods) >= 10:
+            logger.warning(f"Modpack sync skipped because network is unavailable: {e}. Using {len(current_mods)} local mods.")
+            emit_event("progress", {"percent": 65, "status": f"Используются локальные моды ({len(current_mods)})"})
+        else:
+            logger.warning(f"Modpack sync failed: {e}. Attempting fallback ensure_modpack...")
+            ensure_modpack(
+                game_dir=game_dir,
+                modpack_url=getattr(args, 'modpack_url', None),
+                progress_callback=on_sync_progress,
+            )
+            emit_event("progress", {"percent": 65, "status": "Файлы сборки готовы"})
+    except Exception as e:
+        logger.exception("Modpack synchronization failed")
+        emit_event("error", {"message": f"Ошибка синхронизации сборки: {e}"})
+        raise
 
     # Always clean blacklisted mods before launching
     purge_blacklisted_mods(game_dir)

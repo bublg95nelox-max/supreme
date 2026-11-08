@@ -34,82 +34,88 @@ if [ -n "${BASH_SOURCE[0]}" ] && [ -f "${BASH_SOURCE[0]}" ]; then
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 fi
 
+ARCHIVE_SOURCE=""
 APPIMAGE_SOURCE=""
 
-# 1. Locate local AppImage if available
+# 1. Locate local tar.gz or AppImage if available
 if [ -n "$SCRIPT_DIR" ]; then
     for candidate in \
+        "$SCRIPT_DIR/dist/Lowuncher-1.0.5-linux-x64.tar.gz" \
+        "$SCRIPT_DIR"/Lowuncher-*-linux-x64.tar.gz \
         "$SCRIPT_DIR/dist/Lowuncher-1.0.5-linux-x86_64.AppImage" \
-        "$SCRIPT_DIR/dist/Lowuncher-1.0.4-linux-x86_64.AppImage" \
-        "$SCRIPT_DIR/dist/Lowuncher-1.0.3-linux-x86_64.AppImage" \
-        "$SCRIPT_DIR/Lowuncher-1.0.5-linux-x86_64.AppImage" \
-        "$SCRIPT_DIR/Lowuncher-1.0.4-linux-x86_64.AppImage" \
-        "$SCRIPT_DIR/Lowuncher-1.0.3-linux-x86_64.AppImage" \
-        "$SCRIPT_DIR"/Lowuncher-*-linux-x86_64.AppImage \
-        "$SCRIPT_DIR/Lowuncher.AppImage"; do
+        "$SCRIPT_DIR"/Lowuncher-*-linux-x86_64.AppImage; do
         if [ -f "$candidate" ]; then
-            APPIMAGE_SOURCE="$candidate"
+            if [[ "$candidate" == *.tar.gz ]]; then
+                ARCHIVE_SOURCE="$candidate"
+            else
+                APPIMAGE_SOURCE="$candidate"
+            fi
             break
         fi
     done
 fi
 
-if [ -z "$APPIMAGE_SOURCE" ]; then
+if [ -z "$ARCHIVE_SOURCE" ] && [ -z "$APPIMAGE_SOURCE" ]; then
     for candidate in \
+        "/mnt/games/lowuncher/dist/Lowuncher-1.0.5-linux-x64.tar.gz" \
+        "/mnt/games/lowuncher/dist"/Lowuncher-*-linux-x64.tar.gz \
         "/mnt/games/lowuncher/dist/Lowuncher-1.0.5-linux-x86_64.AppImage" \
-        "/mnt/games/lowuncher/dist/Lowuncher-1.0.4-linux-x86_64.AppImage" \
-        "/mnt/games/lowuncher/dist/Lowuncher-1.0.3-linux-x86_64.AppImage" \
         "/mnt/games/lowuncher/dist"/Lowuncher-*-linux-x86_64.AppImage; do
         if [ -f "$candidate" ]; then
-            APPIMAGE_SOURCE="$candidate"
+            if [[ "$candidate" == *.tar.gz ]]; then
+                ARCHIVE_SOURCE="$candidate"
+            else
+                APPIMAGE_SOURCE="$candidate"
+            fi
             break
         fi
     done
 fi
 
 # 2. Download from GitHub Releases if not found locally
-if [ -z "$APPIMAGE_SOURCE" ] || [ ! -f "$APPIMAGE_SOURCE" ]; then
+if [ -z "$ARCHIVE_SOURCE" ] && [ -z "$APPIMAGE_SOURCE" ]; then
     echo -e "${CYAN}▶ Загрузка актуального релиза Lowuncher с GitHub...${RESET}"
     if command -v curl &>/dev/null; then
+        curl -fSL "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.5/Lowuncher-1.0.5-linux-x64.tar.gz" -o "$INSTALL_DIR/Lowuncher.tar.gz" || \
         curl -fSL "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.5/Lowuncher-1.0.5-linux-x86_64.AppImage" -o "$INSTALL_DIR/Lowuncher.AppImage" || \
-        curl -fSL "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.4/Lowuncher-1.0.4-linux-x86_64.AppImage" -o "$INSTALL_DIR/Lowuncher.AppImage" || \
-        curl -fSL "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.3/Lowuncher-1.0.3-linux-x86_64.AppImage" -o "$INSTALL_DIR/Lowuncher.AppImage" || \
-        curl -fSL "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.2/Lowuncher-1.0.2-linux-x86_64.AppImage" -o "$INSTALL_DIR/Lowuncher.AppImage"
+        curl -fSL "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.2/Lowuncher-1.0.2-linux-x64.tar.gz" -o "$INSTALL_DIR/Lowuncher.tar.gz"
     elif command -v wget &>/dev/null; then
+        wget -q --show-progress "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.5/Lowuncher-1.0.5-linux-x64.tar.gz" -O "$INSTALL_DIR/Lowuncher.tar.gz" || \
         wget -q --show-progress "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.5/Lowuncher-1.0.5-linux-x86_64.AppImage" -O "$INSTALL_DIR/Lowuncher.AppImage" || \
-        wget -q --show-progress "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.4/Lowuncher-1.0.4-linux-x86_64.AppImage" -O "$INSTALL_DIR/Lowuncher.AppImage" || \
-        wget -q --show-progress "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.3/Lowuncher-1.0.3-linux-x86_64.AppImage" -O "$INSTALL_DIR/Lowuncher.AppImage" || \
-        wget -q --show-progress "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.2/Lowuncher-1.0.2-linux-x86_64.AppImage" -O "$INSTALL_DIR/Lowuncher.AppImage"
+        wget -q --show-progress "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.2/Lowuncher-1.0.2-linux-x64.tar.gz" -O "$INSTALL_DIR/Lowuncher.tar.gz"
     fi
-    if [ -s "$INSTALL_DIR/Lowuncher.AppImage" ]; then
+    if [ -s "$INSTALL_DIR/Lowuncher.tar.gz" ]; then
+        ARCHIVE_SOURCE="$INSTALL_DIR/Lowuncher.tar.gz"
+    elif [ -s "$INSTALL_DIR/Lowuncher.AppImage" ]; then
         chmod +x "$INSTALL_DIR/Lowuncher.AppImage"
         APPIMAGE_SOURCE="$INSTALL_DIR/Lowuncher.AppImage"
     fi
-else
-    echo -e "${CYAN}▶ Копирование файла лаунчера в $INSTALL_DIR...${RESET}"
-    if [ "$APPIMAGE_SOURCE" != "$INSTALL_DIR/Lowuncher.AppImage" ]; then
-        cp "$APPIMAGE_SOURCE" "$INSTALL_DIR/Lowuncher.AppImage"
-    fi
-    chmod +x "$INSTALL_DIR/Lowuncher.AppImage"
 fi
 
-if [ ! -s "$INSTALL_DIR/Lowuncher.AppImage" ]; then
-    echo -e "${YELLOW}Ошибка: Не удалось найти или скачать файл Lowuncher.AppImage.${RESET}"
-    exit 1
-fi
-
-echo -e "${GREEN}✓ Исполняемый файл получен.${RESET}"
-
-# 3. Extract AppImage to bypass FUSE requirements completely & enable instant startup
+# 3. Extract to bypass FUSE requirements completely & enable instant startup
 echo -e "${CYAN}▶ Распаковка файлов лаунчера (работает без FUSE/libfuse.so.2)...${RESET}"
 cd "$INSTALL_DIR"
 rm -rf squashfs-root app
-"$INSTALL_DIR/Lowuncher.AppImage" --appimage-extract > /dev/null 2>&1 || true
+mkdir -p "$INSTALL_DIR/app"
 
-if [ -d "$INSTALL_DIR/squashfs-root" ]; then
-    mv "$INSTALL_DIR/squashfs-root" "$INSTALL_DIR/app"
-    echo -e "${GREEN}✓ Лаунчер распакован в $INSTALL_DIR/app (мгновенный запуск без FUSE).${RESET}"
+if [ -n "$ARCHIVE_SOURCE" ] && [ -s "$ARCHIVE_SOURCE" ]; then
+    tar -xzf "$ARCHIVE_SOURCE" -C "$INSTALL_DIR/app" --strip-components=1
+    echo -e "${GREEN}✓ Лаунчер распакован из tar.gz в $INSTALL_DIR/app (мгновенный запуск без FUSE).${RESET}"
+elif [ -n "$APPIMAGE_SOURCE" ] && [ -s "$APPIMAGE_SOURCE" ]; then
+    "$APPIMAGE_SOURCE" --appimage-extract > /dev/null 2>&1 || true
+    if [ -d "$INSTALL_DIR/squashfs-root" ]; then
+        mv "$INSTALL_DIR/squashfs-root"/* "$INSTALL_DIR/app/"
+        rm -rf "$INSTALL_DIR/squashfs-root"
+        echo -e "${GREEN}✓ Лаунчер распакован из AppImage в $INSTALL_DIR/app (мгновенный запуск без FUSE).${RESET}"
+    fi
 fi
+
+if [ ! -f "$INSTALL_DIR/app/lowuncher" ]; then
+    echo -e "${YELLOW}Ошибка: Не удалось подготовить исполняемый файл лаунчера.${RESET}"
+    exit 1
+fi
+
+chmod +x "$INSTALL_DIR/app/lowuncher"
 
 # 4. Install Icons into system icon theme
 echo -e "${CYAN}▶ Установка иконок приложения...${RESET}"
