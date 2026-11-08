@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="48" height="48">
+  <defs>
+    <filter id="blockShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+  <g filter="url(#blockShadow)">
+    <!-- Left face (dirt) -->
+    <polygon points="6,23 32,38 32,58 6,43" fill="#6d4c33" stroke="#4a3322" stroke-width="0.8"/>
+    <!-- Left dirt pixel texture -->
+    <polygon points="12,32 18,35 18,39 12,36" fill="#523927"/>
+    <polygon points="20,44 26,47 26,51 20,48" fill="#523927"/>
+    <polygon points="10,38 14,40 14,43 10,41" fill="#7d593d"/>
+
+    <!-- Right face (dirt shaded) -->
+    <polygon points="32,38 58,23 58,43 32,58" fill="#543a27" stroke="#3b291b" stroke-width="0.8"/>
+    <!-- Right dirt pixel texture -->
+    <polygon points="38,44 44,40 44,45 38,48" fill="#3f2b1c"/>
+    <polygon points="46,33 52,30 52,34 46,37" fill="#654731"/>
+
+    <!-- Left grass fringe -->
+    <polygon points="6,23 32,38 32,44 27,41 27,45 20,41 20,44 14,40 14,43 6,38" fill="#5c8e32"/>
+    <polygon points="6,23 32,38 32,41 28,39 28,42 22,39 22,41 16,38 16,40 6,35" fill="#72ab3e"/>
+
+    <!-- Right grass fringe -->
+    <polygon points="32,38 58,23 58,38 50,43 50,39 44,43 44,40 37,44 37,41 32,44" fill="#4b7529"/>
+    <polygon points="32,38 58,23 58,35 52,38 52,36 46,39 46,37 38,41 38,39 32,41" fill="#5e9233"/>
+
+    <!-- Top face (grass surface) -->
+    <polygon points="32,8 58,23 32,38 6,23" fill="#7ebb42" stroke="#68a134" stroke-width="0.8"/>
+    <!-- Top grass highlights and pixels -->
+    <polygon points="26,16 34,12 40,15 32,20" fill="#8ecd4b"/>
+    <polygon points="18,22 24,19 28,21 22,25" fill="#71a93b"/>
+    <polygon points="36,26 44,22 48,24 40,29" fill="#71a93b"/>
+    <polygon points="28,27 34,24 38,26 32,30" fill="#9adc53"/>
+  </g>
+</svg>

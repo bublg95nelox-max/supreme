@@ -1,0 +1,50 @@
+appId: 'lowuncher'
+productName: 'Lowuncher'
+artifactName: '${productName}-${version}-${os}-${arch}.${ext}'
+
+copyright: 'Copyright © 2026 Lowuncher'
+
+asar: true
+compression: 'maximum'
+
+files:
+  - '!{dist,.gitignore,.vscode,docs,dev-app-update.yml,.nvmrc,eslint.config.mjs,archive,.venv}'
+
+extraResources:
+  - 'libraries'
+  - 'core'
+
+# Windows Configuration
+win: 
+  icon: 'build/icon.ico'
+  target: 
+    - target: 'nsis'
+      arch: 'x64'
+    - target: 'portable'
+      arch: 'x64'
+  extraResources:
+    - from: 'build/win-python'
+      to: 'python'
+      filter: ['**/*']
+
+# Windows Installer Configuration
+nsis:
+  oneClick: false
+  perMachine: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+
+# Linux Configuration (Arch Linux / AppImage)
+linux: 
+  icon: 'build/icons'
+  target:
+    - 'AppImage'
+  maintainer: 'Lowuncher Team'
+  vendor: 'Lowuncher'
+  synopsis: 'Minecraft NeoForge Launcher'
+  description: 'Custom Minecraft launcher for school community'
+  category: 'Game'
+
+directories:
+  buildResources: 'build'
+  output: 'dist'

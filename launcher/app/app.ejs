@@ -1,0 +1,62 @@
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" http-equiv="Content-Security-Policy" content="script-src 'self' 'sha256-In6B8teKZQll5heMl9bS7CESTbGvuAt3VVV86BUQBDk='"/>
+    <title><%= lang('app.title') %></title>
+    <!-- Load renderer modules as scripts so their UI functions share the renderer scope. -->
+    <script src="./assets/js/scripts/uicore.js"></script>
+    <script src="./assets/js/scripts/uibinder.js"></script>
+    <link type="text/css" rel="stylesheet" href="./assets/css/launcher.css">
+    <link type="text/css" rel="stylesheet" href="./assets/css/modern_ui.css">
+    <style>
+        html, body {
+            background: transparent !important;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            -webkit-user-select: none;
+            border-radius: 16px;
+        }
+        #frameBar {
+            display: none !important;
+        }
+        #main {
+            display: none;
+            height: 100%;
+            background: #141416;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10;
+            overflow: hidden;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        }
+        #main[overlay] {
+            filter: blur(3px) contrast(0.9) brightness(1.0);
+        }
+    </style>
+</head>
+<body bkid="<%=bkid%>">
+    <%- include('frame') %>
+    <div id="main">
+        <%- include('welcome') %>
+        <%- include('login') %>
+        <%- include('waiting') %>
+        <%- include('loginOptions') %>
+        <%- include('settings') %>
+        <%- include('landing') %>
+    </div>
+    <%- include('overlay') %>
+    <div id="loadingContainer">
+        <div id="loadingContent">
+            <div id="loadSpinnerContainer">
+                <img id="loadSpinnerImage" class="rotating" src="assets/images/sieg.png" alt="Загрузка Lowuncher">
+                <span id="loadingLabel">Подготавливаем лаунчер…</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

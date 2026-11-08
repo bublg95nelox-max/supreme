@@ -1,0 +1,1324 @@
+/* modern_ui.css - Clean Matte Dark Theme Matching User Mockup */
+
+:root {
+    --bg-window: #161618;
+    --bg-sidebar: #131315;
+    --bg-main: #1a1a1d;
+    --bg-card: #222225;
+    --bg-card-hover: #28282c;
+    --bg-input: #17171a;
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border-hover: rgba(255, 255, 255, 0.12);
+    --accent-blue: #2563eb;
+    --accent-blue-hover: #1d4ed8;
+    --accent-blue-glow: rgba(37, 99, 235, 0.4);
+    --accent-emerald: #10b981;
+    --text-primary: #ffffff;
+    --text-secondary: #a1a1aa;
+    --text-muted: #71717a;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --transition: 0.18s ease;
+}
+
+/* Base resets & scrollbars */
+* {
+    box-sizing: border-box;
+}
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+/* ==========================================================================
+   APP CONTAINER ROOT & FRAME BAR OVERRIDES
+   ========================================================================== */
+#frameBar,
+#landingContainer > #upper,
+#landingContainer > #newsContainer,
+#serverSelectContent,
+#accountSelectContent,
+#loadingContainer[style*="none"] {
+    display: none !important;
+}
+
+#loadingContainer {
+    position: absolute !important;
+    inset: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: #141416 !important;
+    border-radius: 16px !important;
+    overflow: hidden !important;
+    z-index: 400 !important;
+}
+
+#landingContainer {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: row;
+    background: var(--bg-window);
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    border-radius: 16px;
+}
+
+#modernAppShell {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+}
+
+/* ==========================================================================
+   LEFT SIDEBAR
+   ========================================================================== */
+#modernSidebar {
+    width: 215px;
+    flex: 0 0 215px;
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 16px 12px;
+    box-sizing: border-box;
+    z-index: 20;
+    border-top-left-radius: 16px;
+    border-bottom-left-radius: 16px;
+}
+
+/* Profile Card at Top of Sidebar */
+#sidebarProfileCard {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background var(--transition);
+}
+
+#sidebarProfileCard:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+#avatarContainer {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background-color: #27272a;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border: 2px solid rgba(255, 255, 255, 0.12);
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+    transition: border-color var(--transition);
+}
+
+#sidebarProfileCard:hover #avatarContainer {
+    border-color: var(--accent-blue);
+}
+
+#avatarOverlay {
+    display: none;
+}
+
+.sidebarProfileText {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+#user_text {
+    position: static !important;
+    right: auto !important;
+    min-width: 0 !important;
+    font-family: 'Avenir Heavy', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 125px;
+    letter-spacing: 0.2px;
+}
+
+.sidebarUserStatus {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'Avenir Book', -apple-system, BlinkMacSystemFont, sans-serif;
+    white-space: nowrap;
+    text-transform: capitalize;
+}
+
+/* Navigation Links */
+#sidebarNavMenu {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 20px;
+    flex-grow: 1;
+}
+
+.sidebarNavBtn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 13.5px;
+    font-weight: 600;
+    font-family: 'Avenir Medium', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    cursor: pointer;
+    transition: all var(--transition);
+    width: 100%;
+    text-align: left;
+    outline: none;
+}
+
+.sidebarNavBtn:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: #e4e4e7;
+}
+
+.sidebarNavBtn.active {
+    background: #27272a;
+    color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.sidebarNavIcon {
+    width: 18px;
+    height: 18px;
+    opacity: 0.75;
+    flex-shrink: 0;
+    transition: opacity var(--transition);
+}
+
+.sidebarNavBtn.active .sidebarNavIcon,
+.sidebarNavBtn:hover .sidebarNavIcon {
+    opacity: 1;
+}
+
+#sidebarBottom {
+    padding-top: 10px;
+    border-top: 1px solid var(--border-subtle);
+}
+
+/* ==========================================================================
+   RIGHT MAIN AREA & HEADER
+   ========================================================================== */
+#modernMainArea {
+    flex: 1 1 0%;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-width: 0;
+    background: var(--bg-main);
+    overflow: hidden;
+    position: relative;
+    border-top-right-radius: 16px;
+    border-bottom-right-radius: 16px;
+}
+
+#modernWindowHeader {
+    height: 48px;
+    flex: 0 0 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    -webkit-app-region: drag;
+    box-sizing: border-box;
+    border-top-right-radius: 16px;
+}
+
+#windowHeaderTitle {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: 'Avenir Heavy', -apple-system, BlinkMacSystemFont, sans-serif;
+    letter-spacing: 0.3px;
+}
+
+#windowControls {
+    -webkit-app-region: no-drag;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Global inputs allow text selection and prevent drag */
+input, textarea, select {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    -webkit-app-region: no-drag !important;
+}
+
+.macDot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    outline: none;
+    transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.macDot:hover {
+    transform: scale(1.15);
+    filter: brightness(1.15);
+}
+
+.macDotYellow, .macDotMin { background: #ffbd2e; }
+.macDotGreen,  .macDotMax { background: #27c93f; }
+.macDotRed,    .macDotClose { background: #ff5f56; }
+
+/* Tab Panes */
+.modernTabPane {
+    display: none;
+    flex-direction: column;
+    flex: 1 1 0%;
+    padding: 0 24px 24px;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+.modernTabPane.active {
+    display: flex;
+}
+
+#tabHome {
+    padding: 0 24px 20px 24px;
+    height: calc(100% - 48px);
+    overflow: hidden;
+    gap: 16px;
+    justify-content: space-between;
+}
+
+/* ==========================================================================
+   TAB 1: ГЛАВНАЯ (HOME) - MATCHING MOCKUP
+   ========================================================================== */
+#heroBannerCard {
+    width: 100%;
+    flex: 1 1 0%;
+    min-height: 480px;
+    border-radius: var(--radius-lg);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.4);
+}
+
+#heroBannerBg {
+    position: absolute;
+    inset: 0;
+    background-image: url('../images/backgrounds/main.jpg');
+    background-size: cover;
+    background-position: center;
+}
+
+#heroBannerGradient {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 35%, rgba(12, 12, 14, 0.88) 100%);
+}
+
+#heroActionRow {
+    position: absolute;
+    bottom: 24px;
+    left: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 5;
+}
+
+/* Blue Play Button */
+#heroActionRow #launch_button,
+#launch_button.modernPlayBtn,
+.modernPlayBtn {
+    background: #3b82f6 !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 0 32px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    font-family: 'Avenir Heavy', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.8px !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 4px 18px rgba(59, 130, 246, 0.45) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    outline: none !important;
+    text-shadow: none !important;
+    box-sizing: border-box !important;
+}
+
+#heroActionRow #launch_button:hover,
+#launch_button.modernPlayBtn:hover,
+.modernPlayBtn:hover {
+    background: #2563eb !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 24px rgba(37, 99, 235, 0.6) !important;
+}
+
+#heroActionRow #launch_button:active,
+#launch_button.modernPlayBtn:active,
+.modernPlayBtn:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 10px rgba(59, 130, 246, 0.45) !important;
+}
+
+#heroActionRow #launch_button:disabled,
+#launch_button.modernPlayBtn:disabled,
+.modernPlayBtn:disabled {
+    opacity: 0.6 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+}
+
+/* Red Stop Button State */
+#heroActionRow #launch_button.isRunning,
+#launch_button.isRunning {
+    background: #dc2626 !important;
+    box-shadow: 0 4px 18px rgba(220, 38, 38, 0.5) !important;
+}
+
+#heroActionRow #launch_button.isRunning:hover,
+#launch_button.isRunning:hover {
+    background: #b91c1c !important;
+    box-shadow: 0 6px 24px rgba(185, 28, 28, 0.65) !important;
+    transform: translateY(-1px) !important;
+}
+
+#heroActionRow #launch_button.isRunning:active,
+#launch_button.isRunning:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 10px rgba(220, 38, 38, 0.45) !important;
+}
+
+/* Progress Wrap */
+#heroActionRow #launch_details,
+#launch_details.modernProgressContainer,
+.modernProgressContainer {
+    background: rgba(18, 18, 22, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 8px 18px;
+    border-radius: 10px;
+    border: 1px solid var(--border-subtle);
+    min-width: 260px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: static !important;
+    top: 0 !important;
+    box-sizing: border-box;
+}
+
+.modernProgressHeader {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-family: 'Avenir Medium', sans-serif;
+}
+
+#launch_progress {
+    width: 100%;
+    height: 6px;
+    border-radius: 4px;
+    appearance: none;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+}
+
+#launch_progress::-webkit-progress-bar {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+#launch_progress::-webkit-progress-value {
+    background: var(--accent-blue);
+    border-radius: 4px;
+    transition: width 0.2s ease;
+}
+
+/* Version Pill */
+.heroPill {
+    background: rgba(30, 30, 34, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #f1f5f9;
+    padding: 0 16px;
+    height: 42px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 600;
+    font-family: 'Avenir Medium', -apple-system, BlinkMacSystemFont, sans-serif;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-sizing: border-box;
+    cursor: default;
+}
+
+/* Folder Button */
+.heroActionBtn {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: rgba(30, 30, 34, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #cbd5e1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.heroActionBtn:hover {
+    background: rgba(45, 45, 52, 0.9);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+/* 3 Stat Cards Row */
+#heroStatCards {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 0;
+    margin-bottom: 2px;
+}
+
+.statCard {
+    background: #18181b;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 14px 24px;
+    min-width: 155px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
+    transition: all var(--transition);
+}
+
+.statCard:hover {
+    border-color: rgba(255, 255, 255, 0.22);
+    background: #202025;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+
+.statCard:active {
+    transform: translateY(0);
+}
+
+.statLabel {
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.statValue {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 0.2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Status Indicator Dot */
+.statusDot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.statusDotOnline {
+    background: #10b981;
+    box-shadow: 0 0 8px #10b981;
+}
+
+.statusDotOffline {
+    background: #ef4444;
+    box-shadow: 0 0 8px #ef4444;
+}
+
+.statusDotChecking {
+    background: #f59e0b;
+    box-shadow: 0 0 8px #f59e0b;
+    animation: pulseDot 1s infinite alternate;
+}
+
+@keyframes pulseDot {
+    0% { opacity: 0.4; }
+    100% { opacity: 1; }
+}
+
+/* ==========================================================================
+   COMMON CARDS, HEADERS & INPUTS
+   ========================================================================== */
+.tabHeader {
+    margin-bottom: 20px;
+}
+
+.tabTitle {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0 0 4px 0;
+    font-family: 'Avenir Heavy', sans-serif;
+}
+
+.tabSubtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.modernCard {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    box-sizing: border-box;
+}
+
+.cardSectionTitle {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+    display: block;
+    font-family: 'Avenir Heavy', sans-serif;
+}
+
+.cardDesc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0 0 14px 0;
+    line-height: 1.45;
+}
+
+.modernInputRow {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.modernInputRow input,
+.resolutionRow input {
+    background: var(--bg-input);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    color: #ffffff;
+    font-size: 13.5px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition);
+    flex: 1;
+}
+
+.modernInputRow input:focus,
+.resolutionRow input:focus {
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+.modernPrimaryBtn {
+    background: var(--accent-blue);
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 10px 20px;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background var(--transition);
+    white-space: nowrap;
+    outline: none;
+}
+
+.modernPrimaryBtn:hover {
+    background: var(--accent-blue-hover);
+}
+
+.modernSecondaryBtn {
+    background: #2a2a2e;
+    color: #e2e8f0;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-sm);
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    white-space: nowrap;
+    outline: none;
+}
+
+.modernSecondaryBtn:hover {
+    background: #36363c;
+    color: #ffffff;
+}
+
+/* ==========================================================================
+   TAB 2: АККАУНТЫ (ACCOUNTS)
+   ========================================================================== */
+.accountsGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+    padding-bottom: 32px;
+}
+
+.accountsCol {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+#savedAccountsList {
+    max-height: 290px;
+    overflow-y: auto;
+    padding-right: 6px;
+}
+
+#savedAccountsList::-webkit-scrollbar {
+    width: 6px;
+}
+
+#savedAccountsList::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+}
+
+#savedAccountsList::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.16);
+    border-radius: 4px;
+}
+
+#savedAccountsList::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.28);
+}
+
+.accountFormVertical {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 14px;
+}
+
+.formInputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.formInputGroup label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #a1a1aa;
+    letter-spacing: 0.2px;
+}
+
+.formInputGroup input {
+    background: #18181b !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #ffffff !important;
+    border-radius: 8px !important;
+    padding: 11px 14px !important;
+    font-size: 14px !important;
+    font-family: inherit !important;
+    outline: none !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.formInputGroup input::placeholder {
+    color: #71717a !important;
+}
+
+.formInputGroup input:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25) !important;
+    background: #1c1c20 !important;
+}
+
+.activeAccountRow {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 10px;
+}
+
+.accountLargeAvatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 2px solid var(--accent-emerald);
+    background: #18181b;
+}
+
+.activeAccountDetails {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.accountBigName {
+    font-size: 16px;
+    font-weight: 800;
+    color: #ffffff;
+    font-family: 'Avenir Heavy', sans-serif;
+}
+
+.accountTypeTag {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.accountActiveBadge {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--accent-emerald);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.modernMsftBtn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #1e1e24;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border-radius: var(--radius-sm);
+    padding: 11px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition);
+}
+
+.modernMsftBtn:hover {
+    background: #282830;
+}
+
+.savedAccountItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-input);
+    margin-bottom: 8px;
+    border: 1px solid var(--border-subtle);
+}
+
+.savedAccountItemLeft {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.savedAccountAvatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+
+.savedAccountName {
+    font-size: 14px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.savedAccountActions {
+    display: flex;
+    gap: 8px;
+}
+
+/* ==========================================================================
+   TAB 3: СКИН (SKIN)
+   ========================================================================== */
+.skinTabGrid {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+.skinPreviewCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.skin3DPreviewWrap {
+    width: 100%;
+    height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 10px 0;
+}
+
+#skinTabPreviewImage {
+    max-height: 270px;
+    filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.6));
+    transition: transform 0.3s ease;
+}
+
+#skinTabPreviewImage:hover {
+    transform: scale(1.04);
+}
+
+.skinCurrentInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.skinCurrentLabel {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.skinCurrentValue {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.skinPresetsTitle {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 16px 0 8px;
+}
+
+.skinPresetsGrid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.skinPresetChip {
+    background: #18181b;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #cbd5e1;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.skinPresetChip:hover {
+    border-color: var(--accent-blue);
+    color: #ffffff;
+    background: rgba(37, 99, 235, 0.15);
+}
+
+.skinPresetChip.active {
+    background: var(--accent-blue);
+    color: #ffffff;
+    border-color: var(--accent-blue);
+}
+
+.serverSyncHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.copyFeedbackText {
+    display: block;
+    color: var(--accent-emerald);
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 8px;
+}
+
+/* ==========================================================================
+   TAB 4: НАСТРОЙКИ (SETTINGS)
+   ========================================================================== */
+.settingsSubTabsNav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+}
+
+.settingsSubTabBtn {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    outline: none;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.subTabSvg {
+    width: 16px;
+    height: 16px;
+    opacity: 0.75;
+    flex-shrink: 0;
+    transition: opacity var(--transition);
+}
+
+.settingsSubTabBtn:hover .subTabSvg,
+.settingsSubTabBtn.active .subTabSvg {
+    opacity: 1;
+}
+
+.settingsSubTabBtn:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.settingsSubTabBtn.active {
+    background: var(--accent-blue);
+    color: #ffffff;
+    border-color: var(--accent-blue);
+}
+
+.settingsSubContent {
+    display: none;
+    flex-direction: column;
+}
+
+.settingsSubContent.active {
+    display: flex;
+}
+
+/* Resolution */
+.resolutionRow {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 10px;
+}
+
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.inputGroup label {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.resDivider {
+    font-size: 18px;
+    color: var(--text-muted);
+    margin-top: 22px;
+}
+
+/* Toggle Switch */
+.toggleOptionRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.toggleOptionRow:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.toggleOptionTitle {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.toggleOptionDesc {
+    display: block;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.modernSwitch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.modernSwitch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.switchSlider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: #333338;
+    border-radius: 24px;
+    transition: background 0.2s ease;
+}
+
+.switchSlider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+}
+
+.modernSwitch input:checked + .switchSlider {
+    background: var(--accent-blue);
+}
+
+.modernSwitch input:checked + .switchSlider:before {
+    transform: translateX(20px);
+}
+
+/* RAM Slider */
+.ramHeaderRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.ramValueBadge {
+    background: rgba(37, 99, 235, 0.15);
+    border: 1px solid rgba(37, 99, 235, 0.35);
+    color: #60a5fa;
+    padding: 6px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-weight: 800;
+    font-family: 'Avenir Heavy', sans-serif;
+}
+
+.modernRange {
+    width: 100%;
+    height: 6px;
+    background: #333338;
+    border-radius: 3px;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+}
+
+.modernRange::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--accent-blue);
+    box-shadow: 0 0 10px var(--accent-blue-glow);
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+.modernRange::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+}
+
+.ramSliderContainer {
+    position: relative;
+    width: 100%;
+}
+
+.rangeLabels {
+    position: relative;
+    width: 100%;
+    height: 18px;
+    margin-top: 10px;
+}
+
+.ramTickLabel {
+    position: absolute;
+    transform: translateX(-50%);
+    font-size: 11px;
+    color: var(--text-muted);
+    user-select: none;
+    cursor: pointer;
+    transition: color 0.15s ease;
+    white-space: nowrap;
+}
+
+.ramTickLabel:hover {
+    color: var(--text-primary);
+}
+
+.ramTickLabel.active {
+    color: var(--accent-blue);
+    font-weight: 700;
+}
+
+/* Mods List */
+.modsCardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.modernModsList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.modernModItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-input);
+    border: 1px solid var(--border-subtle);
+}
+
+.modernModName {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.modernModBadge {
+    font-size: 11px;
+    color: var(--accent-emerald);
+    background: rgba(16, 185, 129, 0.1);
+    padding: 3px 8px;
+    border-radius: 4px;
+}
+
+/* About Card */
+.aboutLogoRow {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.aboutLogoSquare {
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, var(--accent-blue) 0%, #1e40af 100%);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 900;
+    color: #ffffff;
+    box-shadow: 0 6px 18px var(--accent-blue-glow);
+}
+
+.aboutAppTitle {
+    font-size: 20px;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0;
+}
+
+.aboutAppVersion {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.aboutDesc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0;
+}

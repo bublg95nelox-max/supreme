@@ -1,0 +1,17 @@
+modLoader = "javafml"
+loaderVersion = "[4,)"
+license = "MIT"
+
+[[mods]]
+modId = "lowuncher_guard"
+version = "1.0.0"
+displayName = "Lowuncher Guard"
+description = "Система защиты сборки и верификации лаунчера Lowuncher для Minecraft 1.21.1"
+authors = "9lame"
+
+[[dependencies.lowuncher_guard]]
+modId = "neoforge"
+type = "required"
+versionRange = "[21.1.0,)"
+ordering = "NONE"
+side = "BOTH"

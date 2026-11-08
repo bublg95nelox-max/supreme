@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+env/
+venv/
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# Lowuncher local test data
+.lowuncher/
+launcher_config.json
+launcher.log

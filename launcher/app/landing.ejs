@@ -1,0 +1,437 @@
+<div id="landingContainer" style="display: none;">
+    <!-- Modern App Shell Layout matching Mockup -->
+    <div id="modernAppShell">
+        <!-- LEFT SIDEBAR -->
+        <aside id="modernSidebar">
+            <!-- User Profile (Top of Sidebar) -->
+            <div id="sidebarProfileCard" title="Нажмите для смены профиля">
+                <div id="avatarContainer">
+                    <button id="avatarOverlay" title="Редактировать"><%- lang('landing.usernameEditButton') %></button>
+                </div>
+                <div class="sidebarProfileText">
+                    <span id="user_text"><%- lang('landing.usernamePlaceholder') %></span>
+                    <span id="user_type_label" class="sidebarUserStatus">Офлайн аккаунт</span>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav id="sidebarNavMenu">
+                <button class="sidebarNavBtn active" id="navItemHome" data-tab="tabHome">
+                    <svg viewBox="0 0 24 24" class="sidebarNavIcon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                    <span>Главная</span>
+                </button>
+
+                <button class="sidebarNavBtn" id="navItemAccounts" data-tab="tabAccounts">
+                    <svg viewBox="0 0 24 24" class="sidebarNavIcon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    <span>Аккаунты</span>
+                </button>
+
+                <button class="sidebarNavBtn" id="navItemSkin" data-tab="tabSkin">
+                    <svg viewBox="0 0 24 24" class="sidebarNavIcon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/>
+                    </svg>
+                    <span>Скин</span>
+                </button>
+
+                <button class="sidebarNavBtn" id="navItemDiscord">
+                    <svg viewBox="0 0 127.14 96.36" class="sidebarNavIcon" fill="currentColor">
+                        <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,45.91,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,45.91,96.12,53,91.08,65.69,84.69,65.69Z"/>
+                    </svg>
+                    <span>Discord</span>
+                </button>
+            </nav>
+
+            <!-- Bottom Settings Link -->
+            <div id="sidebarBottom">
+                <button class="sidebarNavBtn" id="navItemSettings" data-tab="tabSettings">
+                    <svg viewBox="0 0 24 24" class="sidebarNavIcon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                    <span>Настройки</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- RIGHT MAIN CONTENT -->
+        <main id="modernMainArea">
+            <!-- Window Drag Header with Title & Traffic Lights -->
+            <header id="modernWindowHeader">
+                <div id="windowHeaderTitle">Minecraft</div>
+                <div id="windowControls">
+                    <button class="macDot macDotYellow fMb" id="winDotMin" title="Свернуть"></button>
+                    <button class="macDot macDotGreen fRb" id="winDotMax" title="Развернуть"></button>
+                    <button class="macDot macDotRed fCb" id="winDotClose" title="Закрыть"></button>
+                </div>
+            </header>
+
+            <!-- TAB 1: ГЛАВНАЯ (Home - Matching Mockup) -->
+            <section class="modernTabPane active" id="tabHome">
+                <!-- Hero Banner Card -->
+                <div id="heroBannerCard">
+                    <div id="heroBannerBg"></div>
+                    <div id="heroBannerGradient"></div>
+                    
+                    <div id="heroActionRow">
+                        <!-- Play button & progress container -->
+                        <div id="launch_content">
+                            <button id="launch_button" class="modernPlayBtn">
+                                <span class="modernPlayText">ИГРАТЬ</span>
+                            </button>
+                        </div>
+
+                        <div id="launch_details" style="display: none;">
+                            <div class="modernProgressContainer">
+                                <div class="modernProgressHeader">
+                                    <span id="launch_details_text">Подготовка к запуску...</span>
+                                    <span id="launch_progress_label">0%</span>
+                                </div>
+                                <progress id="launch_progress" value="0" max="100"></progress>
+                            </div>
+                        </div>
+
+                        <!-- Folder action button -->
+                        <button class="heroActionBtn" id="heroBtnFolder" title="Открыть папку сборки">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3 Bottom Stat Cards -->
+                <div id="heroStatCards">
+                    <div class="statCard" id="statPlaytimeCard" title="Нажмите для подробной статистики времени">
+                        <span class="statLabel">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            Время в игре
+                        </span>
+                        <span class="statValue" id="statPlaytimeVal">1 ч 27 мин</span>
+                    </div>
+
+                    <div class="statCard" id="statStatusCard" title="Нажмите для перепроверки статуса сервера">
+                        <span class="statLabel">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                                <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                                <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                                <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                            </svg>
+                            Состояние сервера
+                        </span>
+                        <span class="statValue" id="statStatusValContainer">
+                            <span class="statusDot statusDotChecking" id="statStatusDot"></span>
+                            <span id="statStatusVal">Проверка...</span>
+                        </span>
+                    </div>
+
+                    <div class="statCard" id="statModsCard" title="Нажмите для просмотра и управления модами">
+                        <span class="statLabel">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            </svg>
+                            Моды
+                        </span>
+                        <span class="statValue" id="statModsVal">107 активных</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: АККАУНТЫ (Accounts) -->
+            <section class="modernTabPane" id="tabAccounts">
+                <div class="tabHeader">
+                    <h2 class="tabTitle">Управление аккаунтами</h2>
+                    <p class="tabSubtitle">Выберите текущий игровой профиль или войдите под новым логином и паролем</p>
+                </div>
+
+                <div class="accountsGrid">
+                    <!-- Left Column: Active profile & Saved accounts -->
+                    <div class="accountsCol">
+                        <!-- Current Active Account Card -->
+                        <div class="modernCard" id="currentAccountCard">
+                            <span class="cardSectionTitle">Текущий профиль</span>
+                            <div class="activeAccountRow">
+                                <img id="activeAccountAvatar" class="accountLargeAvatar" src="https://mc-heads.net/avatar/steve/64" alt="Avatar"/>
+                                <div class="activeAccountDetails">
+                                    <span id="activeAccountName" class="accountBigName">Player</span>
+                                    <span id="activeAccountType" class="accountTypeTag">Офлайн профиль</span>
+                                </div>
+                                <span class="accountActiveBadge">АКТИВЕН</span>
+                            </div>
+                        </div>
+
+                        <!-- Saved Accounts List Card -->
+                        <div class="modernCard" id="savedAccountsCard">
+                            <span class="cardSectionTitle">Сохраненные аккаунты</span>
+                            <div id="savedAccountsList">
+                                <!-- Populated dynamically via JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Login form & Microsoft Auth -->
+                    <div class="accountsCol">
+                        <!-- Password-Protected Community Account Login -->
+                        <div class="modernCard">
+                            <span class="cardSectionTitle">Вход по логину и паролю</span>
+                            <p class="cardDesc">Никнейм используется в игре. Пароль защищает ваш профиль от входа другими игроками на этом ПК.</p>
+                            
+                            <div class="accountFormVertical">
+                                <div class="formInputGroup">
+                                    <label for="inputCommunityUser">Никнейм в игре</label>
+                                    <input type="text" id="inputCommunityUser" placeholder="Введите ваш ник..." maxlength="16" autocomplete="off" />
+                                </div>
+
+                                <div class="formInputGroup">
+                                    <label for="inputCommunityPass">Пароль аккаунта</label>
+                                    <input type="password" id="inputCommunityPass" placeholder="Введите пароль..." autocomplete="off" />
+                                </div>
+
+                                <div class="formInputGroup" id="authPinGroup" style="display: none;">
+                                    <label for="inputCommunityPin" style="color: #fbbf24;">PIN-код владельца (для зарезервированного ника)</label>
+                                    <input type="password" id="inputCommunityPin" placeholder="Введите секретный PIN..." maxlength="10" autocomplete="off" />
+                                </div>
+
+                                <div style="margin-top: 6px;">
+                                    <button id="btnCommunityLogin" class="modernPrimaryBtn" style="width: 100%; justify-content: center; padding: 12px 20px; font-weight: 700;">Войти / Создать аккаунт</button>
+                                </div>
+                            </div>
+
+                            <span id="communityAuthStatus" class="copyFeedbackText" style="display: none; margin-top: 12px;"></span>
+                        </div>
+
+                        <!-- Microsoft Account Login Card -->
+                        <div class="modernCard">
+                            <span class="cardSectionTitle">Лицензия Microsoft</span>
+                            <p class="cardDesc">Официальная учетная запись Microsoft для владельцев лицензии Minecraft.</p>
+                            <button id="btnModernLoginMsft" class="modernMsftBtn">
+                                <svg width="20" height="20" viewBox="0 0 23 23">
+                                    <path fill="#f35325" d="M1 1h10v10H1z" />
+                                    <path fill="#81bc06" d="M12 1h10v10H12z" />
+                                    <path fill="#05a6f0" d="M1 12h10v10H1z" />
+                                    <path fill="#ffba08" d="M12 12h10v10H12z" />
+                                </svg>
+                                <span>Войти с аккаунтом Microsoft</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: СКИН (Skin) -->
+            <section class="modernTabPane" id="tabSkin">
+                <div class="tabHeader">
+                    <h2 class="tabTitle">Скин персонажа</h2>
+                    <p class="tabSubtitle">Настройка внешнего вида без изменения игрового ника</p>
+                </div>
+
+                <div class="skinTabGrid">
+                    <!-- Left Column: 3D Body Preview -->
+                    <div class="modernCard skinPreviewCard">
+                        <span class="cardSectionTitle">Внешний вид в игре</span>
+                        <div class="skin3DPreviewWrap">
+                            <img id="skinTabPreviewImage" src="https://mc-heads.net/body/steve/right" alt="Skin Preview" onerror="this.onerror=null;this.src='https://mc-heads.net/body/steve/right';" />
+                        </div>
+                        <div class="skinCurrentInfo">
+                            <span class="skinCurrentLabel">Текущий скин:</span>
+                            <span id="skinTabCurrentDonorLabel" class="skinCurrentValue">Steve (по умолчанию)</span>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Settings & Server Sync -->
+                    <div class="skinSettingsCol">
+                        <!-- Donor Nickname Input Card -->
+                        <div class="modernCard">
+                            <span class="cardSectionTitle">Никнейм для скина (лицензия)</span>
+                            <p class="cardDesc">Укажите ник любого игрока с лицензией Minecraft (например Notch, Dream, Technoblade), чтобы загрузить его скин. Ваш игровой ник останется прежним.</p>
+                            <div class="modernInputRow">
+                                <input type="text" id="skinDonorInput" placeholder="Введите ник донора..." maxlength="16" autocomplete="off" />
+                                <button id="skinApplyBtn" class="modernPrimaryBtn">Применить</button>
+                                <button id="skinResetBtn" class="modernSecondaryBtn">Сброс</button>
+                            </div>
+                            <span id="skinApplyStatus" class="skinStatusText" style="display: none;"></span>
+                        </div>
+
+                        <!-- Server Sync Card (SkinsRestorer) -->
+                        <div class="modernCard serverSyncCard">
+                            <div class="serverSyncHeader">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                                <span class="cardSectionTitle">Синхронизация SkinRestorer</span>
+                            </div>
+                            <p class="cardDesc">Выбранный скин автоматически сохраняется в конфигурацию инстанса и загружается модом <b>SkinRestorer</b> при входе в игру. Больше не нужно вводить команды в чат вручную.</p>
+                            <div style="margin-top: 12px; display: flex; align-items: center; gap: 8px;">
+                                <span style="display:inline-flex; align-items:center; gap:6px; background:rgba(16, 185, 129, 0.12); color:#10b981; border:1px solid rgba(16, 185, 129, 0.25); padding:8px 14px; border-radius:10px; font-size:13px; font-weight:600;">
+                                    ✓ Автоприменение скина при запуске игры
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: НАСТРОЙКИ (Settings) -->
+            <section class="modernTabPane" id="tabSettings">
+                <div class="tabHeader">
+                    <h2 class="tabTitle">Настройки лаунчера</h2>
+                    <p class="tabSubtitle">Память Java, сборка модов и каталоги игры</p>
+                </div>
+
+                <div class="settingsSubTabsNav">
+                    <button class="settingsSubTabBtn active" data-subtab="subtabJava">
+                        <svg class="subTabSvg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+                            <rect x="9" y="9" width="6" height="6"></rect>
+                            <line x1="9" y1="1" x2="9" y2="4"></line>
+                            <line x1="15" y1="1" x2="15" y2="4"></line>
+                            <line x1="9" y1="20" x2="9" y2="23"></line>
+                            <line x1="15" y1="20" x2="15" y2="23"></line>
+                            <line x1="20" y1="9" x2="23" y2="9"></line>
+                            <line x1="20" y1="14" x2="23" y2="14"></line>
+                            <line x1="1" y1="9" x2="4" y2="9"></line>
+                            <line x1="1" y1="14" x2="4" y2="14"></line>
+                        </svg>
+                        <span>Java и Память</span>
+                    </button>
+                    <button class="settingsSubTabBtn" data-subtab="subtabMods">
+                        <svg class="subTabSvg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                        </svg>
+                        <span>Моды</span>
+                    </button>
+                    <button class="settingsSubTabBtn" data-subtab="subtabLauncher">
+                        <svg class="subTabSvg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                        <span>Лаунчер</span>
+                    </button>
+                    <button class="settingsSubTabBtn" data-subtab="subtabAbout">
+                        <svg class="subTabSvg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        <span>О программе</span>
+                    </button>
+                </div>
+
+                <div class="settingsSubContent active" id="subtabJava">
+                    <div class="modernCard">
+                        <div class="ramHeaderRow">
+                            <div>
+                                <span class="cardSectionTitle">Выделенная оперативная память (RAM)</span>
+                                <p class="cardDesc" id="modernRamRecommendation">Рекомендуется: половина от всей оперативной памяти компьютера для быстрой работы NeoForge 1.21.1</p>
+                            </div>
+                            <span class="ramValueBadge" id="modernRamValBadge">6 ГБ</span>
+                        </div>
+                        <div class="ramSliderContainer">
+                            <input type="range" class="modernRange" id="modernRamRange" min="2" max="32" step="1" value="6" />
+                            <div class="rangeLabels" id="modernRamTicksContainer">
+                                <!-- Dynamically generated tick labels that match exact positions -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modernCard">
+                        <span class="cardSectionTitle">Исполняемый файл Java</span>
+                        <p class="cardDesc">По умолчанию используется встроенная Java 21, настроенная для NeoForge 1.21.1</p>
+                        <div class="modernInputRow">
+                            <input type="text" id="modernJavaPathInput" readonly placeholder="Автоматически (Java 21)" />
+                            <button id="modernBtnResetJava" class="modernSecondaryBtn">Сброс на авто</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settingsSubContent" id="subtabMods">
+                    <!-- Instance Folder -->
+                    <div class="modernCard">
+                        <div class="modsCardHeader">
+                            <div>
+                                <span class="cardSectionTitle">Папка инстанса сборки</span>
+                                <p class="cardDesc">Локальная директория сборки Supreme (NeoForge 1.21.1)</p>
+                            </div>
+                            <button id="modernBtnOpenInstanceDir" class="modernPrimaryBtn">📁 Открыть папку инстанса</button>
+                        </div>
+                        <div class="modernInputRow" style="margin-top: 12px;">
+                            <input type="text" id="modernInstancePathInput" readonly value="" placeholder="Путь к инстансу" />
+                        </div>
+                    </div>
+
+                    <!-- Detected Mods List -->
+                    <div class="modernCard">
+                        <div class="modsCardHeader">
+                            <div>
+                                <span class="cardSectionTitle" id="modernModsCountTitle">Обнаруженные модификации (.jar)</span>
+                                <p class="cardDesc">Файлы модов, загружаемые при старте Minecraft</p>
+                            </div>
+                            <button id="modernBtnRefreshMods" class="modernSecondaryBtn" title="Пересканировать папку">🔄 Обновить</button>
+                        </div>
+                        <div id="modernModsListContainer" class="modernModsList">
+                            <!-- Populated with mods list -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settingsSubContent" id="subtabLauncher">
+                    <div class="modernCard">
+                        <span class="cardSectionTitle">Каталог игры</span>
+                        <p class="cardDesc">Место, где хранятся файлы игры, общие библиотеки и ресурсы</p>
+                        <div class="modernInputRow">
+                            <input type="text" id="modernLauncherDirInput" readonly value="/home/saidbl/.lowuncher" />
+                            <button id="modernBtnOpenLauncherDir" class="modernSecondaryBtn">📁 Открыть в проводнике</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settingsSubContent" id="subtabAbout">
+                    <div class="modernCard aboutCard">
+                        <div class="aboutLogoRow">
+                            <div class="aboutLogoSquare">LW</div>
+                            <div>
+                                <h3 class="aboutAppTitle">LOWUNCHER</h3>
+                                <span class="aboutAppVersion">Версия 1.0.0 (Release)</span>
+                            </div>
+                        </div>
+                        <p class="aboutDesc">Кастомный Minecraft-клиент для сообщества. Сборка NeoForge 1.21.1 с автоматической синхронизацией модов, скинами и оптимизацией производительности.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Hidden compatibility elements to ensure no legacy scripts break -->
+    <div style="display: none !important;">
+        <span id="modernServerName">Школьный сервер</span>
+        <span id="landingPlayerLabel"></span>
+        <span id="player_count"></span>
+        <button id="server_selection_button"></button>
+        <button id="settingsMediaButton"></button>
+        <a id="discordURL" href="https://discord.gg/uWbNGvVjg"></a>
+        <div id="modern_server_card"></div>
+        <div id="sidebarCardSkin"></div>
+        <div id="sidebarCardDiscord"></div>
+        <img id="sidebarSkinHead" src="" alt=""/>
+        <div id="server_status_wrapper"></div>
+        <div id="mojangStatusWrapper">
+            <span id="mojang_status_icon"></span>
+            <div id="mojangStatusEssentialContainer"></div>
+            <div id="mojangStatusNonEssentialContainer"></div>
+        </div>
+    </div>
+
+    <script src="./assets/js/scripts/landing.js"></script>
+</div>
