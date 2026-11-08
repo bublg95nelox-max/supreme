@@ -13,6 +13,13 @@ import subprocess
 import re
 from pathlib import Path
 from typing import Callable, Optional, Tuple
+
+# Ensure bundled libraries in libraries/python are available
+_root_dir = Path(__file__).resolve().parent.parent
+_bundled_libs = _root_dir / "libraries" / "python"
+if _bundled_libs.is_dir() and str(_bundled_libs) not in sys.path:
+    sys.path.insert(0, str(_bundled_libs))
+
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry

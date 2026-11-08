@@ -40,11 +40,14 @@ nsis:
   allowElevation: true
   allowToChangeInstallationDirectory: true
 
-# Linux Configuration (Arch Linux / AppImage)
+# Linux Configuration (Arch Linux / AppImage & Portable tar.gz)
 linux: 
   icon: 'build/icons'
   target:
-    - 'AppImage'
+    - target: 'AppImage'
+      arch: 'x64'
+    - target: 'tar.gz'
+      arch: 'x64'
   maintainer: 'Lowuncher Team'
   vendor: 'Lowuncher'
   synopsis: 'Minecraft NeoForge Launcher'

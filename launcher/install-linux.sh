@@ -29,98 +29,123 @@ mkdir -p "$INSTALL_DIR"
 mkdir -p "$BIN_DIR"
 mkdir -p "$DESKTOP_DIR"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR=""
+if [ -n "${BASH_SOURCE[0]}" ] && [ -f "${BASH_SOURCE[0]}" ]; then
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+fi
+
 APPIMAGE_SOURCE=""
 
-# 1. Locate AppImage or download from GitHub Releases
-for candidate in \
-    "$SCRIPT_DIR/dist/Lowuncher-1.0.1-linux-x86_64.AppImage" \
-    "$SCRIPT_DIR/Lowuncher-1.0.1-linux-x86_64.AppImage" \
-    "$SCRIPT_DIR"/Lowuncher-*-linux-x86_64.AppImage \
-    "$SCRIPT_DIR/Lowuncher.AppImage" \
-    "/mnt/games/lowuncher/dist/Lowuncher-1.0.1-linux-x86_64.AppImage" \
-    "/mnt/games/lowuncher/dist"/Lowuncher-*-linux-x86_64.AppImage; do
-    if [ -f "$candidate" ]; then
-        APPIMAGE_SOURCE="$candidate"
-        break
+# 1. Locate local AppImage if available
+if [ -n "$SCRIPT_DIR" ]; then
+    for candidate in \
+        "$SCRIPT_DIR/dist/Lowuncher-1.0.2-linux-x86_64.AppImage" \
+        "$SCRIPT_DIR/dist/Lowuncher-1.0.1-linux-x86_64.AppImage" \
+        "$SCRIPT_DIR/Lowuncher-1.0.2-linux-x86_64.AppImage" \
+        "$SCRIPT_DIR/Lowuncher-1.0.1-linux-x86_64.AppImage" \
+        "$SCRIPT_DIR"/Lowuncher-*-linux-x86_64.AppImage \
+        "$SCRIPT_DIR/Lowuncher.AppImage"; do
+        if [ -f "$candidate" ]; then
+            APPIMAGE_SOURCE="$candidate"
+            break
+        fi
+    done
+fi
+
+if [ -z "$APPIMAGE_SOURCE" ]; then
+    for candidate in \
+        "/mnt/games/lowuncher/dist/Lowuncher-1.0.2-linux-x86_64.AppImage" \
+        "/mnt/games/lowuncher/dist/Lowuncher-1.0.1-linux-x86_64.AppImage" \
+        "/mnt/games/lowuncher/dist"/Lowuncher-*-linux-x86_64.AppImage; do
+        if [ -f "$candidate" ]; then
+            APPIMAGE_SOURCE="$candidate"
+            break
+        fi
+    done
+fi
+
+# 2. Download from GitHub Releases if not found locally
+if [ -z "$APPIMAGE_SOURCE" ] || [ ! -f "$APPIMAGE_SOURCE" ]; then
+    echo -e "${CYAN}▶ Загрузка актуального релиза Lowuncher с GitHub...${RESET}"
+    if command -v curl &>/dev/null; then
+        curl -fSL "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.2/Lowuncher-1.0.2-linux-x86_64.AppImage" -o "$INSTALL_DIR/Lowuncher.AppImage" || \
+        curl -fSL "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.1/Lowuncher-1.0.1-linux-x86_64.AppImage" -o "$INSTALL_DIR/Lowuncher.AppImage"
+    elif command -v wget &>/dev/null; then
+        wget -q --show-progress "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.2/Lowuncher-1.0.2-linux-x86_64.AppImage" -O "$INSTALL_DIR/Lowuncher.AppImage" || \
+        wget -q --show-progress "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.1/Lowuncher-1.0.1-linux-x86_64.AppImage" -O "$INSTALL_DIR/Lowuncher.AppImage"
     fi
-done
-
-echo -e "${CYAN}▶ Копирование файлов лаунчера в $INSTALL_DIR...${RESET}"
-
-if [ -n "$APPIMAGE_SOURCE" ] && [ -f "$APPIMAGE_SOURCE" ]; then
+    if [ -s "$INSTALL_DIR/Lowuncher.AppImage" ]; then
+        chmod +x "$INSTALL_DIR/Lowuncher.AppImage"
+        APPIMAGE_SOURCE="$INSTALL_DIR/Lowuncher.AppImage"
+    fi
+else
+    echo -e "${CYAN}▶ Копирование файла лаунчера в $INSTALL_DIR...${RESET}"
     if [ "$APPIMAGE_SOURCE" != "$INSTALL_DIR/Lowuncher.AppImage" ]; then
         cp "$APPIMAGE_SOURCE" "$INSTALL_DIR/Lowuncher.AppImage"
     fi
     chmod +x "$INSTALL_DIR/Lowuncher.AppImage"
-    echo -e "${GREEN}✓ Исполняемый файл Lowuncher.AppImage успешно установлен.${RESET}"
-elif command -v curl &>/dev/null; then
-    echo -e "${CYAN}▶ Загрузка актуального релиза Lowuncher v1.0.1 с GitHub...${RESET}"
-    if curl -fSL "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.1/Lowuncher-1.0.1-linux-x86_64.AppImage" -o "$INSTALL_DIR/Lowuncher.AppImage"; then
-        chmod +x "$INSTALL_DIR/Lowuncher.AppImage"
-        echo -e "${GREEN}✓ Lowuncher.AppImage успешно загружен и установлен.${RESET}"
-    else
-        echo -e "${YELLOW}Не удалось скачать релиз с GitHub напрямую.${RESET}"
+fi
+
+if [ ! -s "$INSTALL_DIR/Lowuncher.AppImage" ]; then
+    echo -e "${YELLOW}Ошибка: Не удалось найти или скачать файл Lowuncher.AppImage.${RESET}"
+    exit 1
+fi
+
+echo -e "${GREEN}✓ Исполняемый файл получен.${RESET}"
+
+# 3. Extract AppImage to bypass FUSE requirements completely & enable instant startup
+echo -e "${CYAN}▶ Распаковка файлов лаунчера (работает без FUSE/libfuse.so.2)...${RESET}"
+cd "$INSTALL_DIR"
+rm -rf squashfs-root app
+"$INSTALL_DIR/Lowuncher.AppImage" --appimage-extract > /dev/null 2>&1 || true
+
+if [ -d "$INSTALL_DIR/squashfs-root" ]; then
+    mv "$INSTALL_DIR/squashfs-root" "$INSTALL_DIR/app"
+    echo -e "${GREEN}✓ Лаунчер распакован в $INSTALL_DIR/app (мгновенный запуск без FUSE).${RESET}"
+fi
+
+# 4. Install Icons into system icon theme
+echo -e "${CYAN}▶ Установка иконок приложения...${RESET}"
+if [ -d "$INSTALL_DIR/app/usr/share/icons/hicolor" ]; then
+    cp -r "$INSTALL_DIR/app/usr/share/icons/hicolor/"* "$ICON_DIR/" 2>/dev/null || true
+fi
+if [ -f "$INSTALL_DIR/app/lowuncher.png" ]; then
+    cp "$INSTALL_DIR/app/lowuncher.png" "$INSTALL_DIR/icon.png"
+fi
+
+for sz in 16 24 32 48 64 128 256 512 1024; do
+    SZ_DIR="$ICON_DIR/${sz}x${sz}/apps"
+    mkdir -p "$SZ_DIR"
+    if [ -f "$INSTALL_DIR/app/usr/share/icons/hicolor/${sz}x${sz}/apps/lowuncher.png" ]; then
+        cp "$INSTALL_DIR/app/usr/share/icons/hicolor/${sz}x${sz}/apps/lowuncher.png" "$SZ_DIR/lowuncher.png"
     fi
-else
-    # Fallback wrapper if launched in development environment
-    cat << 'EOF' > "$INSTALL_DIR/lowuncher-runner.sh"
+done
+
+if command -v gtk-update-icon-cache &>/dev/null; then
+    gtk-update-icon-cache -f -t "$ICON_DIR" 2>/dev/null || true
+fi
+echo -e "${GREEN}✓ Системные иконки установлены.${RESET}"
+
+# 5. Create lowuncher wrapper script in ~/.local/bin
+cat << 'EOF' > "$BIN_DIR/lowuncher"
 #!/usr/bin/env bash
-if command -v npm &>/dev/null && [ -d "/mnt/games/lowuncher" ]; then
-    exec npm start --prefix /mnt/games/lowuncher "$@"
+export APPIMAGE_EXTRACT_AND_RUN=1
+
+if [ -x "$HOME/.local/share/lowuncher/app/AppRun" ]; then
+    exec "$HOME/.local/share/lowuncher/app/AppRun" "$@"
+elif [ -x "$HOME/.local/share/lowuncher/app/lowuncher" ]; then
+    exec "$HOME/.local/share/lowuncher/app/lowuncher" "$@"
+elif [ -x "$HOME/.local/share/lowuncher/Lowuncher.AppImage" ]; then
+    exec "$HOME/.local/share/lowuncher/Lowuncher.AppImage" --appimage-extract-and-run "$@"
 else
-    echo "Ошибка: Lowuncher AppImage не найден."
+    echo "Ошибка: Lowuncher не найден в $HOME/.local/share/lowuncher"
     exit 1
 fi
 EOF
-    chmod +x "$INSTALL_DIR/lowuncher-runner.sh"
-    echo -e "${YELLOW}ℹ Установлен раннер режима разработки.${RESET}"
-fi
-
-# 2. Install High-Quality Icons
-echo -e "${CYAN}▶ Установка иконок приложения...${RESET}"
-SOURCE_ICON=""
-if [ -f "$SCRIPT_DIR/build/icon.png" ]; then
-    SOURCE_ICON="$SCRIPT_DIR/build/icon.png"
-elif [ -f "$SCRIPT_DIR/icon.png" ]; then
-    SOURCE_ICON="$SCRIPT_DIR/icon.png"
-elif [ -f "/mnt/games/lowuncher/build/icon.png" ]; then
-    SOURCE_ICON="/mnt/games/lowuncher/build/icon.png"
-fi
-
-if [ -n "$SOURCE_ICON" ] && [ -f "$SOURCE_ICON" ]; then
-    cp "$SOURCE_ICON" "$INSTALL_DIR/icon.png"
-    
-    # Install into all standard icon themes
-    for sz in 16 24 32 48 64 128 256 512; do
-        SZ_DIR="$ICON_DIR/${sz}x${sz}/apps"
-        mkdir -p "$SZ_DIR"
-        if [ -f "$SCRIPT_DIR/build/icons/${sz}x${sz}.png" ]; then
-            cp "$SCRIPT_DIR/build/icons/${sz}x${sz}.png" "$SZ_DIR/lowuncher.png"
-        else
-            cp "$SOURCE_ICON" "$SZ_DIR/lowuncher.png"
-        fi
-    done
-    if command -v gtk-update-icon-cache &>/dev/null; then
-        gtk-update-icon-cache -f -t "$ICON_DIR" 2>/dev/null || true
-    fi
-    echo -e "${GREEN}✓ Системные иконки установлены.${RESET}"
-fi
-
-# 3. Create Terminal command symlink
-TARGET_EXEC="$INSTALL_DIR/Lowuncher.AppImage"
-if [ ! -f "$TARGET_EXEC" ] && [ -f "$INSTALL_DIR/lowuncher-runner.sh" ]; then
-    TARGET_EXEC="$INSTALL_DIR/lowuncher-runner.sh"
-fi
-
-cat << EOF > "$BIN_DIR/lowuncher"
-#!/usr/bin/env bash
-exec "$TARGET_EXEC" "\$@"
-EOF
 chmod +x "$BIN_DIR/lowuncher"
-echo -e "${GREEN}✓ Команда 'lowuncher' добавлена в $BIN_DIR/lowuncher.${RESET}"
+echo -e "${GREEN}✓ Команда 'lowuncher' создана: $BIN_DIR/lowuncher${RESET}"
 
-# 4. Create Desktop Entry (.desktop)
+# 6. Create Desktop Entry (.desktop)
 echo -e "${CYAN}▶ Создание ярлыка в меню приложений...${RESET}"
 cat << EOF > "$DESKTOP_DIR/lowuncher.desktop"
 [Desktop Entry]
@@ -128,8 +153,8 @@ Version=1.0
 Type=Application
 Name=Lowuncher
 GenericName=Minecraft Launcher
-Comment=Официальный лаунчер школьного сервера Minecraft
-Exec=$TARGET_EXEC %U
+Comment=Официальный лаунчер школьного сервера Minecraft NeoForge 1.21.1
+Exec=$BIN_DIR/lowuncher %U
 Icon=lowuncher
 Terminal=false
 Categories=Game;ActionGame;
@@ -156,17 +181,15 @@ echo -e "${GREEN}${BOLD}══════════════════�
 echo -e "${GREEN}${BOLD}       LOWUNCHER УСПЕШНО УСТАНОВЛЕН НА ВАШ КОМПЬЮТЕР!         ${RESET}"
 echo -e "${GREEN}${BOLD}══════════════════════════════════════════════════════════════${RESET}"
 echo ""
+echo -e "  • ${BOLD}Запуск из терминала:${RESET} lowuncher"
 echo -e "  • ${BOLD}Меню приложений:${RESET} найдите 'Lowuncher' в меню вашей системы"
-echo -e "  • ${BOLD}Консоль:${RESET} введите команду '${CYAN}lowuncher${RESET}'"
-echo -e "  • ${BOLD}Путь программы:${RESET} $INSTALL_DIR/Lowuncher.AppImage"
+echo -e "  • ${BOLD}Папка установки:${RESET} $INSTALL_DIR"
 echo ""
 
-# Prompt to launch
-if [ -t 0 ] && [ "$1" != "--no-launch" ]; then
-    read -p "Запустить Lowuncher прямо сейчас? [Y/n]: " ans
-    if [[ "$ans" =~ ^[YyДд]$ || -z "$ans" ]]; then
-        echo -e "${CYAN}Запуск Lowuncher...${RESET}"
-        nohup "$TARGET_EXEC" >/dev/null 2>&1 &
-        disown
-    fi
+# Check if ~/.local/bin is in PATH
+if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
+    echo -e "${YELLOW}ℹ Внимание:${RESET} каталог $BIN_DIR не найден в переменной PATH вашей оболочки."
+    echo -e "  Чтобы команда 'lowuncher' работала в терминале, добавьте в ваш ~/.bashrc / ~/.zshrc / ~/.config/fish/config.fish:"
+    echo -e "  ${BOLD}export PATH=\"\$HOME/.local/bin:\$PATH\"${RESET}"
 fi
+echo ""

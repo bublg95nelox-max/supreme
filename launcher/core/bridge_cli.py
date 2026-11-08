@@ -11,10 +11,16 @@ import argparse
 import logging
 import signal
 from pathlib import Path
-import requests
 
-# Ensure lowuncher root is on sys.path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+# Ensure lowuncher root and bundled libraries are on sys.path FIRST
+_root_dir = Path(__file__).resolve().parent.parent
+if str(_root_dir) not in sys.path:
+    sys.path.insert(0, str(_root_dir))
+_bundled_libs = _root_dir / "libraries" / "python"
+if _bundled_libs.is_dir() and str(_bundled_libs) not in sys.path:
+    sys.path.insert(0, str(_bundled_libs))
+
+import requests
 
 from core.java_manager import JavaManager
 from core.installer import Installer
@@ -159,7 +165,7 @@ def handle_run(args):
         session_file = game_dir / ".lowuncher_session.json"
         session_payload = {
             "launcher": "Lowuncher",
-            "version": "1.0.1",
+            "version": "1.0.2",
             "username": args.username,
             "uuid": args.uuid,
             "token": hashlib.sha256(f"Lowuncher-Verified:{args.username}:{args.uuid}:6233".encode("utf-8")).hexdigest(),

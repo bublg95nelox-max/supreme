@@ -160,6 +160,16 @@ document.addEventListener('readystatechange', function () {
             })
         })
 
+        ipcRenderer.on('windowMaximizeState', (_event, isMax) => {
+            document.body.classList.toggle('maximized', Boolean(isMax))
+        })
+        try {
+            const curWin = remote.getCurrentWindow()
+            if (curWin && curWin.isMaximized()) {
+                document.body.classList.add('maximized')
+            }
+        } catch (_e) {}
+
         // Bind minimize button.
         Array.from(document.getElementsByClassName('fMb')).map((val) => {
             val.addEventListener('click', e => {

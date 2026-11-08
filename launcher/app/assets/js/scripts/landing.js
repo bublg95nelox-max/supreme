@@ -2087,7 +2087,7 @@ function loadModernSettings() {
                 if (updateHeaderPillText) updateHeaderPillText.innerText = `Обновление ${ver} готово (нажмите для установки)`
             }
         } else if (action === 'update-not-available') {
-            const curVer = remote && remote.app ? remote.app.getVersion() : '1.0.1'
+            const curVer = remote && remote.app ? remote.app.getVersion() : '1.0.2'
             if (updateStatusBox) updateStatusBox.innerText = `У вас установлена актуальная версия (${curVer}).`
             if (updateHeaderPill) updateHeaderPill.style.display = 'none'
         } else if (action === 'realerror') {

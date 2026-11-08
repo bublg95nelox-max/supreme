@@ -37,9 +37,70 @@
         #main[overlay] {
             filter: blur(3px) contrast(0.9) brightness(1.0);
         }
+        body.maximized {
+            border-radius: 0 !important;
+        }
+        body.maximized #main,
+        body.maximized #landingContainer,
+        body.maximized #modernAppShell,
+        body.maximized #modernSidebar,
+        body.maximized #welcomeContainer,
+        body.maximized #loginContainer,
+        body.maximized #loginOptionsContainer,
+        body.maximized #loadingContainer {
+            border-radius: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        #globalWindowControls {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            -webkit-app-region: no-drag;
+        }
+        .winControlBtn {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #d4d4d8;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            outline: none;
+            transition: all 0.15s ease;
+        }
+        .winControlBtn:hover {
+            background: rgba(255, 255, 255, 0.18);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+        .winControlClose:hover {
+            background: #ef4444 !important;
+            border-color: #ef4444 !important;
+            color: #ffffff !important;
+        }
     </style>
 </head>
 <body bkid="<%=bkid%>">
+    <div id="globalWindowControls">
+        <button class="winControlBtn fMb" id="globalBtnMin" title="Свернуть">
+            <svg width="10" height="10" viewBox="0 0 12 12"><rect fill="currentColor" width="10" height="1.6" x="1" y="5.2"></rect></svg>
+        </button>
+        <button class="winControlBtn fRb" id="globalBtnMax" title="Развернуть">
+            <svg width="10" height="10" viewBox="0 0 12 12"><rect width="9" height="9" x="1.5" y="1.5" fill="none" stroke="currentColor" stroke-width="1.6"></rect></svg>
+        </button>
+        <button class="winControlBtn winControlClose fCb" id="globalBtnClose" title="Закрыть">
+            <svg width="10" height="10" viewBox="0 0 12 12"><polygon fill="currentColor" points="11 1.5 10.5 1 6 5.5 1.5 1 1 1.5 5.5 6 1 10.5 1.5 11 6 6.5 10.5 11 11 10.5 6.5 6"></polygon></svg>
+        </button>
+    </div>
     <%- include('frame') %>
     <div id="main">
         <%- include('welcome') %>

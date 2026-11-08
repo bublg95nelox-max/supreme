@@ -264,6 +264,16 @@ function createWindow() {
     Object.entries(data).forEach(([key, val]) => ejse.data(key, val))
 
     win.loadURL(pathToFileURL(path.join(__dirname, 'app', 'app.ejs')).toString())
+    win.on('maximize', () => {
+        if (win && !win.isDestroyed() && win.webContents) {
+            win.webContents.send('windowMaximizeState', true)
+        }
+    })
+    win.on('unmaximize', () => {
+        if (win && !win.isDestroyed() && win.webContents) {
+            win.webContents.send('windowMaximizeState', false)
+        }
+    })
     win.webContents.on('did-finish-load', () => {
         if (lastDistroIndexDone !== null && win && !win.isDestroyed() && win.webContents) {
             win.webContents.send('distributionIndexDone', lastDistroIndexDone)

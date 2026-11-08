@@ -9,6 +9,13 @@ import threading
 from collections import deque
 from pathlib import Path
 from typing import Callable, Optional, List, Dict, Any, Deque
+
+# Ensure bundled libraries in libraries/python are available
+_root_dir = Path(__file__).resolve().parent.parent
+_bundled_libs = _root_dir / "libraries" / "python"
+if _bundled_libs.is_dir() and str(_bundled_libs) not in sys.path:
+    sys.path.insert(0, str(_bundled_libs))
+
 import minecraft_launcher_lib as mll
 
 logger = logging.getLogger("lowuncher.launcher")
@@ -101,7 +108,7 @@ class GameLauncher:
             if arg.startswith("-Dminecraft.launcher.brand="):
                 sanitized_command.append("-Dminecraft.launcher.brand=Lowuncher")
             elif arg.startswith("-Dminecraft.launcher.version="):
-                sanitized_command.append("-Dminecraft.launcher.version=1.0.1")
+                sanitized_command.append("-Dminecraft.launcher.version=1.0.2")
             else:
                 sanitized_command.append(arg)
 

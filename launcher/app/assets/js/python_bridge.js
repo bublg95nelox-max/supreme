@@ -151,6 +151,8 @@ class PythonBridge {
             const pyPathEnv = [
                 rootDir,
                 process.resourcesPath,
+                path.join(rootDir, 'libraries', 'python'),
+                process.resourcesPath ? path.join(process.resourcesPath, 'libraries', 'python') : null,
                 process.env.PYTHONPATH || ''
             ].filter(Boolean).join(process.platform === 'win32' ? ';' : ':')
 
