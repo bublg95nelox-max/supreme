@@ -152,7 +152,10 @@
 .sidebarProfileText {
     display: flex;
     flex-direction: column;
+    justify-content: center;
     min-width: 0;
+    gap: 3px;
+    height: 38px;
 }
 
 #user_text {
@@ -168,6 +171,8 @@
     text-overflow: ellipsis;
     max-width: 125px;
     letter-spacing: 0.2px;
+    line-height: 1.2 !important;
+    margin: 0 !important;
 }
 
 .sidebarUserStatus {
@@ -176,6 +181,8 @@
     font-family: 'Avenir Book', -apple-system, BlinkMacSystemFont, sans-serif;
     white-space: nowrap;
     text-transform: capitalize;
+    line-height: 1.2 !important;
+    margin: 0 !important;
 }
 
 /* Navigation Links */
@@ -560,6 +567,66 @@ input, textarea, select {
 
 .statCard:active {
     transform: translateY(0);
+}
+
+.statCardExpanded {
+    min-width: 260px;
+    flex: 1.3 1 auto;
+    position: relative;
+    border-color: rgba(99, 102, 241, 0.25);
+    background: linear-gradient(145deg, #18181b 0%, #1c1d24 100%);
+}
+
+.statCardExpanded:hover {
+    border-color: rgba(99, 102, 241, 0.55);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
+}
+
+.statHeaderRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.statCopyBanner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 3px;
+    padding-top: 4px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+.statIpText {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: #38bdf8;
+    letter-spacing: 0.3px;
+}
+
+.statCopyPrompt {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: #a1a1aa;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 2px 7px;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+}
+
+.statCardExpanded:hover .statCopyPrompt {
+    color: #ffffff;
+    background: rgba(99, 102, 241, 0.3);
+}
+
+.statCopySuccess {
+    color: #4ade80 !important;
+    background: rgba(34, 197, 94, 0.25) !important;
 }
 
 .statLabel {

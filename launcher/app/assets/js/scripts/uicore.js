@@ -56,6 +56,11 @@ ipcRenderer.on('autoUpdateNotification', (event, arg, info) => {
                 
                 populateSettingsUpdateInformation(info)
                 break
+            case 'download-progress':
+                if (info && typeof info.percent === 'number') {
+                    settingsUpdateButtonStatus(`Загрузка: ${info.percent.toFixed(0)}%`, true)
+                }
+                break
             case 'update-downloaded':
                 loggerAutoUpdater.info('Update ' + info.version + ' ready to be installed.')
                 settingsUpdateButtonStatus(Lang.queryJS('uicore.autoUpdate.installNowButton'), false, () => {
@@ -139,26 +144,41 @@ document.addEventListener('readystatechange', function () {
     if (document.readyState === 'interactive'){
         loggerUICore.info('UICore Initializing..')
 
-        // Bind close button.
-        Array.from(document.getElementsByClassName('fCb')).map((val) => {
-            val.addEventListener('click', e => {
-                const window = remote.getCurrentWindow()
-                window.close()
-            })
-        })
-
-        // Bind restore down button.
-        Array.from(document.getElementsByClassName('fRb')).map((val) => {
-            val.addEventListener('click', e => {
-                const window = remote.getCurrentWindow()
-                if(window.isMaximized()){
-                    window.unmaximize()
-                } else {
-                    window.maximize()
+        function bindAllWindowControls() {
+            // Bind close button
+            Array.from(document.getElementsByClassName('fCb')).forEach((val) => {
+                val.onclick = (e) => {
+                    e.stopPropagation()
+                    try { ipcRenderer.send('window-close') } catch (_e) {}
+                    try { remote.getCurrentWindow().close() } catch (_e) {}
                 }
-                document.activeElement.blur()
             })
-        })
+
+            // Bind restore down / maximize button
+            Array.from(document.getElementsByClassName('fRb')).forEach((val) => {
+                val.onclick = (e) => {
+                    e.stopPropagation()
+                    try { ipcRenderer.send('window-maximize') } catch (_e) {}
+                    try {
+                        const win = remote.getCurrentWindow()
+                        if (win.isMaximized()) win.unmaximize()
+                        else win.maximize()
+                    } catch (_e) {}
+                    if (document.activeElement) document.activeElement.blur()
+                }
+            })
+
+            // Bind minimize button
+            Array.from(document.getElementsByClassName('fMb')).forEach((val) => {
+                val.onclick = (e) => {
+                    e.stopPropagation()
+                    try { ipcRenderer.send('window-minimize') } catch (_e) {}
+                    try { remote.getCurrentWindow().minimize() } catch (_e) {}
+                    if (document.activeElement) document.activeElement.blur()
+                }
+            })
+        }
+        bindAllWindowControls()
 
         ipcRenderer.on('windowMaximizeState', (_event, isMax) => {
             document.body.classList.toggle('maximized', Boolean(isMax))
@@ -169,15 +189,6 @@ document.addEventListener('readystatechange', function () {
                 document.body.classList.add('maximized')
             }
         } catch (_e) {}
-
-        // Bind minimize button.
-        Array.from(document.getElementsByClassName('fMb')).map((val) => {
-            val.addEventListener('click', e => {
-                const window = remote.getCurrentWindow()
-                window.minimize()
-                document.activeElement.blur()
-            })
-        })
 
         // Remove focus from social media buttons once they're clicked.
         Array.from(document.getElementsByClassName('mediaURL')).map(val => {

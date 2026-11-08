@@ -136,6 +136,9 @@ class PythonBridge {
             if (opts.manifestUrl) {
                 args.push('--manifest-url', opts.manifestUrl)
             }
+            if (opts.modpackUrl) {
+                args.push('--modpack-url', opts.modpackUrl)
+            }
             if (opts.serverHost) {
                 args.push('--server-host', opts.serverHost)
             }

@@ -6,6 +6,7 @@ and the Python Minecraft launch engine (minecraft-launcher-lib, Java 21, NeoForg
 import sys
 import os
 import json
+import time
 import hashlib
 import argparse
 import logging
@@ -16,9 +17,13 @@ from pathlib import Path
 _root_dir = Path(__file__).resolve().parent.parent
 if str(_root_dir) not in sys.path:
     sys.path.insert(0, str(_root_dir))
-_bundled_libs = _root_dir / "libraries" / "python"
-if _bundled_libs.is_dir() and str(_bundled_libs) not in sys.path:
-    sys.path.insert(0, str(_bundled_libs))
+for candidate_libs in [
+    _root_dir / "libraries" / "python",
+    Path(__file__).resolve().parent.parent.parent / "libraries" / "python",
+    Path(sys.executable).parent.parent / "libraries" / "python",
+]:
+    if candidate_libs.is_dir() and str(candidate_libs) not in sys.path:
+        sys.path.insert(0, str(candidate_libs))
 
 import requests
 
@@ -30,6 +35,9 @@ from core.auth import AuthManager
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("lowuncher.bridge")
+
+DEFAULT_MODPACK_URL = "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.3/modpack-supreme-1.21.1.zip"
+MODPACK_VERSION = "1.0.3"
 
 
 def emit_event(event_type: str, data: dict):
@@ -77,6 +85,122 @@ def ensure_servers_dat(game_dir: Path):
         logger.warning(f"Could not ensure servers.dat: {e}")
 
 
+def ensure_modpack(game_dir: Path, modpack_url: str = None, progress_callback=None):
+    """
+    Ensures that the Supreme modpack (108 mods, configs, servers.dat) is fully installed in game_dir.
+    If mods are missing or incomplete (< 100 mods), downloads and extracts the modpack.
+    """
+    mods_dir = game_dir / "mods"
+    marker_file = game_dir / ".modpack_installed.json"
+
+    current_mods = list(mods_dir.glob("*.jar")) if mods_dir.is_dir() else []
+    installed_ver = None
+    if marker_file.is_file():
+        try:
+            with open(marker_file, "r", encoding="utf-8") as f:
+                installed_ver = json.load(f).get("version")
+        except Exception:
+            installed_ver = None
+
+    # If already installed and has all mods, skip download
+    if len(current_mods) >= 100 and installed_ver == MODPACK_VERSION:
+        logger.info(f"Modpack {MODPACK_VERSION} already installed ({len(current_mods)} mods).")
+        if progress_callback:
+            progress_callback(100, 100, f"Сборка модов готова ({len(current_mods)} модов)")
+        return
+
+    logger.info(f"Modpack sync needed: current mods={len(current_mods)}, installed_ver={installed_ver}")
+
+    # Check local pre-bundled modpack first
+    local_candidates = [
+        _root_dir / "dist" / "modpack-supreme-1.21.1.zip",
+        _root_dir / "libraries" / "modpack-supreme-1.21.1.zip",
+    ]
+    for candidate in local_candidates:
+        if candidate.is_file():
+            logger.info(f"Found local modpack archive: {candidate}")
+            if progress_callback:
+                progress_callback(50, 100, "Распаковка локальной сборки модов...")
+            import zipfile
+            with zipfile.ZipFile(candidate, "r") as zf:
+                zf.extractall(game_dir)
+            mod_count = len(list((game_dir / "mods").glob("*.jar")))
+            with open(marker_file, "w", encoding="utf-8") as f:
+                json.dump({
+                    "version": MODPACK_VERSION,
+                    "installed_at": time.time(),
+                    "mods_count": mod_count
+                }, f, indent=2)
+            if progress_callback:
+                progress_callback(100, 100, f"Сборка модов распакована ({mod_count} модов)")
+            return
+
+    # Download from remote release URL
+    target_url = modpack_url or DEFAULT_MODPACK_URL
+    logger.info(f"Downloading modpack from {target_url}...")
+    tmp_zip = game_dir / ".modpack_download.tmp"
+
+    try:
+        resp = requests.get(target_url, stream=True, headers={"User-Agent": "Lowuncher/1.0"}, timeout=(15, 120))
+        resp.raise_for_status()
+
+        total_bytes = int(resp.headers.get("content-length", 0))
+        downloaded = 0
+        last_report = 0
+
+        with open(tmp_zip, "wb") as f:
+            for chunk in resp.iter_content(chunk_size=131072):
+                if chunk:
+                    f.write(chunk)
+                    downloaded += len(chunk)
+                    now = time.time()
+                    if now - last_report > 0.3 or (total_bytes > 0 and downloaded == total_bytes):
+                        last_report = now
+                        if total_bytes > 0:
+                            pct = int((downloaded / total_bytes) * 100)
+                            dl_mb = downloaded / 1048576
+                            tot_mb = total_bytes / 1048576
+                            msg = f"Загрузка сборки модов ({dl_mb:.1f} / {tot_mb:.1f} МБ)... {pct}%"
+                        else:
+                            dl_mb = downloaded / 1048576
+                            msg = f"Загрузка сборки модов ({dl_mb:.1f} МБ)..."
+                        if progress_callback:
+                            progress_callback(downloaded, total_bytes or downloaded, msg)
+
+        if progress_callback:
+            progress_callback(downloaded, total_bytes or downloaded, "Распаковка сборки модов (108 модов)...")
+
+        import zipfile
+        with zipfile.ZipFile(tmp_zip, "r") as zf:
+            zf.extractall(game_dir)
+
+        mod_count = len(list((game_dir / "mods").glob("*.jar")))
+        with open(marker_file, "w", encoding="utf-8") as f:
+            json.dump({
+                "version": MODPACK_VERSION,
+                "installed_at": time.time(),
+                "mods_count": mod_count
+            }, f, indent=2)
+
+        if progress_callback:
+            progress_callback(100, 100, f"Сборка модов готова ({mod_count} модов)")
+
+    except requests.exceptions.RequestException as e:
+        if len(current_mods) >= 10:
+            logger.warning(f"Could not download modpack ({e}), using {len(current_mods)} existing mods.")
+            if progress_callback:
+                progress_callback(100, 100, f"Используется локальная сборка ({len(current_mods)} модов)")
+            return
+        logger.error(f"Failed to download modpack: {e}")
+        raise RuntimeError(f"Не удалось загрузить моды ({e}). Проверьте подключение к интернету.") from e
+    finally:
+        if tmp_zip.is_file():
+            try:
+                tmp_zip.unlink()
+            except Exception:
+                pass
+
+
 def handle_run(args):
     game_dir = Path(args.game_dir).resolve()
     game_dir.mkdir(parents=True, exist_ok=True)
@@ -102,9 +226,9 @@ def handle_run(args):
         java_path = java_mgr.ensure_java_21(progress_callback=on_java_progress)
     emit_event("progress", {"percent": 35, "status": f"Java 21 готова: {java_path.name}"})
 
-    # 2. Modpack Synchronization (if manifest provided)
-    if args.manifest_url:
-        emit_event("progress", {"percent": 40, "status": "Синхронизация файлов сборки..."})
+    # 2. Modpack Synchronization
+    emit_event("progress", {"percent": 40, "status": "Синхронизация файлов сборки..."})
+    if getattr(args, 'manifest_url', None):
         sync_engine = SyncEngine(game_dir)
         def on_sync_progress(curr, total, status):
             pct = 40 + int((curr / max(1, total)) * 25)
@@ -119,6 +243,16 @@ def handle_run(args):
             logger.exception("Modpack synchronization failed")
             emit_event("error", {"message": "Синхронизация сборки не прошла проверку целостности"})
             raise
+    else:
+        def on_modpack_progress(curr, total, status):
+            pct = 40 + int((curr / max(1, total)) * 25)
+            emit_event("progress", {"percent": min(65, pct), "status": status})
+        ensure_modpack(
+            game_dir=game_dir,
+            modpack_url=getattr(args, 'modpack_url', None),
+            progress_callback=on_modpack_progress,
+        )
+        emit_event("progress", {"percent": 65, "status": "Файлы сборки готовы"})
 
     # 3. Minecraft & Loader Installation
     installer = Installer(game_dir)
@@ -165,7 +299,7 @@ def handle_run(args):
         session_file = game_dir / ".lowuncher_session.json"
         session_payload = {
             "launcher": "Lowuncher",
-            "version": "1.0.2",
+            "version": "1.0.3",
             "username": args.username,
             "uuid": args.uuid,
             "token": hashlib.sha256(f"Lowuncher-Verified:{args.username}:{args.uuid}:6233".encode("utf-8")).hexdigest(),
@@ -229,6 +363,7 @@ def main():
     run_parser.add_argument("--token", default="0", help="Session token")
     run_parser.add_argument("--ram", type=int, default=4096, help="RAM in MB")
     run_parser.add_argument("--manifest-url", default=None, help="Remote manifest URL for mods sync")
+    run_parser.add_argument("--modpack-url", default=None, help="Direct URL to modpack zip archive")
     run_parser.add_argument("--server-host", default=None, help="Server IP to auto-connect")
     run_parser.add_argument("--server-port", type=int, default=None, help="Server port")
     run_parser.add_argument("--java-path", default=None, help="Explicit path to Java 21 executable")

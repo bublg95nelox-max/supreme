@@ -45,10 +45,33 @@ function initAutoUpdater(event, data) {
     autoUpdater.on('checking-for-update', () => {
         event.sender.send('autoUpdateNotification', 'checking-for-update')
     })
+    autoUpdater.on('download-progress', (progressObj) => {
+        event.sender.send('autoUpdateNotification', 'download-progress', progressObj)
+    })
     autoUpdater.on('error', (err) => {
         event.sender.send('autoUpdateNotification', 'realerror', err)
     }) 
 }
+
+// Window control IPC channels (cross-platform reliable window actions)
+ipcMain.on('window-minimize', (event) => {
+    const targetWin = BrowserWindow.fromWebContents(event.sender) || win
+    if (targetWin) targetWin.minimize()
+})
+ipcMain.on('window-maximize', (event) => {
+    const targetWin = BrowserWindow.fromWebContents(event.sender) || win
+    if (targetWin) {
+        if (targetWin.isMaximized()) {
+            targetWin.unmaximize()
+        } else {
+            targetWin.maximize()
+        }
+    }
+})
+ipcMain.on('window-close', (event) => {
+    const targetWin = BrowserWindow.fromWebContents(event.sender) || win
+    if (targetWin) targetWin.close()
+})
 
 // Open channel to listen for update actions.
 ipcMain.on('autoUpdateAction', (event, arg, data) => {

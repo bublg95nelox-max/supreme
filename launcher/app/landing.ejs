@@ -119,20 +119,32 @@
                         <span class="statValue" id="statPlaytimeVal">1 ч 27 мин</span>
                     </div>
 
-                    <div class="statCard" id="statStatusCard" title="Нажмите для перепроверки статуса сервера">
-                        <span class="statLabel">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
-                                <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
-                                <line x1="6" y1="6" x2="6.01" y2="6"></line>
-                                <line x1="6" y1="18" x2="6.01" y2="18"></line>
-                            </svg>
-                            Состояние сервера
-                        </span>
-                        <span class="statValue" id="statStatusValContainer">
-                            <span class="statusDot statusDotChecking" id="statStatusDot"></span>
-                            <span id="statStatusVal">Проверка...</span>
-                        </span>
+                    <div class="statCard statCardExpanded" id="statStatusCard" title="Нажмите, чтобы скопировать IP сервера: 89.248.236.145:27160">
+                        <div class="statHeaderRow">
+                            <span class="statLabel">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                                    <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                                    <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                                    <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                                </svg>
+                                Сервер Supreme
+                            </span>
+                            <span class="statValue statusContainer" id="statStatusValContainer">
+                                <span class="statusDot statusDotChecking" id="statStatusDot"></span>
+                                <span id="statStatusVal">Проверка...</span>
+                            </span>
+                        </div>
+                        <div class="statCopyBanner" id="statCopyBanner">
+                            <span class="statIpText">89.248.236.145:27160</span>
+                            <span class="statCopyPrompt" id="statCopyPrompt">
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                                <span id="statCopyHintText">Нажмите для копирования IP</span>
+                            </span>
+                        </div>
                     </div>
 
                     <div class="statCard" id="statModsCard" title="Нажмите для просмотра и управления модами">
@@ -404,7 +416,7 @@
                             <div class="aboutLogoSquare">LW</div>
                             <div>
                                 <h3 class="aboutAppTitle">LOWUNCHER</h3>
-                                <span class="aboutAppVersion" id="modernAppVersionLabel">Версия 1.0.2 (Release)</span>
+                                <span class="aboutAppVersion" id="modernAppVersionLabel">Версия 1.0.3 (Release)</span>
                             </div>
                         </div>
                         <p class="aboutDesc">Кастомный Minecraft-клиент для школьного сообщества. Сборка NeoForge 1.21.1 с автоматической синхронизацией модов, скинами и оптимизацией производительности.</p>
@@ -422,7 +434,7 @@
                             </div>
                         </div>
                         <div id="modernUpdateStatusBox" style="margin-top: 10px; font-size: 13px; color: #a1a1aa;">
-                            Текущая версия актуальна (1.0.2).
+                            Текущая версия актуальна (1.0.3).
                         </div>
                     </div>
                 </div>

@@ -54,51 +54,66 @@
         }
         #globalWindowControls {
             position: absolute;
-            top: 12px;
-            right: 16px;
-            z-index: 99999;
+            top: 14px;
+            right: 18px;
+            z-index: 999999 !important;
             display: flex;
             align-items: center;
-            gap: 6px;
-            -webkit-app-region: no-drag;
+            gap: 9px;
+            -webkit-app-region: no-drag !important;
+            pointer-events: auto !important;
         }
-        .winControlBtn {
-            width: 28px;
-            height: 28px;
-            border-radius: 6px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            color: #d4d4d8;
-            cursor: pointer;
+        .globalMacDot {
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            cursor: pointer !important;
+            padding: 0;
+            outline: none;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 0;
-            outline: none;
-            transition: all 0.15s ease;
+            transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
+            -webkit-app-region: no-drag !important;
+            pointer-events: auto !important;
         }
-        .winControlBtn:hover {
-            background: rgba(255, 255, 255, 0.18);
-            color: #ffffff;
-            transform: translateY(-1px);
+        .globalMacDot:hover {
+            transform: scale(1.2);
+            filter: brightness(1.1);
         }
-        .winControlClose:hover {
-            background: #ef4444 !important;
-            border-color: #ef4444 !important;
-            color: #ffffff !important;
+        .globalMacDotYellow {
+            background: #febc2e;
+            box-shadow: 0 0 6px rgba(254, 188, 46, 0.35);
+        }
+        .globalMacDotGreen {
+            background: #28c840;
+            box-shadow: 0 0 6px rgba(40, 200, 64, 0.35);
+        }
+        .globalMacDotRed {
+            background: #ff5f56;
+            box-shadow: 0 0 6px rgba(255, 95, 86, 0.35);
+        }
+        .globalMacDot svg {
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            pointer-events: none;
+        }
+        #globalWindowControls:hover .globalMacDot svg {
+            opacity: 0.85;
         }
     </style>
 </head>
 <body bkid="<%=bkid%>">
     <div id="globalWindowControls">
-        <button class="winControlBtn fMb" id="globalBtnMin" title="Свернуть">
-            <svg width="10" height="10" viewBox="0 0 12 12"><rect fill="currentColor" width="10" height="1.6" x="1" y="5.2"></rect></svg>
+        <button class="globalMacDot globalMacDotYellow fMb" id="globalBtnMin" title="Свернуть">
+            <svg width="7" height="7" viewBox="0 0 10 10"><rect fill="#4a3000" width="8" height="2" x="1" y="4"></rect></svg>
         </button>
-        <button class="winControlBtn fRb" id="globalBtnMax" title="Развернуть">
-            <svg width="10" height="10" viewBox="0 0 12 12"><rect width="9" height="9" x="1.5" y="1.5" fill="none" stroke="currentColor" stroke-width="1.6"></rect></svg>
+        <button class="globalMacDot globalMacDotGreen fRb" id="globalBtnMax" title="Развернуть">
+            <svg width="7" height="7" viewBox="0 0 10 10"><polygon fill="#0b4619" points="1,4 1,9 6,9"></polygon><polygon fill="#0b4619" points="9,6 9,1 4,1"></polygon></svg>
         </button>
-        <button class="winControlBtn winControlClose fCb" id="globalBtnClose" title="Закрыть">
-            <svg width="10" height="10" viewBox="0 0 12 12"><polygon fill="currentColor" points="11 1.5 10.5 1 6 5.5 1.5 1 1 1.5 5.5 6 1 10.5 1.5 11 6 6.5 10.5 11 11 10.5 6.5 6"></polygon></svg>
+        <button class="globalMacDot globalMacDotRed winControlClose fCb" id="globalBtnClose" title="Закрыть">
+            <svg width="7" height="7" viewBox="0 0 10 10"><polygon fill="#4d0000" points="8.5,2.5 7.5,1.5 5,4 2.5,1.5 1.5,2.5 4,5 1.5,7.5 2.5,8.5 5,6 7.5,8.5 8.5,7.5 6,5"></polygon></svg>
         </button>
     </div>
     <%- include('frame') %>

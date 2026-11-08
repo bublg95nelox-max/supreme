@@ -1449,22 +1449,21 @@ checkLiveServerStatus()
 
 const statStatusCard = document.getElementById('statStatusCard')
 if(statStatusCard) {
-    statStatusCard.title = 'Сервер: 89.248.236.145:27160 (Резерв: ozdangalla.netmc.ru). Нажмите, чтобы скопировать IP.'
     statStatusCard.onclick = () => {
         try {
             clipboard.writeText('89.248.236.145:27160')
         } catch (e) {
             console.warn('Clipboard write failed:', e)
         }
-        const statStatusVal = document.getElementById('statStatusVal')
-        if (statStatusVal) {
-            const oldText = statStatusVal.innerText
-            statStatusVal.innerText = 'IP скопирован!'
+        const statCopyHintText = document.getElementById('statCopyHintText')
+        const statCopyPrompt = document.getElementById('statCopyPrompt')
+        if (statCopyPrompt && statCopyHintText) {
+            statCopyPrompt.classList.add('statCopySuccess')
+            statCopyHintText.innerText = '✓ Скопировано в буфер!'
             setTimeout(() => {
-                checkLiveServerStatus()
-            }, 1200)
-        } else {
-            checkLiveServerStatus()
+                statCopyPrompt.classList.remove('statCopySuccess')
+                statCopyHintText.innerText = 'Нажмите для копирования IP'
+            }, 2500)
         }
     }
 }
@@ -2073,10 +2072,19 @@ function loadModernSettings() {
             if (updateStatusBox) updateStatusBox.innerText = 'Проверка наличия обновлений...'
         } else if (action === 'update-available') {
             const ver = info && info.version ? `v${info.version}` : ''
-            if (updateStatusBox) updateStatusBox.innerText = `Найдено обновление ${ver}! Загрузка в фоне...`
+            if (updateStatusBox) updateStatusBox.innerText = `Найдено обновление ${ver}! Начинается загрузка...`
             if (updateHeaderPill) {
                 updateHeaderPill.style.display = 'flex'
                 if (updateHeaderPillText) updateHeaderPillText.innerText = `Загрузка обновления ${ver}...`
+            }
+        } else if (action === 'download-progress') {
+            const pct = info && typeof info.percent === 'number' ? info.percent.toFixed(0) : '0'
+            const speed = info && info.bytesPerSecond ? `${(info.bytesPerSecond / 1048576).toFixed(1)} МБ/с` : ''
+            const text = `Загрузка обновления: ${pct}%${speed ? ' (' + speed + ')' : ''}`
+            if (updateStatusBox) updateStatusBox.innerText = text
+            if (updateHeaderPill) {
+                updateHeaderPill.style.display = 'flex'
+                if (updateHeaderPillText) updateHeaderPillText.innerText = text
             }
         } else if (action === 'update-downloaded') {
             const ver = info && info.version ? `v${info.version}` : ''
@@ -2087,11 +2095,11 @@ function loadModernSettings() {
                 if (updateHeaderPillText) updateHeaderPillText.innerText = `Обновление ${ver} готово (нажмите для установки)`
             }
         } else if (action === 'update-not-available') {
-            const curVer = remote && remote.app ? remote.app.getVersion() : '1.0.2'
+            const curVer = remote && remote.app ? remote.app.getVersion() : '1.0.3'
             if (updateStatusBox) updateStatusBox.innerText = `У вас установлена актуальная версия (${curVer}).`
             if (updateHeaderPill) updateHeaderPill.style.display = 'none'
         } else if (action === 'realerror') {
-            if (updateStatusBox) updateStatusBox.innerText = 'Не удалось подключиться к серверу обновлений.'
+            if (updateStatusBox) updateStatusBox.innerText = 'Сервер обновлений временно недоступен. Актуальные релизы доступны на GitHub.'
         }
     })
 }
