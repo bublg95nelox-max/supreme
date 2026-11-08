@@ -1,0 +1,138 @@
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" http-equiv="Content-Security-Policy" content="script-src 'self' 'sha256-In6B8teKZQll5heMl9bS7CESTbGvuAt3VVV86BUQBDk='"/>
+    <title><%= lang('app.title') %></title>
+    <!-- Load renderer modules as scripts so their UI functions share the renderer scope. -->
+    <script src="./assets/js/scripts/uicore.js"></script>
+    <script src="./assets/js/scripts/uibinder.js"></script>
+    <link type="text/css" rel="stylesheet" href="./assets/css/launcher.css">
+    <link type="text/css" rel="stylesheet" href="./assets/css/modern_ui.css">
+    <style>
+        html, body {
+            background: transparent !important;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            -webkit-user-select: none;
+            border-radius: 16px;
+        }
+        #frameBar {
+            display: none !important;
+        }
+        #main {
+            display: none;
+            height: 100%;
+            background: #141416;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10;
+            overflow: hidden;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        }
+        #main[overlay] {
+            filter: blur(3px) contrast(0.9) brightness(1.0);
+        }
+        body.maximized {
+            border-radius: 0 !important;
+        }
+        body.maximized #main,
+        body.maximized #landingContainer,
+        body.maximized #modernAppShell,
+        body.maximized #modernSidebar,
+        body.maximized #welcomeContainer,
+        body.maximized #loginContainer,
+        body.maximized #loginOptionsContainer,
+        body.maximized #loadingContainer {
+            border-radius: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        #globalWindowControls {
+            position: absolute;
+            top: 14px;
+            right: 18px;
+            z-index: 999999 !important;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            -webkit-app-region: no-drag !important;
+            pointer-events: auto !important;
+        }
+        .globalMacDot {
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            cursor: pointer !important;
+            padding: 0;
+            outline: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
+            -webkit-app-region: no-drag !important;
+            pointer-events: auto !important;
+        }
+        .globalMacDot:hover {
+            transform: scale(1.2);
+            filter: brightness(1.1);
+        }
+        .globalMacDotYellow {
+            background: #febc2e;
+            box-shadow: 0 0 6px rgba(254, 188, 46, 0.35);
+        }
+        .globalMacDotGreen {
+            background: #28c840;
+            box-shadow: 0 0 6px rgba(40, 200, 64, 0.35);
+        }
+        .globalMacDotRed {
+            background: #ff5f56;
+            box-shadow: 0 0 6px rgba(255, 95, 86, 0.35);
+        }
+        .globalMacDot svg {
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            pointer-events: none;
+        }
+        #globalWindowControls:hover .globalMacDot svg {
+            opacity: 0.85;
+        }
+    </style>
+</head>
+<body bkid="<%=bkid%>">
+    <div id="globalWindowControls">
+        <button class="globalMacDot globalMacDotYellow fMb" id="globalBtnMin" title="Свернуть">
+            <svg width="7" height="7" viewBox="0 0 10 10"><rect fill="#4a3000" width="8" height="2" x="1" y="4"></rect></svg>
+        </button>
+        <button class="globalMacDot globalMacDotGreen fRb" id="globalBtnMax" title="Развернуть">
+            <svg width="7" height="7" viewBox="0 0 10 10"><polygon fill="#0b4619" points="1,4 1,9 6,9"></polygon><polygon fill="#0b4619" points="9,6 9,1 4,1"></polygon></svg>
+        </button>
+        <button class="globalMacDot globalMacDotRed winControlClose fCb" id="globalBtnClose" title="Закрыть">
+            <svg width="7" height="7" viewBox="0 0 10 10"><polygon fill="#4d0000" points="8.5,2.5 7.5,1.5 5,4 2.5,1.5 1.5,2.5 4,5 1.5,7.5 2.5,8.5 5,6 7.5,8.5 8.5,7.5 6,5"></polygon></svg>
+        </button>
+    </div>
+    <%- include('frame') %>
+    <div id="main">
+        <%- include('welcome') %>
+        <%- include('login') %>
+        <%- include('waiting') %>
+        <%- include('loginOptions') %>
+        <%- include('settings') %>
+        <%- include('landing') %>
+    </div>
+    <%- include('overlay') %>
+    <div id="loadingContainer">
+        <div id="loadingContent">
+            <div id="loadSpinnerContainer">
+                <img id="loadSpinnerImage" class="rotating" src="assets/images/sieg.png" alt="Загрузка Lowuncher">
+                <span id="loadingLabel">Подготавливаем лаунчер…</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

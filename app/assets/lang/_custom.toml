@@ -1,0 +1,68 @@
+# Custom Language File for Lowuncher
+
+[ejs.app]
+title = "Lowuncher"
+
+[ejs.landing]
+mediaDiscordURL = "https://discord.gg/uWbNGvVjg"
+launchButton = "Играть"
+launchButtonPlaceholder = "Школьный сервер (1.21.1)"
+serverStatus = "В сети"
+serverStatusPlaceholder = "3 онлайн"
+
+[ejs.loginOptions]
+loginOptionsTitle = "ВЫБЕРИТЕ СПОСОБ ВХОДА"
+loginWithMicrosoft = "Войти через Microsoft"
+loginWithOffline = "Вход по нику (Офлайн)"
+cancelButton = "Отмена"
+
+[ejs.login]
+loginSubheader = "ВХОД В LOWUNCHER"
+loginEmailPlaceholder = "Никнейм игрока"
+loginButtonText = "ВОЙТИ"
+loginCancelText = "ОТМЕНА"
+loginRememberMeText = "Запомнить меня"
+
+[ejs.settings]
+sourceGithubLink = "https://github.com/bublg95nelox-max/supreme"
+supportLink = "https://github.com/bublg95nelox-max/supreme/issues"
+mojangAccount = "Офлайн аккаунты"
+addMojangAccount = "Добавить никнейм"
+navUpdates = "ОБНОВЛЕНИЯ"
+launcherUpdatesHeaderText = "Обновления Lowuncher"
+launcherUpdatesHeaderDesc = "Проверка, загрузка и автоматическая установка обновлений лаунчера."
+stableRelease = "Стабильный релиз"
+versionText = "Версия:"
+checkForUpdates = "Проверить обновления"
+whatsNew = "ЧТО НОВОГО"
+updateReleaseNotes = "Список изменений"
+noReleaseNotes = "Нет доступного описания обновления."
+
+[ejs.welcome]
+welcomeHeader = "ДОБРО ПОЖАЛОВАТЬ В LOWUNCHER"
+welcomeDescription = "Лаунчер Minecraft для школьного игрового сообщества. Автоматическая загрузка Java 21, NeoForge и актуальных модов."
+welcomeDescCTA = "Введите никнейм и нажмите Играть!"
+
+[js.login]
+login = "ВОЙТИ"
+loggingIn = "ВХОД..."
+success = "УСПЕШНО"
+
+[js.landing.launch]
+pleaseWait = "Пожалуйста, подождите..."
+failureTitle = "Ошибка запуска"
+failureText = "Не удалось подготовить или запустить игру."
+
+[js.settings.updates]
+newReleaseTitle = "Доступно новое обновление"
+newPreReleaseTitle = "Доступна предварительная версия"
+downloadingButton = "Загрузка обновления..."
+downloadButton = "Скачать с GitHub"
+latestVersionTitle = "У вас установлена последняя версия"
+checkForUpdatesButton = "Проверить обновления"
+checkingForUpdatesButton = "Проверка обновлений..."
+
+[js.uicore.autoUpdate]
+checkingForUpdateButton = "Проверка обновлений..."
+installNowButton = "Перезапустить и обновить"
+checkForUpdatesButton = "Проверить обновления"
