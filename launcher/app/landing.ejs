@@ -63,7 +63,13 @@
         <main id="modernMainArea">
             <!-- Window Drag Header with Title & Traffic Lights -->
             <header id="modernWindowHeader">
-                <div id="windowHeaderTitle">Minecraft</div>
+                <div style="display: flex; align-items: center;">
+                    <div id="windowHeaderTitle">Lowuncher</div>
+                    <div id="modernUpdateHeaderPill" style="display: none; margin-left: 14px; background: rgba(34, 197, 94, 0.2); border: 1px solid rgba(34, 197, 94, 0.4); color: #4ade80; font-size: 11px; padding: 2px 10px; border-radius: 9999px; cursor: pointer; align-items: center; gap: 6px;">
+                        <span style="width: 6px; height: 6px; background: #22c55e; border-radius: 50%;"></span>
+                        <span id="modernUpdateHeaderPillText">Обновление</span>
+                    </div>
+                </div>
                 <div id="windowControls">
                     <button class="macDot macDotYellow fMb" id="winDotMin" title="Свернуть"></button>
                     <button class="macDot macDotGreen fRb" id="winDotMax" title="Развернуть"></button>
@@ -403,10 +409,26 @@
                             <div class="aboutLogoSquare">LW</div>
                             <div>
                                 <h3 class="aboutAppTitle">LOWUNCHER</h3>
-                                <span class="aboutAppVersion">Версия 1.0.0 (Release)</span>
+                                <span class="aboutAppVersion" id="modernAppVersionLabel">Версия 1.0.1 (Release)</span>
                             </div>
                         </div>
-                        <p class="aboutDesc">Кастомный Minecraft-клиент для сообщества. Сборка NeoForge 1.21.1 с автоматической синхронизацией модов, скинами и оптимизацией производительности.</p>
+                        <p class="aboutDesc">Кастомный Minecraft-клиент для школьного сообщества. Сборка NeoForge 1.21.1 с автоматической синхронизацией модов, скинами и оптимизацией производительности.</p>
+                    </div>
+
+                    <div class="modernCard">
+                        <div class="modsCardHeader">
+                            <div>
+                                <span class="cardSectionTitle">Автообновление</span>
+                                <p class="cardDesc" id="modernUpdateStatusDesc">Автоматическая проверка и установка обновлений лаунчера с GitHub</p>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button id="modernBtnCheckUpdates" class="modernPrimaryBtn">🔄 Проверить обновления</button>
+                                <button id="modernBtnInstallUpdate" class="modernPrimaryBtn" style="display: none; background: #22c55e; color: #fff;">⚡ Перезапустить и обновить</button>
+                            </div>
+                        </div>
+                        <div id="modernUpdateStatusBox" style="margin-top: 10px; font-size: 13px; color: #a1a1aa;">
+                            Текущая версия актуальна (1.0.1).
+                        </div>
                     </div>
                 </div>
             </section>

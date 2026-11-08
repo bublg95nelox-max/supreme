@@ -88,7 +88,7 @@ async function showMainUI(data){
     console.log('[Lowuncher] showMainUI started')
     mainUIShown = true
 
-    if(!isDev){
+    if(!isDev || fs.existsSync(path.join(__dirname, '..', '..', 'dev-app-update.yml'))){
         loggerBinderAutoUpdater.info('Initializing..')
         ipcRenderer.send('autoUpdateAction', 'initAutoUpdater', ConfigManager.getAllowPrerelease())
     }

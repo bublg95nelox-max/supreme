@@ -35,11 +35,13 @@ remote.getCurrentWebContents().on('devtools-opened', () => {
 webFrame.setZoomLevel(0)
 webFrame.setVisualZoomLevelLimits(1, 1)
 
-// Initialize auto updates in production environments.
+// Initialize auto updates
 let updateCheckListener
-if(!isDev){
-    ipcRenderer.on('autoUpdateNotification', (event, arg, info) => {
-        switch(arg){
+ipcRenderer.on('autoUpdateNotification', (event, arg, info) => {
+    try {
+        window.dispatchEvent(new CustomEvent('lowuncher-autoupdate', { detail: { action: arg, info } }))
+    } catch (_e) {}
+    switch(arg){
             case 'checking-for-update':
                 loggerAutoUpdater.info('Checking for update..')
                 settingsUpdateButtonStatus(Lang.queryJS('uicore.autoUpdate.checkingForUpdateButton'), true)
@@ -48,7 +50,7 @@ if(!isDev){
                 loggerAutoUpdater.info('New update available', info.version)
                 
                 if(process.platform === 'darwin'){
-                    info.darwindownload = `https://github.com/dscalzi/HeliosLauncher/releases/download/v${info.version}/Helios-Launcher-setup-${info.version}${process.arch === 'arm64' ? '-arm64' : '-x64'}.dmg`
+                    info.darwindownload = `https://github.com/bublg95nelox-max/supreme/releases/download/v${info.version}/Lowuncher-${info.version}${process.arch === 'arm64' ? '-arm64' : '-x64'}.dmg`
                     showUpdateUI(info)
                 }
                 
@@ -90,7 +92,6 @@ if(!isDev){
                 break
         }
     })
-}
 
 /**
  * Send a notification to the main process changing the value of

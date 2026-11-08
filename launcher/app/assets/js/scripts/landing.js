@@ -2033,4 +2033,65 @@ function loadModernSettings() {
     if (btnRefreshMods) {
         btnRefreshMods.onclick = refreshLocalModsUI
     }
+
+    // Auto-update controls in About tab & header
+    const btnCheckUpdates = document.getElementById('modernBtnCheckUpdates')
+    const btnInstallUpdate = document.getElementById('modernBtnInstallUpdate')
+    const updateStatusBox = document.getElementById('modernUpdateStatusBox')
+    const updateHeaderPill = document.getElementById('modernUpdateHeaderPill')
+    const updateHeaderPillText = document.getElementById('modernUpdateHeaderPillText')
+
+    if (btnCheckUpdates) {
+        btnCheckUpdates.onclick = () => {
+            if (updateStatusBox) updateStatusBox.innerText = 'Проверка наличия обновлений на GitHub...'
+            ipcRenderer.send('autoUpdateAction', 'checkForUpdate')
+        }
+    }
+
+    if (btnInstallUpdate) {
+        btnInstallUpdate.onclick = () => {
+            ipcRenderer.send('autoUpdateAction', 'installUpdateNow')
+        }
+    }
+
+    if (updateHeaderPill) {
+        updateHeaderPill.onclick = () => {
+            if (btnInstallUpdate && btnInstallUpdate.style.display !== 'none') {
+                ipcRenderer.send('autoUpdateAction', 'installUpdateNow')
+            } else {
+                const navSettings = document.getElementById('navItemSettings')
+                if (navSettings) navSettings.click()
+                const aboutSubtab = document.querySelector('.settingsSubTabBtn[data-subtab="subtabAbout"]')
+                if (aboutSubtab) aboutSubtab.click()
+            }
+        }
+    }
+
+    window.addEventListener('lowuncher-autoupdate', (e) => {
+        const { action, info } = e.detail || {}
+        if (action === 'checking-for-update') {
+            if (updateStatusBox) updateStatusBox.innerText = 'Проверка наличия обновлений...'
+        } else if (action === 'update-available') {
+            const ver = info && info.version ? `v${info.version}` : ''
+            if (updateStatusBox) updateStatusBox.innerText = `Найдено обновление ${ver}! Загрузка в фоне...`
+            if (updateHeaderPill) {
+                updateHeaderPill.style.display = 'flex'
+                if (updateHeaderPillText) updateHeaderPillText.innerText = `Загрузка обновления ${ver}...`
+            }
+        } else if (action === 'update-downloaded') {
+            const ver = info && info.version ? `v${info.version}` : ''
+            if (updateStatusBox) updateStatusBox.innerText = `Обновление ${ver} готово к установке!`
+            if (btnInstallUpdate) btnInstallUpdate.style.display = 'inline-block'
+            if (updateHeaderPill) {
+                updateHeaderPill.style.display = 'flex'
+                if (updateHeaderPillText) updateHeaderPillText.innerText = `Обновление ${ver} готово (нажмите для установки)`
+            }
+        } else if (action === 'update-not-available') {
+            const curVer = remote && remote.app ? remote.app.getVersion() : '1.0.1'
+            if (updateStatusBox) updateStatusBox.innerText = `У вас установлена актуальная версия (${curVer}).`
+            if (updateHeaderPill) updateHeaderPill.style.display = 'none'
+        } else if (action === 'realerror') {
+            if (updateStatusBox) updateStatusBox.innerText = 'Не удалось подключиться к серверу обновлений.'
+        }
+    })
 }

@@ -32,23 +32,36 @@ mkdir -p "$DESKTOP_DIR"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APPIMAGE_SOURCE=""
 
-# 1. Locate AppImage
-if [ -f "$SCRIPT_DIR/dist/Lowuncher-1.0.0-linux-x86_64.AppImage" ]; then
-    APPIMAGE_SOURCE="$SCRIPT_DIR/dist/Lowuncher-1.0.0-linux-x86_64.AppImage"
-elif [ -f "$SCRIPT_DIR/Lowuncher-1.0.0-linux-x86_64.AppImage" ]; then
-    APPIMAGE_SOURCE="$SCRIPT_DIR/Lowuncher-1.0.0-linux-x86_64.AppImage"
-elif [ -f "$SCRIPT_DIR/Lowuncher.AppImage" ]; then
-    APPIMAGE_SOURCE="$SCRIPT_DIR/Lowuncher.AppImage"
-elif [ -f "/mnt/games/lowuncher/dist/Lowuncher-1.0.0-linux-x86_64.AppImage" ]; then
-    APPIMAGE_SOURCE="/mnt/games/lowuncher/dist/Lowuncher-1.0.0-linux-x86_64.AppImage"
-fi
+# 1. Locate AppImage or download from GitHub Releases
+for candidate in \
+    "$SCRIPT_DIR/dist/Lowuncher-1.0.1-linux-x86_64.AppImage" \
+    "$SCRIPT_DIR/Lowuncher-1.0.1-linux-x86_64.AppImage" \
+    "$SCRIPT_DIR"/Lowuncher-*-linux-x86_64.AppImage \
+    "$SCRIPT_DIR/Lowuncher.AppImage" \
+    "/mnt/games/lowuncher/dist/Lowuncher-1.0.1-linux-x86_64.AppImage" \
+    "/mnt/games/lowuncher/dist"/Lowuncher-*-linux-x86_64.AppImage; do
+    if [ -f "$candidate" ]; then
+        APPIMAGE_SOURCE="$candidate"
+        break
+    fi
+done
 
 echo -e "${CYAN}▶ Копирование файлов лаунчера в $INSTALL_DIR...${RESET}"
 
 if [ -n "$APPIMAGE_SOURCE" ] && [ -f "$APPIMAGE_SOURCE" ]; then
-    cp "$APPIMAGE_SOURCE" "$INSTALL_DIR/Lowuncher.AppImage"
+    if [ "$APPIMAGE_SOURCE" != "$INSTALL_DIR/Lowuncher.AppImage" ]; then
+        cp "$APPIMAGE_SOURCE" "$INSTALL_DIR/Lowuncher.AppImage"
+    fi
     chmod +x "$INSTALL_DIR/Lowuncher.AppImage"
-    echo -e "${GREEN}✓ Исполняемый файл Lowuncher.AppImage успешно скопирован.${RESET}"
+    echo -e "${GREEN}✓ Исполняемый файл Lowuncher.AppImage успешно установлен.${RESET}"
+elif command -v curl &>/dev/null; then
+    echo -e "${CYAN}▶ Загрузка актуального релиза Lowuncher v1.0.1 с GitHub...${RESET}"
+    if curl -fSL "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.1/Lowuncher-1.0.1-linux-x86_64.AppImage" -o "$INSTALL_DIR/Lowuncher.AppImage"; then
+        chmod +x "$INSTALL_DIR/Lowuncher.AppImage"
+        echo -e "${GREEN}✓ Lowuncher.AppImage успешно загружен и установлен.${RESET}"
+    else
+        echo -e "${YELLOW}Не удалось скачать релиз с GitHub напрямую.${RESET}"
+    fi
 else
     # Fallback wrapper if launched in development environment
     cat << 'EOF' > "$INSTALL_DIR/lowuncher-runner.sh"

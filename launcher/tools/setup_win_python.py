@@ -60,6 +60,10 @@ def setup_win_python():
             new_lines.append("Lib/site-packages")
         if "." not in new_lines:
             new_lines.append(".")
+        if ".." not in new_lines:
+            new_lines.append("..")
+        if "..\\.." not in new_lines:
+            new_lines.append("..\\..")
         pth_file.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
         print(f"Patched {pth_file.name} to enable site-packages")
 

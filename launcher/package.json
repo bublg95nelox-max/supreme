@@ -1,6 +1,6 @@
 {
   "name": "lowuncher",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "productName": "Lowuncher",
   "description": "Custom Minecraft Launcher for School Community",
   "author": "Lowuncher Team",
@@ -44,6 +44,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dscalzi/HeliosLauncher.git"
+    "url": "git+https://github.com/bublg95nelox-max/supreme.git"
   }
 }

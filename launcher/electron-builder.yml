@@ -2,6 +2,12 @@ appId: 'lowuncher'
 productName: 'Lowuncher'
 artifactName: '${productName}-${version}-${os}-${arch}.${ext}'
 
+publish:
+  provider: github
+  owner: bublg95nelox-max
+  repo: supreme
+  releaseType: release
+
 copyright: 'Copyright © 2026 Lowuncher'
 
 asar: true

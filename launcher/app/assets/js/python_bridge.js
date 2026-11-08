@@ -87,7 +87,13 @@ class PythonBridge {
             if (fs.existsSync(bundledUnix)) return bundledUnix
         }
 
-        // 3. Fallback to system python
+        // 3. Check build/win-python for dev/portable Windows runs
+        if (process.platform === 'win32') {
+            const devWin = path.join(rootDir, 'build', 'win-python', 'python.exe')
+            if (fs.existsSync(devWin)) return devWin
+        }
+
+        // 4. Fallback to system python
         return process.platform === 'win32' ? 'python' : 'python3'
     }
 

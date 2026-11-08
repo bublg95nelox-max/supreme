@@ -159,7 +159,7 @@ def handle_run(args):
         session_file = game_dir / ".lowuncher_session.json"
         session_payload = {
             "launcher": "Lowuncher",
-            "version": "1.0.0",
+            "version": "1.0.1",
             "username": args.username,
             "uuid": args.uuid,
             "token": hashlib.sha256(f"Lowuncher-Verified:{args.username}:{args.uuid}:6233".encode("utf-8")).hexdigest(),
