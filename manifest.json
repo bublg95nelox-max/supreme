@@ -553,9 +553,9 @@
     {
       "path": "mods/lowuncher-guard-1.21.1.jar",
       "hashes": {
-        "sha256": "990459758e6ff06d200382e328215c6aaaf3e98bdca848d17a1cb5d15c91b405"
+        "sha256": "33b8e822a9760280d072fbbb76223db5e89263aa2c8f7679c7b2cc65ebcff080"
       },
-      "size": 3848
+      "size": 4009
     },
     {
       "path": "mods/mezz_config-1.21.1-neoforge-0.6.11-standalone.jar",
