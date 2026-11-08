@@ -108,7 +108,7 @@ class GameLauncher:
             if arg.startswith("-Dminecraft.launcher.brand="):
                 sanitized_command.append("-Dminecraft.launcher.brand=Lowuncher")
             elif arg.startswith("-Dminecraft.launcher.version="):
-                sanitized_command.append("-Dminecraft.launcher.version=1.0.3")
+                sanitized_command.append("-Dminecraft.launcher.version=1.0.4")
             else:
                 sanitized_command.append(arg)
 

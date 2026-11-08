@@ -23,6 +23,8 @@ extraResources:
 # Windows Configuration
 win: 
   icon: 'build/icon.ico'
+  legalTrademarks: 'Lowuncher'
+  requestedExecutionLevel: 'asInvoker'
   target: 
     - target: 'nsis'
       arch: 'x64'
@@ -39,6 +41,7 @@ nsis:
   perMachine: false
   allowElevation: true
   allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false
 
 # Linux Configuration (Arch Linux / AppImage & Portable tar.gz)
 linux: 

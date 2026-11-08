@@ -17,15 +17,23 @@ from pathlib import Path
 _root_dir = Path(__file__).resolve().parent.parent
 if str(_root_dir) not in sys.path:
     sys.path.insert(0, str(_root_dir))
+
 for candidate_libs in [
     _root_dir / "libraries" / "python",
     Path(__file__).resolve().parent.parent.parent / "libraries" / "python",
     Path(sys.executable).parent.parent / "libraries" / "python",
+    _root_dir / "build" / "win-python" / "Lib" / "site-packages",
 ]:
     if candidate_libs.is_dir() and str(candidate_libs) not in sys.path:
         sys.path.insert(0, str(candidate_libs))
 
-import requests
+try:
+    import requests
+except ImportError:
+    requests = None
+
+import urllib.request
+import urllib.error
 
 from core.java_manager import JavaManager
 from core.installer import Installer
@@ -36,8 +44,8 @@ from core.auth import AuthManager
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("lowuncher.bridge")
 
-DEFAULT_MODPACK_URL = "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.3/modpack-supreme-1.21.1.zip"
-MODPACK_VERSION = "1.0.3"
+DEFAULT_MODPACK_URL = "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.4/modpack-supreme-1.21.1.zip"
+MODPACK_VERSION = "1.0.4"
 
 
 def emit_event(event_type: str, data: dict):
@@ -85,13 +93,50 @@ def ensure_servers_dat(game_dir: Path):
         logger.warning(f"Could not ensure servers.dat: {e}")
 
 
+def purge_blacklisted_mods(game_dir: Path):
+    """
+    Purges obsolete or removed mods and their configs.
+    Ensures players who downloaded earlier builds get FTB Chunks, Ultimine, Backups 2,
+    and Essentials removed automatically.
+    """
+    mods_dir = game_dir / "mods"
+    if mods_dir.is_dir():
+        BLACKLIST_JARS = [
+            "*ftb*chunks*",
+            "*ftb*ultimine*",
+            "*ftb*backup*",
+            "*ftb*essential*",
+        ]
+        for pattern in BLACKLIST_JARS:
+            for stale in mods_dir.glob(f"{pattern}.jar"):
+                try:
+                    stale.unlink()
+                    logger.info(f"Purged blacklisted mod jar: {stale.name}")
+                except Exception as ex:
+                    logger.warning(f"Could not delete {stale.name}: {ex}")
+
+    # Also clean up obsolete FTB config files
+    for conf_folder in [game_dir / "config", game_dir / "defaultconfigs"]:
+        if conf_folder.is_dir():
+            for conf_pat in ["ftbchunks*", "ftbultimine*", "ftbbackups2*", "ftbessentials*"]:
+                for stale_conf in conf_folder.glob(conf_pat):
+                    try:
+                        stale_conf.unlink()
+                        logger.info(f"Purged obsolete config: {stale_conf.name}")
+                    except Exception as ex:
+                        logger.warning(f"Could not delete config {stale_conf.name}: {ex}")
+
+
 def ensure_modpack(game_dir: Path, modpack_url: str = None, progress_callback=None):
     """
-    Ensures that the Supreme modpack (108 mods, configs, servers.dat) is fully installed in game_dir.
-    If mods are missing or incomplete (< 100 mods), downloads and extracts the modpack.
+    Ensures that the Supreme modpack (104 mods, configs, servers.dat) is fully installed in game_dir.
+    If mods are missing or incomplete, downloads and extracts the modpack.
     """
     mods_dir = game_dir / "mods"
     marker_file = game_dir / ".modpack_installed.json"
+
+    # Always purge blacklisted mods first
+    purge_blacklisted_mods(game_dir)
 
     current_mods = list(mods_dir.glob("*.jar")) if mods_dir.is_dir() else []
     installed_ver = None
@@ -103,7 +148,7 @@ def ensure_modpack(game_dir: Path, modpack_url: str = None, progress_callback=No
             installed_ver = None
 
     # If already installed and has all mods, skip download
-    if len(current_mods) >= 100 and installed_ver == MODPACK_VERSION:
+    if len(current_mods) >= 95 and installed_ver == MODPACK_VERSION:
         logger.info(f"Modpack {MODPACK_VERSION} already installed ({len(current_mods)} mods).")
         if progress_callback:
             progress_callback(100, 100, f"Сборка модов готова ({len(current_mods)} модов)")
@@ -124,6 +169,7 @@ def ensure_modpack(game_dir: Path, modpack_url: str = None, progress_callback=No
             import zipfile
             with zipfile.ZipFile(candidate, "r") as zf:
                 zf.extractall(game_dir)
+            purge_blacklisted_mods(game_dir)
             mod_count = len(list((game_dir / "mods").glob("*.jar")))
             with open(marker_file, "w", encoding="utf-8") as f:
                 json.dump({
@@ -135,22 +181,26 @@ def ensure_modpack(game_dir: Path, modpack_url: str = None, progress_callback=No
                 progress_callback(100, 100, f"Сборка модов распакована ({mod_count} модов)")
             return
 
-    # Download from remote release URL
+    # Download from remote release URL using standard library urllib (zero external dependencies)
     target_url = modpack_url or DEFAULT_MODPACK_URL
     logger.info(f"Downloading modpack from {target_url}...")
     tmp_zip = game_dir / ".modpack_download.tmp"
 
     try:
-        resp = requests.get(target_url, stream=True, headers={"User-Agent": "Lowuncher/1.0"}, timeout=(15, 120))
-        resp.raise_for_status()
+        req = urllib.request.Request(
+            target_url,
+            headers={"User-Agent": "Lowuncher/1.0.4"}
+        )
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            total_bytes = int(resp.headers.get("Content-Length", 0))
+            downloaded = 0
+            last_report = 0
 
-        total_bytes = int(resp.headers.get("content-length", 0))
-        downloaded = 0
-        last_report = 0
-
-        with open(tmp_zip, "wb") as f:
-            for chunk in resp.iter_content(chunk_size=131072):
-                if chunk:
+            with open(tmp_zip, "wb") as f:
+                while True:
+                    chunk = resp.read(131072)
+                    if not chunk:
+                        break
                     f.write(chunk)
                     downloaded += len(chunk)
                     now = time.time()
@@ -168,12 +218,13 @@ def ensure_modpack(game_dir: Path, modpack_url: str = None, progress_callback=No
                             progress_callback(downloaded, total_bytes or downloaded, msg)
 
         if progress_callback:
-            progress_callback(downloaded, total_bytes or downloaded, "Распаковка сборки модов (108 модов)...")
+            progress_callback(downloaded, total_bytes or downloaded, "Распаковка сборки модов...")
 
         import zipfile
         with zipfile.ZipFile(tmp_zip, "r") as zf:
             zf.extractall(game_dir)
 
+        purge_blacklisted_mods(game_dir)
         mod_count = len(list((game_dir / "mods").glob("*.jar")))
         with open(marker_file, "w", encoding="utf-8") as f:
             json.dump({
@@ -185,7 +236,7 @@ def ensure_modpack(game_dir: Path, modpack_url: str = None, progress_callback=No
         if progress_callback:
             progress_callback(100, 100, f"Сборка модов готова ({mod_count} модов)")
 
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         if len(current_mods) >= 10:
             logger.warning(f"Could not download modpack ({e}), using {len(current_mods)} existing mods.")
             if progress_callback:
@@ -236,7 +287,7 @@ def handle_run(args):
         try:
             sync_engine.sync(args.manifest_url, progress_callback=on_sync_progress)
             emit_event("progress", {"percent": 65, "status": "Файлы сборки синхронизированы"})
-        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        except (TimeoutError, OSError) as e:
             logger.warning(f"Modpack sync skipped because network is unavailable: {e}")
             emit_event("progress", {"percent": 65, "status": "Синхронизация пропущена: сеть недоступна"})
         except Exception:
@@ -253,6 +304,9 @@ def handle_run(args):
             progress_callback=on_modpack_progress,
         )
         emit_event("progress", {"percent": 65, "status": "Файлы сборки готовы"})
+
+    # Always clean blacklisted mods before launching
+    purge_blacklisted_mods(game_dir)
 
     # 3. Minecraft & Loader Installation
     installer = Installer(game_dir)
@@ -299,7 +353,7 @@ def handle_run(args):
         session_file = game_dir / ".lowuncher_session.json"
         session_payload = {
             "launcher": "Lowuncher",
-            "version": "1.0.3",
+            "version": "1.0.4",
             "username": args.username,
             "uuid": args.uuid,
             "token": hashlib.sha256(f"Lowuncher-Verified:{args.username}:{args.uuid}:6233".encode("utf-8")).hexdigest(),

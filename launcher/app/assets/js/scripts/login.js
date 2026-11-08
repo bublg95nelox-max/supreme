@@ -23,20 +23,41 @@ let lu = false, lp = false
 let loginIsOffline = true
 const validOfflineName = /^[a-zA-Z0-9_]{2,16}$/
 
+function checkLoginValidity(){
+    loginDisabled(!(lu && lp))
+}
+
 function validateUsernameOffline(value){
     const clean = (value || '').trim()
     if(!clean){
         lu = false
         showError(loginEmailError, 'Введите никнейм')
-        loginDisabled(true)
+        checkLoginValidity()
     } else if(!validOfflineName.test(clean)){
         lu = false
         showError(loginEmailError, 'Только буквы A-Z, цифры и _ (2-16 симв.)')
-        loginDisabled(true)
+        checkLoginValidity()
     } else {
         loginEmailError.style.opacity = 0
         lu = true
-        loginDisabled(false)
+        checkLoginValidity()
+    }
+}
+
+function validatePasswordOffline(value){
+    const clean = (value || '').trim()
+    if(!clean){
+        lp = false
+        showError(loginPasswordError, 'Введите пароль')
+        checkLoginValidity()
+    } else if(clean.length < 3){
+        lp = false
+        showError(loginPasswordError, 'Пароль минимум 3 символа')
+        checkLoginValidity()
+    } else {
+        loginPasswordError.style.opacity = 0
+        lp = true
+        checkLoginValidity()
     }
 }
 
@@ -47,20 +68,24 @@ function setupOfflineMode(isOffline){
     const loginDisclaimerElem = document.getElementById('loginDisclaimer')
     const loginSubheaderElem = document.getElementById('loginSubheader')
 
+    if(passwordContainer) $(passwordContainer).show()
+
     if(isOffline){
-        if(passwordContainer) $(passwordContainer).hide()
         if(loginOptionsElem) $(loginOptionsElem).hide()
         if(loginDisclaimerElem) $(loginDisclaimerElem).hide()
-        if(loginSubheaderElem) loginSubheaderElem.innerText = 'ВХОД ПО НИКНЕЙМУ'
+        if(loginSubheaderElem) loginSubheaderElem.innerText = 'ВХОД / РЕГИСТРАЦИЯ'
         if(loginUsername) loginUsername.placeholder = 'Введите никнейм...'
+        if(loginPassword) loginPassword.placeholder = 'Введите пароль (или PIN)...'
         validateUsernameOffline(loginUsername.value)
+        validatePasswordOffline(loginPassword.value)
     } else {
-        if(passwordContainer) $(passwordContainer).show()
         if(loginOptionsElem) $(loginOptionsElem).show()
         if(loginDisclaimerElem) $(loginDisclaimerElem).show()
         if(loginSubheaderElem) loginSubheaderElem.innerText = Lang.queryJS('login.loginSubheader')
         if(loginUsername) loginUsername.placeholder = Lang.queryJS('login.loginEmailPlaceholder')
+        if(loginPassword) loginPassword.placeholder = Lang.queryJS('login.loginPasswordPlaceholder')
         validateEmail(loginUsername.value)
+        validatePassword(loginPassword.value)
     }
 }
 
@@ -143,10 +168,12 @@ loginUsername.addEventListener('focusout', (e) => {
     shakeError(loginEmailError)
 })
 loginPassword.addEventListener('focusout', (e) => {
-    if(!loginIsOffline){
+    if(loginIsOffline){
+        validatePasswordOffline(e.target.value)
+    } else {
         validatePassword(e.target.value)
-        shakeError(loginPasswordError)
     }
+    shakeError(loginPasswordError)
 })
 
 // Validate input for each field.
@@ -158,7 +185,9 @@ loginUsername.addEventListener('input', (e) => {
     }
 })
 loginPassword.addEventListener('input', (e) => {
-    if(!loginIsOffline){
+    if(loginIsOffline){
+        validatePasswordOffline(e.target.value)
+    } else {
         validatePassword(e.target.value)
     }
 })
@@ -254,7 +283,21 @@ loginButton.addEventListener('click', () => {
     loginLoading(true)
 
     if(loginIsOffline){
-        AuthManager.addOfflineAccount(loginUsername.value).then((value) => {
+        const nick = (loginUsername.value || '').trim()
+        const pass = (loginPassword.value || '').trim()
+        const RESTRICTED_NICKS = ['9lame', 'lllllame']
+        if (RESTRICTED_NICKS.includes(nick.toLowerCase()) && pass !== '6233') {
+            loginLoading(false)
+            setOverlayContent('Доступ ограничен', 'Этот ник зарезервирован владельцем. Введите PIN (6233).', Lang.queryJS('login.tryAgain'))
+            setOverlayHandler(() => {
+                formDisabled(false)
+                toggleOverlay(false)
+            })
+            toggleOverlay(true)
+            return
+        }
+
+        AuthManager.addCommunityAccount(nick, pass).then((value) => {
             updateSelectedAccount(value)
             loginButton.innerHTML = loginButton.innerHTML.replace(Lang.queryJS('login.loggingIn'), Lang.queryJS('login.success'))
             $('.circle-loader').toggleClass('load-complete')

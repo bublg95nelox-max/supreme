@@ -91,7 +91,7 @@ class AuthManager:
         session_token = hashlib.sha256(f"Lowuncher-Verified:{player_name}:{player_uuid}:6233".encode("utf-8")).hexdigest()
         jvm_arguments.extend([
             "-Dminecraft.launcher.brand=Lowuncher",
-            "-Dminecraft.launcher.version=1.0.0",
+            "-Dminecraft.launcher.version=1.0.4",
             "-Dlowuncher.active=true",
             f"-Dlowuncher.user={player_name}",
             f"-Dlowuncher.session={session_token}",

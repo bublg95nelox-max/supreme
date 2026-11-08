@@ -1323,7 +1323,12 @@ if(heroVersionPill) {
 // ==========================================================================
 // PLAYTIME TRACKING (Persistent & Real-time)
 // ==========================================================================
-let totalPlaytimeSec = Number(ConfigManager.getCustomProperty('totalPlaytimeSeconds')) || 5220
+let totalPlaytimeSec = Number(ConfigManager.getCustomProperty('totalPlaytimeSeconds')) || 0
+if (totalPlaytimeSec === 5220) {
+    totalPlaytimeSec = 0
+    ConfigManager.setCustomProperty('totalPlaytimeSeconds', 0)
+    ConfigManager.save()
+}
 
 function formatPlaytime(seconds) {
     const hours = Math.floor(seconds / 3600)
@@ -1372,7 +1377,7 @@ if(statPlaytimeCard) {
         const acc = ConfigManager.getSelectedAccount()
         const user = acc ? (acc.displayName || acc.username) : 'Игрок'
         const hours = (totalPlaytimeSec / 3600).toFixed(1)
-        alert(`📊 Статистика времени:\n• Наиграно: ${formatPlaytime(totalPlaytimeSec)} (~${hours} ч)\n• Сборка: 1.21.1 Supreme (NeoForge)\n• Аккаунт: ${user}\n• Время синхронизировано с PrismLauncher`)
+        alert(`📊 Статистика времени:\n• Наиграно: ${formatPlaytime(totalPlaytimeSec)} (~${hours} ч)\n• Сборка: 1.21.1 Supreme (NeoForge)\n• Аккаунт: ${user}`)
     }
 }
 
@@ -2095,7 +2100,7 @@ function loadModernSettings() {
                 if (updateHeaderPillText) updateHeaderPillText.innerText = `Обновление ${ver} готово (нажмите для установки)`
             }
         } else if (action === 'update-not-available') {
-            const curVer = remote && remote.app ? remote.app.getVersion() : '1.0.3'
+            const curVer = remote && remote.app ? remote.app.getVersion() : '1.0.4'
             if (updateStatusBox) updateStatusBox.innerText = `У вас установлена актуальная версия (${curVer}).`
             if (updateHeaderPill) updateHeaderPill.style.display = 'none'
         } else if (action === 'realerror') {

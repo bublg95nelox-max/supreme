@@ -145,6 +145,38 @@ document.addEventListener('readystatechange', function () {
         loggerUICore.info('UICore Initializing..')
 
         function bindAllWindowControls() {
+            // Direct ID bindings for top-level macOS-style traffic dots
+            const btnClose = document.getElementById('globalBtnClose')
+            if (btnClose) {
+                btnClose.onclick = (e) => {
+                    e.stopPropagation()
+                    try { ipcRenderer.send('window-close') } catch (_e) {}
+                    try { remote.getCurrentWindow().close() } catch (_e) {}
+                }
+            }
+            const btnMax = document.getElementById('globalBtnMax')
+            if (btnMax) {
+                btnMax.onclick = (e) => {
+                    e.stopPropagation()
+                    try { ipcRenderer.send('window-maximize') } catch (_e) {}
+                    try {
+                        const win = remote.getCurrentWindow()
+                        if (win.isMaximized()) win.unmaximize()
+                        else win.maximize()
+                    } catch (_e) {}
+                    if (document.activeElement) document.activeElement.blur()
+                }
+            }
+            const btnMin = document.getElementById('globalBtnMin')
+            if (btnMin) {
+                btnMin.onclick = (e) => {
+                    e.stopPropagation()
+                    try { ipcRenderer.send('window-minimize') } catch (_e) {}
+                    try { remote.getCurrentWindow().minimize() } catch (_e) {}
+                    if (document.activeElement) document.activeElement.blur()
+                }
+            }
+
             // Bind close button
             Array.from(document.getElementsByClassName('fCb')).forEach((val) => {
                 val.onclick = (e) => {

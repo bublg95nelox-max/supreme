@@ -39,10 +39,10 @@ APPIMAGE_SOURCE=""
 # 1. Locate local AppImage if available
 if [ -n "$SCRIPT_DIR" ]; then
     for candidate in \
+        "$SCRIPT_DIR/dist/Lowuncher-1.0.4-linux-x86_64.AppImage" \
         "$SCRIPT_DIR/dist/Lowuncher-1.0.3-linux-x86_64.AppImage" \
-        "$SCRIPT_DIR/dist/Lowuncher-1.0.2-linux-x86_64.AppImage" \
+        "$SCRIPT_DIR/Lowuncher-1.0.4-linux-x86_64.AppImage" \
         "$SCRIPT_DIR/Lowuncher-1.0.3-linux-x86_64.AppImage" \
-        "$SCRIPT_DIR/Lowuncher-1.0.2-linux-x86_64.AppImage" \
         "$SCRIPT_DIR"/Lowuncher-*-linux-x86_64.AppImage \
         "$SCRIPT_DIR/Lowuncher.AppImage"; do
         if [ -f "$candidate" ]; then
@@ -54,8 +54,8 @@ fi
 
 if [ -z "$APPIMAGE_SOURCE" ]; then
     for candidate in \
+        "/mnt/games/lowuncher/dist/Lowuncher-1.0.4-linux-x86_64.AppImage" \
         "/mnt/games/lowuncher/dist/Lowuncher-1.0.3-linux-x86_64.AppImage" \
-        "/mnt/games/lowuncher/dist/Lowuncher-1.0.2-linux-x86_64.AppImage" \
         "/mnt/games/lowuncher/dist"/Lowuncher-*-linux-x86_64.AppImage; do
         if [ -f "$candidate" ]; then
             APPIMAGE_SOURCE="$candidate"
@@ -68,13 +68,13 @@ fi
 if [ -z "$APPIMAGE_SOURCE" ] || [ ! -f "$APPIMAGE_SOURCE" ]; then
     echo -e "${CYAN}▶ Загрузка актуального релиза Lowuncher с GitHub...${RESET}"
     if command -v curl &>/dev/null; then
+        curl -fSL "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.4/Lowuncher-1.0.4-linux-x86_64.AppImage" -o "$INSTALL_DIR/Lowuncher.AppImage" || \
         curl -fSL "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.3/Lowuncher-1.0.3-linux-x86_64.AppImage" -o "$INSTALL_DIR/Lowuncher.AppImage" || \
-        curl -fSL "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.2/Lowuncher-1.0.2-linux-x86_64.AppImage" -o "$INSTALL_DIR/Lowuncher.AppImage" || \
-        curl -fSL "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.1/Lowuncher-1.0.1-linux-x86_64.AppImage" -o "$INSTALL_DIR/Lowuncher.AppImage"
+        curl -fSL "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.2/Lowuncher-1.0.2-linux-x86_64.AppImage" -o "$INSTALL_DIR/Lowuncher.AppImage"
     elif command -v wget &>/dev/null; then
+        wget -q --show-progress "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.4/Lowuncher-1.0.4-linux-x86_64.AppImage" -O "$INSTALL_DIR/Lowuncher.AppImage" || \
         wget -q --show-progress "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.3/Lowuncher-1.0.3-linux-x86_64.AppImage" -O "$INSTALL_DIR/Lowuncher.AppImage" || \
-        wget -q --show-progress "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.2/Lowuncher-1.0.2-linux-x86_64.AppImage" -O "$INSTALL_DIR/Lowuncher.AppImage" || \
-        wget -q --show-progress "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.1/Lowuncher-1.0.1-linux-x86_64.AppImage" -O "$INSTALL_DIR/Lowuncher.AppImage"
+        wget -q --show-progress "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.2/Lowuncher-1.0.2-linux-x86_64.AppImage" -O "$INSTALL_DIR/Lowuncher.AppImage"
     fi
     if [ -s "$INSTALL_DIR/Lowuncher.AppImage" ]; then
         chmod +x "$INSTALL_DIR/Lowuncher.AppImage"
