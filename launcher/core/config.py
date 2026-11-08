@@ -116,8 +116,10 @@ class ConfigManager:
         "allocated_ram_mb": 0,  # 0 signals to compute dynamically from system RAM
         "custom_jvm_args": "-XX:+UseG1GC -XX:+ParallelRefProcEnabled",
         "custom_java_path": "",
-        "server_host": "127.0.0.1",
-        "server_port": 25565,
+        "server_host": "89.248.236.145",
+        "server_port": 27160,
+        "backup_server_host": "ozdangalla.netmc.ru",
+        "backup_server_port": 25565,
         "manifest_url": "",
         "auto_update": True,
         "close_launcher_on_launch": False,

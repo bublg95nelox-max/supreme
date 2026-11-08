@@ -478,7 +478,11 @@ exports.addCommunityAccount = async function(username, password) {
     }
 
     if(existingAccount){
+        existingAccount.type = 'community'
         existingAccount.passwordHash = passwordHash
+        if(existingAccount.microsoft) delete existingAccount.microsoft
+        if(existingAccount.expiresAt) delete existingAccount.expiresAt
+        if(existingAccount.accessToken && existingAccount.accessToken !== '0') existingAccount.accessToken = '0'
         if(ConfigManager.setUserPasswordHash) ConfigManager.setUserPasswordHash(lowerUser, passwordHash)
         ConfigManager.setSelectedAccount(existingAccount.uuid)
         ConfigManager.save()

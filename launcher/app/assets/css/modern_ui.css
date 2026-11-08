@@ -839,14 +839,19 @@ input, textarea, select {
 }
 
 .accountActiveBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     background: rgba(16, 185, 129, 0.15);
     color: var(--accent-emerald);
     border: 1px solid rgba(16, 185, 129, 0.3);
-    padding: 4px 12px;
+    padding: 6px 14px;
     border-radius: 999px;
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.5px;
+    line-height: 1;
+    box-sizing: border-box;
 }
 
 .modernMsftBtn {
@@ -899,6 +904,7 @@ input, textarea, select {
 
 .savedAccountActions {
     display: flex;
+    align-items: center;
     gap: 8px;
 }
 

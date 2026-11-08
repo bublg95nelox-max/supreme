@@ -11,10 +11,11 @@ const SUPREME_DISTRO = {
         {
             id: 'Lowuncher-School',
             name: 'Supreme (1.21.1 NeoForge)',
-            description: 'Сборка Supreme: Minecraft 1.21.1 + NeoForge 21.1.265 (107 модов)',
+            description: 'Сборка Supreme: Minecraft 1.21.1 + NeoForge 21.1.265 (108 модов)',
             icon: 'assets/images/SealCircle.png',
             version: '1.0.0',
-            address: 'localhost:25565',
+            address: '89.248.236.145:27160',
+            backupAddress: 'ozdangalla.netmc.ru',
             minecraftVersion: '1.21.1',
             loader: 'neoforge',
             loaderVersion: '21.1.265',

@@ -32,6 +32,45 @@ def emit_event(event_type: str, data: dict):
     print(f"[BRIDGE_EVENT] {json.dumps(payload, ensure_ascii=False)}", flush=True)
 
 
+def ensure_servers_dat(game_dir: Path):
+    """Pre-populates servers.dat in the instance game directory with official servers."""
+    try:
+        servers_file = game_dir / "servers.dat"
+        import struct
+        import gzip
+
+        def enc_str(s: str) -> bytes:
+            raw = s.encode("utf-8")
+            return struct.pack(">H", len(raw)) + raw
+
+        should_write = not servers_file.exists()
+        if servers_file.exists():
+            try:
+                raw_decomp = gzip.decompress(servers_file.read_bytes())
+                if b"89.248.236.145" not in raw_decomp:
+                    should_write = True
+            except Exception:
+                should_write = True
+
+        if should_write:
+            servers = [
+                {"name": "Supreme (Основной)", "ip": "89.248.236.145:27160"},
+                {"name": "Supreme (Резерв)", "ip": "ozdangalla.netmc.ru"},
+            ]
+            payload = b"\x0a\x00\x00\x09" + enc_str("servers") + b"\x0a" + struct.pack(">i", len(servers))
+            for s in servers:
+                payload += b"\x08" + enc_str("name") + enc_str(s["name"])
+                payload += b"\x08" + enc_str("ip") + enc_str(s["ip"])
+                payload += b"\x00"
+            payload += b"\x00"
+
+            with open(servers_file, "wb") as f:
+                f.write(gzip.compress(payload))
+            logger.info(f"Pre-populated servers.dat in {servers_file}")
+    except Exception as e:
+        logger.warning(f"Could not ensure servers.dat: {e}")
+
+
 def handle_run(args):
     game_dir = Path(args.game_dir).resolve()
     game_dir.mkdir(parents=True, exist_ok=True)
@@ -129,6 +168,9 @@ def handle_run(args):
             json.dump(session_payload, sf, indent=2)
     except Exception as e:
         logger.warning(f"Could not write lowuncher session marker: {e}")
+
+    # Ensure official multiplayer servers are pre-loaded in game
+    ensure_servers_dat(game_dir)
 
     # 5. Launch
     emit_event("progress", {"percent": 98, "status": "Запуск процесса Minecraft..."})

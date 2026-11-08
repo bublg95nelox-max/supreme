@@ -204,7 +204,7 @@ function updateSelectedAccount(authUser){
         }
         if(authUser.uuid != null){
             const skinDonor = ConfigManager.getAccountSkinDonor(authUser.uuid)
-            skinKey = skinDonor || ((authUser.type === 'offline' && authUser.displayName) ? authUser.displayName : authUser.uuid)
+            skinKey = skinDonor || (((authUser.type === 'offline' || authUser.type === 'community') && authUser.displayName) ? authUser.displayName : authUser.uuid)
             const avatarContainer = document.getElementById('avatarContainer')
             if(avatarContainer){
                 avatarContainer.style.backgroundImage = `url('https://mc-heads.net/avatar/${encodeURIComponent(skinKey)}/64')`
@@ -227,8 +227,12 @@ function updateSelectedAccount(authUser){
                 userTypeLabel.innerText = `Скин: ${skinDonor}`
             } else if(authUser.type === 'offline'){
                 userTypeLabel.innerText = 'Офлайн аккаунт'
+            } else if(authUser.type === 'community'){
+                userTypeLabel.innerText = 'Игровой профиль'
+            } else if(authUser.type === 'microsoft'){
+                userTypeLabel.innerText = 'Лицензия Microsoft'
             } else {
-                userTypeLabel.innerText = 'Аккаунт Microsoft'
+                userTypeLabel.innerText = 'Игровой профиль'
             }
         } else {
             userTypeLabel.innerText = 'Нет аккаунта'
@@ -242,7 +246,9 @@ function updateSelectedAccount(authUser){
     if(activeAccountAvatar) activeAccountAvatar.src = `https://mc-heads.net/avatar/${encodeURIComponent(skinKey)}/64`
     if(activeAccountName) activeAccountName.innerText = username
     if(activeAccountType) {
-        activeAccountType.innerText = (authUser && authUser.type === 'microsoft') ? 'Лицензия Microsoft' : 'Офлайн профиль'
+        if(authUser && authUser.type === 'community') activeAccountType.innerText = 'Логин и пароль'
+        else if(authUser && authUser.type === 'microsoft') activeAccountType.innerText = 'Лицензия Microsoft'
+        else activeAccountType.innerText = 'Офлайн профиль'
     }
 
     if(typeof updateSkinTabUI === 'function') {
@@ -1375,59 +1381,59 @@ if(statPlaytimeCard) {
 // ==========================================================================
 const nodeNet = require('net')
 
+const PRIMARY_SERVER = '89.248.236.145:27160'
+const BACKUP_SERVER = 'ozdangalla.netmc.ru:25565'
+
 async function checkLiveServerStatus() {
     const statStatusVal = document.getElementById('statStatusVal')
     const statStatusDot = document.getElementById('statStatusDot')
     if (statStatusDot) statStatusDot.className = 'statusDot statusDotChecking'
     if (statStatusVal) statStatusVal.innerText = 'Проверка...'
 
-    const configuredHost = ConfigManager.getCustomProperty('serverHost')
-    const serv = (DistroAPI.distro) ? DistroAPI.distro.getServerById(ConfigManager.getSelectedServer()) : null
-    const rawTarget = configuredHost || (serv && serv.rawServer && serv.rawServer.address)
+    function pingEndpoint(endpoint) {
+        let host = endpoint.trim()
+        let port = 25565
+        if (host.includes(':')) {
+            const parts = host.split(':')
+            host = parts[0]
+            port = Number.parseInt(parts[1], 10) || 25565
+        }
 
-    if (!rawTarget) {
-        if (statStatusDot) statStatusDot.className = 'statusDot statusDotOffline'
-        if (statStatusVal) statStatusVal.innerText = 'IP не задан'
-        return
+        return new Promise(resolve => {
+            const socket = new nodeNet.Socket()
+            let done = false
+            const timer = setTimeout(() => {
+                if (!done) {
+                    done = true
+                    socket.destroy()
+                    resolve(false)
+                }
+            }, 2500)
+
+            socket.connect(port, host, () => {
+                if (!done) {
+                    done = true
+                    clearTimeout(timer)
+                    socket.destroy()
+                    resolve(true)
+                }
+            })
+
+            socket.on('error', () => {
+                if (!done) {
+                    done = true
+                    clearTimeout(timer)
+                    socket.destroy()
+                    resolve(false)
+                }
+            })
+        })
     }
 
-    let host = rawTarget.trim()
-    let port = 25565
-    if (host.includes(':')) {
-        const parts = host.split(':')
-        host = parts[0]
-        port = Number.parseInt(parts[1], 10) || 25565
+    let isOnline = await pingEndpoint(PRIMARY_SERVER)
+    if (!isOnline) {
+        isOnline = await pingEndpoint(BACKUP_SERVER)
     }
-
-    const isOnline = await new Promise(resolve => {
-        const socket = new nodeNet.Socket()
-        let done = false
-        const timer = setTimeout(() => {
-            if (!done) {
-                done = true
-                socket.destroy()
-                resolve(false)
-            }
-        }, 2500)
-
-        socket.connect(port, host, () => {
-            if (!done) {
-                done = true
-                clearTimeout(timer)
-                socket.destroy()
-                resolve(true)
-            }
-        })
-
-        socket.on('error', () => {
-            if (!done) {
-                done = true
-                clearTimeout(timer)
-                socket.destroy()
-                resolve(false)
-            }
-        })
-    })
 
     if (isOnline) {
         if (statStatusDot) statStatusDot.className = 'statusDot statusDotOnline'
@@ -1443,8 +1449,23 @@ checkLiveServerStatus()
 
 const statStatusCard = document.getElementById('statStatusCard')
 if(statStatusCard) {
+    statStatusCard.title = 'Сервер: 89.248.236.145:27160 (Резерв: ozdangalla.netmc.ru). Нажмите, чтобы скопировать IP.'
     statStatusCard.onclick = () => {
-        checkLiveServerStatus()
+        try {
+            clipboard.writeText('89.248.236.145:27160')
+        } catch (e) {
+            console.warn('Clipboard write failed:', e)
+        }
+        const statStatusVal = document.getElementById('statStatusVal')
+        if (statStatusVal) {
+            const oldText = statStatusVal.innerText
+            statStatusVal.innerText = 'IP скопирован!'
+            setTimeout(() => {
+                checkLiveServerStatus()
+            }, 1200)
+        } else {
+            checkLiveServerStatus()
+        }
     }
 }
 
@@ -1473,6 +1494,7 @@ function renderModernAccountsList() {
     const selected = ConfigManager.getSelectedAccount()
 
     // Deduplicate accounts by displayName case-insensitively
+    // If there is both a community and a microsoft account with the same name, prefer community unless microsoft is currently selected
     const seenMap = new Map()
     for (const uuid of rawKeys) {
         const acc = accounts[uuid]
@@ -1480,9 +1502,16 @@ function renderModernAccountsList() {
         const nameLower = acc.displayName.trim().toLowerCase()
         const isCurrent = selected && selected.uuid === uuid
 
-        // Prioritize currently active account, or community account over plain offline
-        if (!seenMap.has(nameLower) || isCurrent) {
+        if (!seenMap.has(nameLower)) {
             seenMap.set(nameLower, uuid)
+        } else if (isCurrent) {
+            seenMap.set(nameLower, uuid)
+        } else {
+            const existingUuid = seenMap.get(nameLower)
+            const existingAcc = accounts[existingUuid]
+            if (existingAcc && existingAcc.type === 'microsoft' && acc.type === 'community') {
+                seenMap.set(nameLower, uuid)
+            }
         }
     }
 
@@ -1498,7 +1527,7 @@ function renderModernAccountsList() {
         const acc = accounts[uuid]
         const isCurrent = selected && selected.uuid === uuid
         const skinDonor = ConfigManager.getAccountSkinDonor(uuid)
-        const skinKey = skinDonor || ((acc.type === 'offline' && acc.displayName) ? acc.displayName : acc.uuid)
+        const skinKey = skinDonor || (((acc.type === 'offline' || acc.type === 'community') && acc.displayName) ? acc.displayName : acc.uuid)
 
         let typeLabel = 'Офлайн профиль'
         if (acc.type === 'community') typeLabel = 'Логин и пароль'
@@ -1515,8 +1544,11 @@ function renderModernAccountsList() {
                 </div>
             </div>
             <div class="savedAccountActions">
-                ${isCurrent ? '<span class="accountActiveBadge">ВЫБРАН</span>' : `<button class="modernSecondaryBtn btnSelectAcc" data-uuid="${acc.uuid}">Выбрать</button>`}
-                ${keys.length > 1 ? `<button class="modernSecondaryBtn btnDeleteAcc" data-uuid="${acc.uuid}" style="color:#ef4444;">Удалить</button>` : ''}
+                ${isCurrent 
+                    ? '<span class="accountActiveBadge">ВЫБРАН</span>' 
+                    : `<button class="modernSecondaryBtn btnSelectAcc" data-uuid="${acc.uuid}">Выбрать</button>
+                       <button class="modernSecondaryBtn btnDeleteAcc" data-uuid="${acc.uuid}" style="color:#ef4444;">Удалить</button>`
+                }
             </div>
         `
         listContainer.appendChild(item)
@@ -1537,6 +1569,7 @@ function renderModernAccountsList() {
             const uuid = btn.getAttribute('data-uuid')
             ConfigManager.removeAuthAccount(uuid)
             ConfigManager.save()
+            updateSelectedAccount(ConfigManager.getSelectedAccount())
             renderModernAccountsList()
         }
     })
