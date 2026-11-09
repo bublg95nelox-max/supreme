@@ -2133,6 +2133,11 @@ function loadModernSettings() {
         }
     }
 
+    const curAppVersion = remote && remote.app ? remote.app.getVersion() : '1.0.6'
+    const appVerLabel = document.getElementById('modernAppVersionLabel')
+    if (appVerLabel) appVerLabel.innerText = `Версия ${curAppVersion} (Release)`
+    if (updateStatusBox) updateStatusBox.innerText = `Текущая версия актуальна (${curAppVersion}).`
+
     window.addEventListener('lowuncher-autoupdate', (e) => {
         const { action, info } = e.detail || {}
         if (action === 'checking-for-update') {
@@ -2162,7 +2167,7 @@ function loadModernSettings() {
                 if (updateHeaderPillText) updateHeaderPillText.innerText = `Обновление ${ver} готово (нажмите для установки)`
             }
         } else if (action === 'update-not-available') {
-            const curVer = remote && remote.app ? remote.app.getVersion() : '1.0.5'
+            const curVer = remote && remote.app ? remote.app.getVersion() : '1.0.6'
             if (updateStatusBox) updateStatusBox.innerText = `У вас установлена актуальная версия (${curVer}).`
             if (updateHeaderPill) updateHeaderPill.style.display = 'none'
         } else if (action === 'realerror') {

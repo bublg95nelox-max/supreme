@@ -40,16 +40,12 @@ APPIMAGE_SOURCE=""
 # 1. Locate local tar.gz or AppImage if available
 if [ -n "$SCRIPT_DIR" ]; then
     for candidate in \
-        "$SCRIPT_DIR/dist/Lowuncher-1.0.5-linux-x64.tar.gz" \
-        "$SCRIPT_DIR"/Lowuncher-*-linux-x64.tar.gz \
-        "$SCRIPT_DIR/dist/Lowuncher-1.0.5-linux-x86_64.AppImage" \
-        "$SCRIPT_DIR"/Lowuncher-*-linux-x86_64.AppImage; do
+        "$SCRIPT_DIR/dist/Lowuncher-1.0.6-linux-x64.tar.gz" \
+        "$SCRIPT_DIR"/Lowuncher-1.0.6-linux-x64.tar.gz \
+        "$SCRIPT_DIR/dist"/Lowuncher-*-linux-x64.tar.gz \
+        "$SCRIPT_DIR"/Lowuncher-*-linux-x64.tar.gz; do
         if [ -f "$candidate" ]; then
-            if [[ "$candidate" == *.tar.gz ]]; then
-                ARCHIVE_SOURCE="$candidate"
-            else
-                APPIMAGE_SOURCE="$candidate"
-            fi
+            ARCHIVE_SOURCE="$candidate"
             break
         fi
     done
@@ -57,16 +53,10 @@ fi
 
 if [ -z "$ARCHIVE_SOURCE" ] && [ -z "$APPIMAGE_SOURCE" ]; then
     for candidate in \
-        "/mnt/games/lowuncher/dist/Lowuncher-1.0.5-linux-x64.tar.gz" \
-        "/mnt/games/lowuncher/dist"/Lowuncher-*-linux-x64.tar.gz \
-        "/mnt/games/lowuncher/dist/Lowuncher-1.0.5-linux-x86_64.AppImage" \
-        "/mnt/games/lowuncher/dist"/Lowuncher-*-linux-x86_64.AppImage; do
+        "/mnt/games/lowuncher/dist/Lowuncher-1.0.6-linux-x64.tar.gz" \
+        "/mnt/games/lowuncher/dist"/Lowuncher-*-linux-x64.tar.gz; do
         if [ -f "$candidate" ]; then
-            if [[ "$candidate" == *.tar.gz ]]; then
-                ARCHIVE_SOURCE="$candidate"
-            else
-                APPIMAGE_SOURCE="$candidate"
-            fi
+            ARCHIVE_SOURCE="$candidate"
             break
         fi
     done
