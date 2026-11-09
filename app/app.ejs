@@ -63,6 +63,11 @@
             -webkit-app-region: no-drag !important;
             pointer-events: auto !important;
         }
+        /* When landingContainer is active, hide globalWindowControls so header controls inside modernWindowHeader have exclusive domain */
+        body:has(#landingContainer:not([style*="display: none"])) #globalWindowControls,
+        body.view-landing #globalWindowControls {
+            display: none !important;
+        }
         .globalMacDot {
             width: 13px;
             height: 13px;

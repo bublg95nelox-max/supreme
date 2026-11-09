@@ -264,10 +264,20 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 24px;
-    -webkit-app-region: drag;
+    padding: 0 20px 0 24px;
+    -webkit-app-region: no-drag !important;
     box-sizing: border-box;
     border-top-right-radius: 16px;
+    user-select: none;
+}
+
+#modernWindowDragArea {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    height: 100%;
+    -webkit-app-region: drag !important;
+    cursor: default;
 }
 
 #windowHeaderTitle {
@@ -276,13 +286,19 @@
     color: var(--text-primary);
     font-family: 'Avenir Heavy', -apple-system, BlinkMacSystemFont, sans-serif;
     letter-spacing: 0.3px;
+    -webkit-app-region: drag !important;
 }
 
-#windowControls {
-    -webkit-app-region: no-drag;
+#modernWindowControls,
+#windowControls,
+.windowControlCluster {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 9px;
+    -webkit-app-region: no-drag !important;
+    pointer-events: auto !important;
+    padding: 6px 4px;
+    z-index: 1000;
 }
 
 /* Global inputs allow text selection and prevent drag */
@@ -292,25 +308,56 @@ input, textarea, select {
     -webkit-app-region: no-drag !important;
 }
 
+.modernWinBtn,
 .macDot {
-    width: 12px;
-    height: 12px;
+    width: 13px;
+    height: 13px;
+    min-width: 13px;
+    min-height: 13px;
     border-radius: 50%;
-    border: none;
-    cursor: pointer;
+    border: 1px solid rgba(0, 0, 0, 0.25);
+    cursor: pointer !important;
     padding: 0;
     outline: none;
-    transition: transform 0.15s ease, filter 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
+    -webkit-app-region: no-drag !important;
+    pointer-events: auto !important;
 }
 
+.modernWinBtn:hover,
 .macDot:hover {
-    transform: scale(1.15);
+    transform: scale(1.18);
     filter: brightness(1.15);
 }
 
-.macDotYellow, .macDotMin { background: #ffbd2e; }
-.macDotGreen,  .macDotMax { background: #27c93f; }
-.macDotRed,    .macDotClose { background: #ff5f56; }
+.modernWinBtnYellow, .macDotYellow, .macDotMin {
+    background: #febc2e;
+    box-shadow: 0 0 6px rgba(254, 188, 46, 0.35);
+}
+.modernWinBtnGreen, .macDotGreen, .macDotMax {
+    background: #28c840;
+    box-shadow: 0 0 6px rgba(40, 200, 64, 0.35);
+}
+.modernWinBtnRed, .macDotRed, .macDotClose {
+    background: #ff5f56;
+    box-shadow: 0 0 6px rgba(255, 95, 86, 0.35);
+}
+
+.modernWinBtn svg,
+.macDot svg {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    pointer-events: none;
+}
+
+.windowControlCluster:hover .modernWinBtn svg,
+.windowControlCluster:hover .macDot svg,
+#windowControls:hover .macDot svg {
+    opacity: 0.85;
+}
 
 /* Tab Panes */
 .modernTabPane {
@@ -530,6 +577,18 @@ input, textarea, select {
     background: rgba(45, 45, 52, 0.9);
     color: #ffffff;
     transform: translateY(-1px);
+}
+
+.heroActionBtnReport {
+    border-color: rgba(88, 101, 242, 0.45) !important;
+    color: #5865F2 !important;
+}
+
+.heroActionBtnReport:hover {
+    background: #5865F2 !important;
+    border-color: #5865F2 !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 16px rgba(88, 101, 242, 0.6) !important;
 }
 
 /* 3 Stat Cards Row */

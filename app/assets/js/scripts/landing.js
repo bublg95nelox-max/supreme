@@ -445,29 +445,53 @@ function showLaunchFailure(title, desc, err = null){
         title,
         desc,
         'Понятно',
-        'Отправить отчёт в Discord'
+        '🚨 Отправить отчёт разработчику в Discord'
     )
+    const dismissBtn = document.getElementById('overlayDismiss')
+    if (dismissBtn) {
+        dismissBtn.classList.add('overlayDiscordReportBtn')
+        dismissBtn.style.display = 'inline-flex'
+        dismissBtn.disabled = false
+    }
     setOverlayHandler(() => {
+        if (dismissBtn) dismissBtn.classList.remove('overlayDiscordReportBtn')
         toggleOverlay(false)
     })
     setDismissHandler(async () => {
-        const dismissBtn = document.getElementById('overlayDismiss')
         if (dismissBtn) {
             dismissBtn.disabled = true
-            dismissBtn.innerText = 'Отправка...'
+            dismissBtn.innerText = 'Отправка отчёта в Discord... ⏳'
         }
         try {
             const DiscordReporter = require('./assets/js/discord_reporter')
+            let combinedLogs = []
+            if (recentLaunchLogs && recentLaunchLogs.length > 0) {
+                combinedLogs.push('=== RECENT LAUNCH LOGS ===')
+                combinedLogs.push(...recentLaunchLogs.slice(-250))
+            }
+            try {
+                const serv = (DistroAPI.distro) ? DistroAPI.distro.getServerById(ConfigManager.getSelectedServer()) : null
+                const servId = (serv && serv.rawServer) ? serv.rawServer.id : 'Lowuncher-School'
+                const instanceDir = pathLib.join(ConfigManager.getInstanceDirectory(), servId)
+                const latestLogPath = pathLib.join(instanceDir, 'logs', 'latest.log')
+                if (fsExtra.existsSync(latestLogPath)) {
+                    const content = fsExtra.readFileSync(latestLogPath, 'utf8')
+                    const lines = content.split('\n')
+                    combinedLogs.push('\n=== INSTANCE LATEST.LOG (LAST 300 LINES) ===')
+                    combinedLogs.push(...lines.slice(-300))
+                }
+            } catch (_fErr) {}
+
             const res = await DiscordReporter.sendReport({
                 error: errorDetails,
-                logs: recentLaunchLogs,
+                logs: combinedLogs.length > 0 ? combinedLogs : recentLaunchLogs,
                 title: title
             })
             if (res.success) {
-                if (dismissBtn) dismissBtn.innerText = 'Отправлено ✓'
+                if (dismissBtn) dismissBtn.innerText = '✓ Отчёт успешно отправлен!'
                 const descEl = document.getElementById('overlayDesc')
-                const linkNotice = res.mclogsUrl ? `<br><br>📄 Лог на mclo.gs: <a href="${res.mclogsUrl}" target="_blank" style="color: #64b5f6;">${res.mclogsUrl}</a>` : ''
-                if (descEl) descEl.innerHTML = desc + `<br><br><b style="color: #4cd964;">✓ Отчёт успешно отправлен разработчику в Discord!</b>${linkNotice}`
+                const linkNotice = res.mclogsUrl ? `<br><span style="display:inline-block; margin-top:6px; font-size:12px; color:#cbd5e1;">📄 Лог на mclo.gs: <a href="${res.mclogsUrl}" target="_blank" style="color: #60a5fa; text-decoration: underline;">${res.mclogsUrl}</a></span>` : ''
+                if (descEl) descEl.innerHTML = desc + `<div style="margin-top: 14px; padding: 10px 14px; background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.35); border-radius: 8px; color: #4ade80; text-align: left;"><b style="color: #4ade80;">✓ Отчёт успешно отправлен разработчику в Discord!</b>${linkNotice}</div>`
             } else {
                 if (dismissBtn) {
                     dismissBtn.disabled = false
@@ -477,7 +501,7 @@ function showLaunchFailure(title, desc, err = null){
         } catch (_sendErr) {
             if (dismissBtn) {
                 dismissBtn.disabled = false
-                dismissBtn.innerText = 'Ошибка отправки'
+                dismissBtn.innerText = 'Ошибка отправки (повторить)'
             }
         }
     })
@@ -1354,6 +1378,121 @@ if(heroBtnFolder) {
         fsExtra.ensureDirSync(instanceDir)
         shell.openPath(instanceDir)
     }
+}
+
+/**
+ * Triggers a manual diagnostic report collection and dispatch to Discord.
+ * @param {HTMLElement} [btnEl] 
+ */
+async function triggerDiagnosticReport(btnEl = null) {
+    if (btnEl) {
+        btnEl.disabled = true
+        btnEl.dataset.origText = btnEl.innerHTML
+        btnEl.innerHTML = 'Сбор логов...'
+    }
+
+    try {
+        const DiscordReporter = require('./assets/js/discord_reporter')
+        let combinedLogs = []
+        if (recentLaunchLogs && recentLaunchLogs.length > 0) {
+            combinedLogs.push('=== RECENT LAUNCH LOGS ===')
+            combinedLogs.push(...recentLaunchLogs.slice(-250))
+        }
+
+        try {
+            const serv = (DistroAPI.distro) ? DistroAPI.distro.getServerById(ConfigManager.getSelectedServer()) : null
+            const servId = (serv && serv.rawServer) ? serv.rawServer.id : 'Lowuncher-School'
+            const instanceDir = pathLib.join(ConfigManager.getInstanceDirectory(), servId)
+
+            const latestLogPath = pathLib.join(instanceDir, 'logs', 'latest.log')
+            if (fsExtra.existsSync(latestLogPath)) {
+                const content = fsExtra.readFileSync(latestLogPath, 'utf8')
+                const lines = content.split('\n')
+                combinedLogs.push('\n=== INSTANCE LATEST.LOG (LAST 300 LINES) ===')
+                combinedLogs.push(...lines.slice(-300))
+            }
+
+            const crashDir = pathLib.join(instanceDir, 'crash-reports')
+            if (fsExtra.existsSync(crashDir)) {
+                const files = fsExtra.readdirSync(crashDir).filter(f => f.endsWith('.txt'))
+                if (files.length > 0) {
+                    files.sort((a, b) => {
+                        return fsExtra.statSync(pathLib.join(crashDir, b)).mtimeMs - fsExtra.statSync(pathLib.join(crashDir, a)).mtimeMs
+                    })
+                    const newestCrash = files[0]
+                    const crashContent = fsExtra.readFileSync(pathLib.join(crashDir, newestCrash), 'utf8')
+                    combinedLogs.push(`\n=== CRASH REPORT: ${newestCrash} ===`)
+                    combinedLogs.push(crashContent.slice(0, 15000))
+                }
+            }
+        } catch (_fileErr) {
+            console.warn('Could not read instance files for diagnostics:', _fileErr)
+        }
+
+        if (btnEl) btnEl.innerHTML = 'Отправка в Discord...'
+
+        const res = await DiscordReporter.sendReport({
+            title: 'Пользовательский диагностический отчёт',
+            logs: combinedLogs,
+            error: 'Пользователь запросил отправку отчёта и логов разработчику'
+        })
+
+        if (btnEl) {
+            btnEl.disabled = false
+            btnEl.innerHTML = btnEl.dataset.origText || 'Отправить отчёт в Discord'
+        }
+
+        const dismissBtn = document.getElementById('overlayDismiss')
+        if (dismissBtn) {
+            dismissBtn.classList.remove('overlayDiscordReportBtn')
+            dismissBtn.style.display = 'none'
+        }
+
+        if (res.success) {
+            const linkNotice = res.mclogsUrl ? `<br><br><span style="display:inline-block; margin-top:8px; padding:6px 12px; background:rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.3); border-radius:6px; font-size:12px;">📄 Ссылка на лог mclo.gs: <a href="${res.mclogsUrl}" target="_blank" style="color: #60a5fa; text-decoration: underline;">${res.mclogsUrl}</a></span>` : ''
+            setOverlayContent(
+                'Отчёт отправлен',
+                `Диагностические данные и логи успешно отправлены разработчику в Discord!${linkNotice}`,
+                'Закрыть'
+            )
+            setOverlayHandler(() => toggleOverlay(false))
+            setDismissHandler(null)
+            toggleOverlay(true, true)
+        } else {
+            setOverlayContent(
+                'Ошибка отправки',
+                `Не удалось отправить отчёт в Discord: ${res.error || 'Сетевой сбой'}. Проверьте подключение к интернету.`,
+                'Закрыть'
+            )
+            setOverlayHandler(() => toggleOverlay(false))
+            setDismissHandler(null)
+            toggleOverlay(true, true)
+        }
+    } catch (err) {
+        if (btnEl) {
+            btnEl.disabled = false
+            btnEl.innerHTML = btnEl.dataset.origText || 'Отправить отчёт в Discord'
+        }
+        setOverlayContent(
+            'Ошибка',
+            `Произошла ошибка при отправке отчёта: ${err.message}`,
+            'Закрыть'
+        )
+        setOverlayHandler(() => toggleOverlay(false))
+        setDismissHandler(null)
+        toggleOverlay(true, true)
+    }
+}
+
+// Dedicated Report buttons
+const heroBtnReport = document.getElementById('heroBtnReport')
+if (heroBtnReport) {
+    heroBtnReport.onclick = () => triggerDiagnosticReport(heroBtnReport)
+}
+
+const modernBtnSendReport = document.getElementById('modernBtnSendReport')
+if (modernBtnSendReport) {
+    modernBtnSendReport.onclick = () => triggerDiagnosticReport(modernBtnSendReport)
 }
 
 // Hero version pill

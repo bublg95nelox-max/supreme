@@ -140,56 +140,113 @@ $(function(){
     loggerUICore.info('UICore Initialized');
 })*/
 
-document.addEventListener('readystatechange', function () {
-    if (document.readyState === 'interactive'){
-        loggerUICore.info('UICore Initializing..')
-
-        function bindAllWindowControls() {
-            const handleClose = (e) => {
-                if (e) e.stopPropagation()
-                try { ipcRenderer.send('window-close') } catch (_e) {}
-            }
-            const handleMax = (e) => {
-                if (e) e.stopPropagation()
-                try { ipcRenderer.send('window-maximize') } catch (_e) {}
-                if (document.activeElement) document.activeElement.blur()
-            }
-            const handleMin = (e) => {
-                if (e) e.stopPropagation()
-                try { ipcRenderer.send('window-minimize') } catch (_e) {}
-                if (document.activeElement) document.activeElement.blur()
-            }
-
-            const btnClose = document.getElementById('globalBtnClose')
-            if (btnClose) btnClose.onclick = handleClose
-
-            const btnMax = document.getElementById('globalBtnMax')
-            if (btnMax) btnMax.onclick = handleMax
-
-            const btnMin = document.getElementById('globalBtnMin')
-            if (btnMin) btnMin.onclick = handleMin
-
-            // Legacy frame buttons fallback (if frame is ever unhidden)
-            Array.from(document.getElementsByClassName('fCb')).forEach((val) => {
-                val.onclick = handleClose
-            })
-            Array.from(document.getElementsByClassName('fRb')).forEach((val) => {
-                val.onclick = handleMax
-            })
-            Array.from(document.getElementsByClassName('fMb')).forEach((val) => {
-                val.onclick = handleMin
-            })
+function bindAllWindowControls() {
+    const handleClose = (e) => {
+        if (e) {
+            e.preventDefault()
+            e.stopPropagation()
         }
-        bindAllWindowControls()
-
-        ipcRenderer.on('windowMaximizeState', (_event, isMax) => {
-            document.body.classList.toggle('maximized', Boolean(isMax))
-        })
+        console.log('[WindowControl] Close requested')
+        try { ipcRenderer.send('window-close') } catch (_e) {}
         try {
-            ipcRenderer.invoke('window-get-maximize-state').then((isMax) => {
-                document.body.classList.toggle('maximized', Boolean(isMax))
-            }).catch(() => {})
+            const curWin = remote.getCurrentWindow()
+            if (curWin && !curWin.isDestroyed()) curWin.close()
         } catch (_e) {}
+    }
+    const handleMax = (e) => {
+        if (e) {
+            e.preventDefault()
+            e.stopPropagation()
+        }
+        console.log('[WindowControl] Maximize/Restore requested')
+        try { ipcRenderer.send('window-maximize') } catch (_e) {}
+        if (document.activeElement) document.activeElement.blur()
+    }
+    const handleMin = (e) => {
+        if (e) {
+            e.preventDefault()
+            e.stopPropagation()
+        }
+        console.log('[WindowControl] Minimize requested')
+        try { ipcRenderer.send('window-minimize') } catch (_e) {}
+        if (document.activeElement) document.activeElement.blur()
+    }
+
+    const bindSelector = (selector, handler) => {
+        document.querySelectorAll(selector).forEach((el) => {
+            el.onclick = handler
+        })
+    }
+
+    bindSelector('#globalBtnClose, #modernBtnClose, #btnClose, .winControlClose, .fCb', handleClose)
+    bindSelector('#globalBtnMax, #modernBtnMax, #btnMax, .winControlMax, .fRb', handleMax)
+    bindSelector('#globalBtnMin, #modernBtnMin, #btnMin, .winControlMin, .fMb', handleMin)
+
+    const dragArea = document.getElementById('modernWindowDragArea')
+    if (dragArea) {
+        dragArea.ondblclick = handleMax
+    }
+}
+window.bindAllWindowControls = bindAllWindowControls
+
+// Capture phase global delegation to guarantee clicks on traffic lights always trigger
+document.addEventListener('click', (e) => {
+    if (!e || !e.target) return
+    const closeBtn = e.target.closest('#globalBtnClose, #modernBtnClose, #btnClose, .winControlClose')
+    if (closeBtn) {
+        e.preventDefault()
+        e.stopPropagation()
+        console.log('[WindowControl Delegation] Close clicked')
+        try { ipcRenderer.send('window-close') } catch (_e) {}
+        try {
+            const curWin = remote.getCurrentWindow()
+            if (curWin && !curWin.isDestroyed()) curWin.close()
+        } catch (_e) {}
+        return
+    }
+    const maxBtn = e.target.closest('#globalBtnMax, #modernBtnMax, #btnMax, .winControlMax')
+    if (maxBtn) {
+        e.preventDefault()
+        e.stopPropagation()
+        console.log('[WindowControl Delegation] Maximize clicked')
+        try { ipcRenderer.send('window-maximize') } catch (_e) {}
+        if (document.activeElement) document.activeElement.blur()
+        return
+    }
+    const minBtn = e.target.closest('#globalBtnMin, #modernBtnMin, #btnMin, .winControlMin')
+    if (minBtn) {
+        e.preventDefault()
+        e.stopPropagation()
+        console.log('[WindowControl Delegation] Minimize clicked')
+        try { ipcRenderer.send('window-minimize') } catch (_e) {}
+        if (document.activeElement) document.activeElement.blur()
+        return
+    }
+}, true)
+
+function initUICore() {
+    loggerUICore.info('UICore Initializing..')
+    bindAllWindowControls()
+
+    ipcRenderer.on('windowMaximizeState', (_event, isMax) => {
+        document.body.classList.toggle('maximized', Boolean(isMax))
+    })
+    try {
+        ipcRenderer.invoke('window-get-maximize-state').then((isMax) => {
+            document.body.classList.toggle('maximized', Boolean(isMax))
+        }).catch(() => {})
+    } catch (_e) {}
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initUICore)
+} else {
+    initUICore()
+}
+
+document.addEventListener('readystatechange', function () {
+    if (document.readyState === 'interactive' || document.readyState === 'complete'){
+        bindAllWindowControls()
 
         // Remove focus from social media buttons once they're clicked.
         Array.from(document.getElementsByClassName('mediaURL')).map(val => {

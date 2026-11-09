@@ -56,11 +56,13 @@ function initAutoUpdater(event, data) {
 // Window control IPC channels (cross-platform reliable window actions)
 ipcMain.on('window-minimize', (event) => {
     const targetWin = BrowserWindow.fromWebContents(event.sender) || win
-    if (targetWin) targetWin.minimize()
+    console.log('[Main IPC] window-minimize received, targetWin exists:', Boolean(targetWin))
+    if (targetWin && !targetWin.isDestroyed()) targetWin.minimize()
 })
 ipcMain.on('window-maximize', (event) => {
     const targetWin = BrowserWindow.fromWebContents(event.sender) || win
-    if (targetWin) {
+    console.log('[Main IPC] window-maximize received, isMaximized:', targetWin ? targetWin.isMaximized() : null)
+    if (targetWin && !targetWin.isDestroyed()) {
         if (targetWin.isMaximized()) {
             targetWin.unmaximize()
         } else {
@@ -70,7 +72,8 @@ ipcMain.on('window-maximize', (event) => {
 })
 ipcMain.on('window-close', (event) => {
     const targetWin = BrowserWindow.fromWebContents(event.sender) || win
-    if (targetWin) targetWin.close()
+    console.log('[Main IPC] window-close received, targetWin exists:', Boolean(targetWin))
+    if (targetWin && !targetWin.isDestroyed()) targetWin.close()
 })
 ipcMain.handle('window-get-maximize-state', (event) => {
     const targetWin = BrowserWindow.fromWebContents(event.sender) || win

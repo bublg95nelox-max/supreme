@@ -1,4 +1,5 @@
 const assert = require('assert')
+const fs = require('fs')
 const path = require('path')
 const os = require('os')
 const crypto = require('crypto')
@@ -128,5 +129,18 @@ assert.strictEqual(sanitized, 'java -jar game.jar --username Player --token *** 
 assert.strictEqual(DiscordReporter.sanitizeText('password: secretPassWord123'), 'password: ***')
 assert.strictEqual(DiscordReporter.sanitizeText('MINECRAFT_AUTH_TOKEN: auth_tok_999'), 'MINECRAFT_AUTH_TOKEN: ***')
 console.log('✔ DiscordReporter sanitization (token/password masking) verified')
+
+// 12. Verify window controls and Discord diagnostic buttons in UI files
+const landingEjs = fs.readFileSync(path.join(__dirname, '../app/landing.ejs'), 'utf8')
+const modernCss = fs.readFileSync(path.join(__dirname, '../app/assets/css/modern_ui.css'), 'utf8')
+const launcherCss = fs.readFileSync(path.join(__dirname, '../app/assets/css/launcher.css'), 'utf8')
+
+assert(landingEjs.includes('id="modernWindowControls"'), 'modernWindowControls must be present in landing.ejs')
+assert(landingEjs.includes('id="modernBtnClose"'), 'modernBtnClose must be present in landing.ejs')
+assert(landingEjs.includes('id="heroBtnReport"'), 'heroBtnReport must be present in heroActionRow')
+assert(landingEjs.includes('id="modernBtnSendReport"'), 'modernBtnSendReport must be present in Settings')
+assert(modernCss.includes('-webkit-app-region: no-drag !important'), 'Window controls must have no-drag !important')
+assert(launcherCss.includes('overlayDiscordReportBtn'), 'overlayDiscordReportBtn must be styled in launcher.css')
+console.log('✔ UI window controls and Discord diagnostic button templates verified')
 
 console.log('\n--- ALL HELIOS MODIFICATION TESTS PASSED ---')

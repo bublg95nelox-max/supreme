@@ -55,6 +55,7 @@ function switchView(current, next, currentFadeTime = 500, nextFadeTime = 500, on
     }
     isViewTransitioning = true
     currentView = next
+    document.body.classList.toggle('view-landing', next === VIEWS.landing)
     $(`${current}`).fadeOut(currentFadeTime, async () => {
         try {
             await onCurrentFade()
@@ -64,6 +65,9 @@ function switchView(current, next, currentFadeTime = 500, nextFadeTime = 500, on
         $(`${next}`).fadeIn(nextFadeTime, async () => {
             try {
                 await onNextFade()
+                if (typeof window.bindAllWindowControls === 'function') {
+                    window.bindAllWindowControls()
+                }
             } catch(err) {
                 console.error('onNextFade error', err)
             } finally {
@@ -143,7 +147,12 @@ async function showMainUI(data){
         } else {
             if(isLoggedIn){
                 currentView = VIEWS.landing
-                $(VIEWS.landing).fadeIn(1000)
+                document.body.classList.add('view-landing')
+                $(VIEWS.landing).fadeIn(1000, () => {
+                    if (typeof window.bindAllWindowControls === 'function') {
+                        window.bindAllWindowControls()
+                    }
+                })
             } else {
                 loginOptionsCancelEnabled(false)
                 loginOptionsViewOnLoginSuccess = VIEWS.landing
