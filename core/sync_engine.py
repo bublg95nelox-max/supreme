@@ -3,6 +3,7 @@ Modpack synchronization engine for Lowuncher.
 Compares local game files with remote manifest.json and performs robust, transactional sync.
 """
 import os
+import sys
 import time
 import json
 import shutil
@@ -407,7 +408,21 @@ class SyncEngine:
 
             for staged_path, final_path in staged_files:
                 final_path.parent.mkdir(parents=True, exist_ok=True)
-                staged_path.replace(final_path)
+                # On Windows, antivirus or background indexing can briefly lock freshly downloaded files
+                for attempt in range(5):
+                    try:
+                        if sys.platform == "win32" and final_path.exists():
+                            try:
+                                final_path.unlink(missing_ok=True)
+                            except Exception:
+                                pass
+                        staged_path.replace(final_path)
+                        break
+                    except (PermissionError, OSError) as pe:
+                        if attempt == 4:
+                            logger.error(f"Failed to commit staged file {final_path} after 5 attempts: {pe}")
+                            raise
+                        time.sleep(0.2)
 
             # Now that all new files are successfully installed, remove obsolete files
             for obs_file in obsolete:

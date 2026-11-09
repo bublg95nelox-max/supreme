@@ -67,7 +67,21 @@ class AuthManager:
         """
         Formats options dictionary compatible with minecraft-launcher-lib.
         """
-        ram_mb = max(1024, int(allocated_ram_mb or 4096))
+        requested_ram = max(1024, int(allocated_ram_mb or 4096))
+        # Prevent JVM crash on low-RAM systems by clamping heap to available physical memory
+        try:
+            from core.config import get_total_system_ram_mb
+            total_ram = get_total_system_ram_mb()
+            if total_ram > 0:
+                safe_max = max(2048, total_ram - 1536)
+                ram_mb = min(requested_ram, safe_max)
+                if ram_mb < requested_ram:
+                    logger.info(f"Clamped RAM allocation from {requested_ram}MB to {ram_mb}MB for system stability ({total_ram}MB total)")
+            else:
+                ram_mb = requested_ram
+        except Exception:
+            ram_mb = requested_ram
+
         jvm_arguments = [
             f"-Xmx{ram_mb}M",
             f"-Xms{min(1024, ram_mb)}M",
