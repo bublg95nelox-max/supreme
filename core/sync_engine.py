@@ -83,9 +83,12 @@ def file_url_to_path(value: str) -> Path:
     parsed = urlparse(value)
     if parsed.scheme != "file":
         return Path(value)
+    from urllib.request import url2pathname
+    # If netloc is a Windows drive letter (e.g. C: in file://C:/path)
+    if len(parsed.netloc) == 2 and parsed.netloc[1] == ":":
+        return Path(url2pathname(unquote(f"{parsed.netloc}{parsed.path}")))
     if parsed.netloc and parsed.netloc not in ("", "localhost"):
         raise ValueError("UNC file:// URLs are not supported")
-    from urllib.request import url2pathname
     return Path(url2pathname(unquote(parsed.path)))
 
 
@@ -387,7 +390,7 @@ class SyncEngine:
 
                 downloaded = 0
                 if url.startswith("file://"):
-                    src_file = Path(unquote(parsed_url.path))
+                    src_file = file_url_to_path(url)
                     if not src_file.exists():
                         raise FileNotFoundError(f"Локальный файл не найден: {src_file}")
                     with open(src_file, "rb") as sf, open(temp_download, "wb") as df:

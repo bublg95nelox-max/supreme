@@ -3,6 +3,8 @@ Bridge CLI for Lowuncher.
 Acts as the communication bridge between HeliosLauncher (Node.js/Electron)
 and the Python Minecraft launch engine (minecraft-launcher-lib, Java 21, NeoForge, SyncEngine).
 """
+from __future__ import annotations
+
 import sys
 import os
 import json
@@ -12,6 +14,7 @@ import argparse
 import logging
 import signal
 from pathlib import Path
+from typing import Optional, Callable, Dict, Any, List
 
 # Ensure lowuncher root and bundled libraries are on sys.path FIRST
 _root_dir = Path(__file__).resolve().parent.parent
