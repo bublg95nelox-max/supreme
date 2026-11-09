@@ -172,7 +172,10 @@ class ConfigManager:
 
     @property
     def username(self) -> str:
-        return self._data.get("username", "Player")
+        value = self._data.get("username")
+        if not isinstance(value, str) or not value.strip():
+            return "Player"
+        return value.strip()
 
     @username.setter
     def username(self, val: str) -> None:
@@ -180,7 +183,11 @@ class ConfigManager:
 
     @property
     def allocated_ram_mb(self) -> int:
-        val = int(self._data.get("allocated_ram_mb", 0))
+        value = self._data.get("allocated_ram_mb")
+        try:
+            val = int(value)
+        except (TypeError, ValueError):
+            val = 0
         if val <= 0:
             val = calculate_recommended_ram_mb()
             self._data["allocated_ram_mb"] = val
@@ -188,11 +195,16 @@ class ConfigManager:
 
     @allocated_ram_mb.setter
     def allocated_ram_mb(self, val: int) -> None:
-        self.set("allocated_ram_mb", int(val))
+        try:
+            int_val = int(val)
+        except (TypeError, ValueError):
+            int_val = 0
+        self.set("allocated_ram_mb", int_val)
 
     @property
     def manifest_url(self) -> str:
-        return self._data.get("manifest_url", "")
+        value = self._data.get("manifest_url")
+        return value.strip() if isinstance(value, str) else ""
 
     @manifest_url.setter
     def manifest_url(self, val: str) -> None:

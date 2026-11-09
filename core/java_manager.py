@@ -242,24 +242,27 @@ class JavaManager:
         """
         if self.is_ready():
             exe = self.get_java_executable()
-            assert exe is not None
+            if not exe:
+                raise RuntimeError("Исполняемый файл Java 21 не найден, хотя рантайм числится готовым.")
             return exe
 
         if progress_callback:
             progress_callback(0, 100, "Поиск Java 21...")
 
         download_url, filename, expected_size = self.get_download_url()
-        temp_archive = self.runtime_dir / filename
+        temp_archive = self.runtime_dir / f"{filename}.part"
+        final_archive = self.runtime_dir / filename
+        temp_archive.unlink(missing_ok=True)
 
         logger.info(f"Downloading Java 21 from {download_url} -> {temp_archive}")
         if progress_callback:
             progress_callback(0, expected_size or 100, "Скачивание Java 21...")
 
-        # Download with streaming and progress
+        # Download with streaming and progress into .part file
         try:
             with self.session.get(download_url, stream=True, timeout=(10, 60), headers={"User-Agent": "Lowuncher/1.0"}) as r:
                 r.raise_for_status()
-                total_size = int(r.headers.get("content-length", expected_size))
+                total_size = int(r.headers.get("content-length", expected_size or 0))
                 downloaded = 0
                 with open(temp_archive, "wb") as f:
                     for chunk in r.iter_content(chunk_size=1024 * 64):
@@ -268,8 +271,15 @@ class JavaManager:
                             downloaded += len(chunk)
                             if progress_callback and total_size > 0:
                                 progress_callback(downloaded, total_size, "Скачивание Java 21...")
+
+            if total_size > 0 and temp_archive.stat().st_size != total_size:
+                raise IOError(f"Размер скачанного архива Java ({temp_archive.stat().st_size}) не совпадает с Content-Length ({total_size})")
+
+            temp_archive.replace(final_archive)
         except Exception:
             temp_archive.unlink(missing_ok=True)
+            if final_archive.exists():
+                final_archive.unlink(missing_ok=True)
             raise
 
         # Clean old directory if corrupted
@@ -280,17 +290,17 @@ class JavaManager:
         if progress_callback:
             progress_callback(100, 100, "Распаковка Java 21...")
 
-        logger.info(f"Extracting {temp_archive} to {self.java21_dir}")
+        logger.info(f"Extracting {final_archive} to {self.java21_dir}")
         try:
             root = self.java21_dir.resolve()
             if filename.endswith(".zip"):
-                with zipfile.ZipFile(temp_archive, "r") as zf:
+                with zipfile.ZipFile(final_archive, "r") as zf:
                     for member in zf.infolist():
                         target = (self.java21_dir / member.filename).resolve()
                         target.relative_to(root)
                     zf.extractall(self.java21_dir)
             elif filename.endswith(".tar.gz") or filename.endswith(".tgz"):
-                with tarfile.open(temp_archive, "r:gz") as tf:
+                with tarfile.open(final_archive, "r:gz") as tf:
                     for member in tf.getmembers():
                         target = (self.java21_dir / member.name).resolve()
                         if not str(target).startswith(str(root)):
@@ -305,8 +315,9 @@ class JavaManager:
         except ValueError as exc:
             raise RuntimeError(f"Unsafe Java archive: {exc}") from exc
         finally:
-            if temp_archive.exists():
-                temp_archive.unlink(missing_ok=True)
+            temp_archive.unlink(missing_ok=True)
+            if final_archive.exists():
+                final_archive.unlink(missing_ok=True)
 
         exe = self.get_java_executable()
         if not exe:

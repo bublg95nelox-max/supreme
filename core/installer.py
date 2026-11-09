@@ -42,7 +42,13 @@ class Installer:
         if not version_json.is_file() or version_json.stat().st_size < 1000:
             return False
 
-        # If it's a NeoForge version, ensure the universal jar exists in libraries
+        try:
+            profile = json.loads(version_json.read_text(encoding="utf-8"))
+        except Exception:
+            logger.warning(f"Version JSON corrupted for '{version_id}'. Marking as not installed.")
+            return False
+
+        # If it's a NeoForge version, ensure the universal jar exists in libraries and critical libraries exist
         if "neoforge" in version_id.lower():
             # version_id is like 'neoforge-21.1.265'
             parts = version_id.split("-", 1)
@@ -63,6 +69,22 @@ class Installer:
                         f"but missing or incomplete universal jar ({universal_jar}). Marking as not installed."
                     )
                     return False
+
+            # Verify client vanilla jar also exists for inherited vanilla version
+            inherits_from = profile.get("inheritsFrom", "1.21.1")
+            vanilla_jar = self.versions_dir / inherits_from / f"{inherits_from}.jar"
+            if not vanilla_jar.is_file() or vanilla_jar.stat().st_size < 10000000:
+                logger.warning(f"NeoForge '{version_id}' missing inherited vanilla jar ({vanilla_jar}).")
+                return False
+
+            # Verify downloaded library artifacts listed in profile
+            for lib in profile.get("libraries", []):
+                artifact = lib.get("downloads", {}).get("artifact")
+                if artifact and artifact.get("path"):
+                    lib_path = self.game_dir / "libraries" / artifact["path"]
+                    if not lib_path.is_file() or lib_path.stat().st_size == 0:
+                        logger.warning(f"NeoForge '{version_id}' missing library artifact: {lib_path}")
+                        return False
 
         # If it's vanilla Minecraft, ensure the client jar is intact
         if version_id == "1.21.1" or (

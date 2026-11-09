@@ -76,6 +76,19 @@ def check_free_space(target_dir: Path, required_bytes: int, safety_margin_mb: in
         )
 
 
+def file_url_to_path(value: str) -> Path:
+    """Safely converts file:// URL or local path to Path object, supporting Windows drive letters."""
+    if not isinstance(value, str):
+        return Path(value)
+    parsed = urlparse(value)
+    if parsed.scheme != "file":
+        return Path(value)
+    if parsed.netloc and parsed.netloc not in ("", "localhost"):
+        raise ValueError("UNC file:// URLs are not supported")
+    from urllib.request import url2pathname
+    return Path(url2pathname(unquote(parsed.path)))
+
+
 def cleanup_temp_files(game_dir: Path) -> None:
     """
     Removes lingering *.download files or stale .sync_staging directories
@@ -108,11 +121,15 @@ class SyncEngine:
         """
         Fetches manifest.json. Supports HTTP/HTTPS URLs and local file paths.
         """
+        if not isinstance(manifest_url, str) or not manifest_url.strip():
+            raise ValueError("URL manifest.json не задан")
+        manifest_url = manifest_url.strip()
+
         logger.info(f"Fetching manifest from {manifest_url}")
 
         # Support local file path or file:// URL
         if manifest_url.startswith("file://") or Path(manifest_url).is_file():
-            file_path = Path(unquote(urlparse(manifest_url).path)) if manifest_url.startswith("file://") else Path(manifest_url)
+            file_path = file_url_to_path(manifest_url)
             with open(file_path, "r", encoding="utf-8") as f:
                 manifest = json.load(f)
         else:
@@ -136,7 +153,48 @@ class SyncEngine:
         if not isinstance(manifest.get("files"), list):
             raise ValueError("Некорректный манифест: поле 'files' должно быть списком")
 
+        # Cache successfully loaded manifest for offline resilience
+        try:
+            cache_file = self.game_dir / ".last_manifest.json"
+            cache_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(cache_file, "w", encoding="utf-8") as cf:
+                json.dump(manifest, cf, indent=2, ensure_ascii=False)
+        except Exception:
+            pass
+
         return manifest
+
+    def verify_local_installation(self, manifest: Dict[str, Any]) -> List[str]:
+        """
+        Verifies all files in manifest against existing local files.
+        Returns a list of errors/mismatches. Empty list means installation is 100% verified.
+        """
+        invalid = []
+        for file_entry in manifest.get("files", []):
+            if not isinstance(file_entry, dict) or "path" not in file_entry:
+                continue
+            rel_p = file_entry["path"]
+            try:
+                target = safe_resolve_path(self.game_dir, rel_p)
+            except ValueError:
+                invalid.append(f"{rel_p}: unsafe path")
+                continue
+
+            if not target.is_file():
+                invalid.append(f"{rel_p}: missing")
+                continue
+
+            expected_size = file_entry.get("size")
+            if expected_size is not None and target.stat().st_size != expected_size:
+                invalid.append(f"{rel_p}: size mismatch ({target.stat().st_size} != {expected_size})")
+                continue
+
+            expected_hash = (file_entry.get("sha256") or "").strip().lower()
+            if expected_hash and len(expected_hash) == 64:
+                actual_hash = compute_file_sha256(target)
+                if actual_hash != expected_hash:
+                    invalid.append(f"{rel_p}: sha256 mismatch")
+        return invalid
 
     def plan_sync(self, manifest: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[Path]]:
         """
@@ -406,23 +464,42 @@ class SyncEngine:
             if progress_callback:
                 progress_callback(total_bytes, total_bytes, "Применение обновлений сборки...")
 
-            for staged_path, final_path in staged_files:
-                final_path.parent.mkdir(parents=True, exist_ok=True)
-                # On Windows, antivirus or background indexing can briefly lock freshly downloaded files
-                for attempt in range(5):
+            committed_backups: List[Tuple[Path, Path]] = []
+            try:
+                for staged_path, final_path in staged_files:
+                    final_path.parent.mkdir(parents=True, exist_ok=True)
+                    backup_path = staged_path.with_suffix(".backup")
+                    if final_path.exists():
+                        try:
+                            final_path.replace(backup_path)
+                            committed_backups.append((backup_path, final_path))
+                        except Exception:
+                            pass
+
+                    # On Windows, antivirus or background indexing can briefly lock freshly downloaded files
+                    for attempt in range(5):
+                        try:
+                            if sys.platform == "win32" and final_path.exists():
+                                try:
+                                    final_path.unlink(missing_ok=True)
+                                except Exception:
+                                    pass
+                            staged_path.replace(final_path)
+                            break
+                        except (PermissionError, OSError) as pe:
+                            if attempt == 4:
+                                logger.error(f"Failed to commit staged file {final_path} after 5 attempts: {pe}")
+                                raise
+                            time.sleep(0.2)
+            except Exception as commit_err:
+                logger.error(f"Commit interrupted: {commit_err}. Rolling back committed files...")
+                for backup_path, final_path in committed_backups:
                     try:
-                        if sys.platform == "win32" and final_path.exists():
-                            try:
-                                final_path.unlink(missing_ok=True)
-                            except Exception:
-                                pass
-                        staged_path.replace(final_path)
-                        break
-                    except (PermissionError, OSError) as pe:
-                        if attempt == 4:
-                            logger.error(f"Failed to commit staged file {final_path} after 5 attempts: {pe}")
-                            raise
-                        time.sleep(0.2)
+                        if backup_path.exists():
+                            backup_path.replace(final_path)
+                    except Exception:
+                        pass
+                raise
 
             # Now that all new files are successfully installed, remove obsolete files
             for obs_file in obsolete:
