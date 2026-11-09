@@ -120,4 +120,13 @@ assert.doesNotThrow(() => {
 })
 console.log('✔ PythonBridge.killProcessSafe validation verified')
 
+// 11. Verify DiscordReporter log sanitizer
+const DiscordReporter = require('../app/assets/js/discord_reporter')
+const sampleLog = 'java -jar game.jar --username Player --token superSecretToken12345 --ram 4096'
+const sanitized = DiscordReporter.sanitizeText(sampleLog)
+assert.strictEqual(sanitized, 'java -jar game.jar --username Player --token *** --ram 4096')
+assert.strictEqual(DiscordReporter.sanitizeText('password: secretPassWord123'), 'password: ***')
+assert.strictEqual(DiscordReporter.sanitizeText('MINECRAFT_AUTH_TOKEN: auth_tok_999'), 'MINECRAFT_AUTH_TOKEN: ***')
+console.log('✔ DiscordReporter sanitization (token/password masking) verified')
+
 console.log('\n--- ALL HELIOS MODIFICATION TESTS PASSED ---')

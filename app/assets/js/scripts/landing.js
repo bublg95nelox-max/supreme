@@ -126,6 +126,8 @@ function setLaunchEnabled(val){
     if(launchBtn) launchBtn.disabled = !val
 }
 
+let isLaunchInProgress = false
+
 // Bind launch button
 document.getElementById('launch_button').addEventListener('click', async e => {
     const PythonBridge = require('./assets/js/python_bridge')
@@ -136,12 +138,25 @@ document.getElementById('launch_button').addEventListener('click', async e => {
         if(textSpan) textSpan.innerText = 'ОСТАНОВКА...'
         launchBtn.disabled = true
         PythonBridge.killGame()
-        setTimeout(() => {
-            setGameRunningState(false)
-            toggleLaunchArea(false)
-        }, 600)
+        let checks = 0
+        const pollTimer = setInterval(() => {
+            checks++
+            if (!PythonBridge.isGameRunning() || checks >= 10) {
+                clearInterval(pollTimer)
+                setGameRunningState(false)
+                toggleLaunchArea(false)
+                setLaunchEnabled(true)
+                isLaunchInProgress = false
+            }
+        }, 200)
         return
     }
+
+    if (isLaunchInProgress) {
+        loggerLanding.warn('Launch already in progress, ignoring duplicate click.')
+        return
+    }
+    isLaunchInProgress = true
 
     loggerLanding.info('Launching game..')
     setLaunchEnabled(false)
@@ -175,8 +190,9 @@ document.getElementById('launch_button').addEventListener('click', async e => {
         }
     } catch(err) {
         loggerLanding.error('Unhandled error in during launch process.', err)
-        showLaunchFailure(Lang.queryJS('landing.launch.failureTitle'), Lang.queryJS('landing.launch.failureText'))
+        showLaunchFailure(Lang.queryJS('landing.launch.failureTitle'), Lang.queryJS('landing.launch.failureText'), err)
         setLaunchEnabled(true)
+        isLaunchInProgress = false
     }
 })
 
@@ -414,22 +430,61 @@ let mojangStatusListener = setInterval(() => refreshMojangStatuses(true), 60*60*
 // Set refresh rate to once every 5 minutes.
 let serverStatusListener = setInterval(() => refreshServerStatus(true), 300000)
 
+let recentLaunchLogs = []
+
 /**
- * Shows an error overlay, toggles off the launch area.
+ * Shows an error overlay, toggles off the launch area, and provides a Discord reporting button.
  * 
  * @param {string} title The overlay title.
  * @param {string} desc The overlay description.
+ * @param {Error|string} [err] Optional error instance or details for Discord reporting.
  */
-function showLaunchFailure(title, desc){
+function showLaunchFailure(title, desc, err = null){
+    const errorDetails = err || desc
     setOverlayContent(
         title,
         desc,
-        Lang.queryJS('landing.launch.okay')
+        'Понятно',
+        'Отправить отчёт в Discord'
     )
-    setOverlayHandler(null)
-    toggleOverlay(true)
+    setOverlayHandler(() => {
+        toggleOverlay(false)
+    })
+    setDismissHandler(async () => {
+        const dismissBtn = document.getElementById('overlayDismiss')
+        if (dismissBtn) {
+            dismissBtn.disabled = true
+            dismissBtn.innerText = 'Отправка...'
+        }
+        try {
+            const DiscordReporter = require('./assets/js/discord_reporter')
+            const res = await DiscordReporter.sendReport({
+                error: errorDetails,
+                logs: recentLaunchLogs,
+                title: title
+            })
+            if (res.success) {
+                if (dismissBtn) dismissBtn.innerText = 'Отправлено ✓'
+                const descEl = document.getElementById('overlayDesc')
+                const linkNotice = res.mclogsUrl ? `<br><br>📄 Лог на mclo.gs: <a href="${res.mclogsUrl}" target="_blank" style="color: #64b5f6;">${res.mclogsUrl}</a>` : ''
+                if (descEl) descEl.innerHTML = desc + `<br><br><b style="color: #4cd964;">✓ Отчёт успешно отправлен разработчику в Discord!</b>${linkNotice}`
+            } else {
+                if (dismissBtn) {
+                    dismissBtn.disabled = false
+                    dismissBtn.innerText = 'Повторить отправку'
+                }
+            }
+        } catch (_sendErr) {
+            if (dismissBtn) {
+                dismissBtn.disabled = false
+                dismissBtn.innerText = 'Ошибка отправки'
+            }
+        }
+    })
+    toggleOverlay(true, true)
     toggleLaunchArea(false)
     setLaunchEnabled(true)
+    isLaunchInProgress = false
 }
 
 /* System (Java) Scan */
@@ -629,6 +684,7 @@ async function dlAsync(login = true) {
         const authUser = ConfigManager.getSelectedAccount()
 
         try {
+            recentLaunchLogs = []
             if (typeof startPlaytimeTracker === 'function') startPlaytimeTracker()
             await LaunchStrategy.launch(serv, authUser, {
                 onProgress: (percent, status) => {
@@ -641,6 +697,8 @@ async function dlAsync(login = true) {
                     setGameRunningState(true)
                 },
                 onLog: (line) => {
+                    recentLaunchLogs.push(line)
+                    if (recentLaunchLogs.length > 250) recentLaunchLogs.shift()
                     if(GAME_LAUNCH_REGEX.test(line)) {
                         toggleLaunchArea(false)
                         setGameRunningState(true)
@@ -651,6 +709,7 @@ async function dlAsync(login = true) {
             setGameRunningState(false)
             toggleLaunchArea(false)
             setLaunchEnabled(true)
+            isLaunchInProgress = false
             return
         } catch(err) {
             if (typeof stopPlaytimeTracker === 'function') stopPlaytimeTracker()
@@ -659,8 +718,9 @@ async function dlAsync(login = true) {
             loggerLaunchSuite.error('Launch error:', err)
             const rawMsg = err.message || 'Не удалось запустить процесс Minecraft.'
             const hintMsg = '\n\n💡 Совет: Попробуйте перезапустить лаунчер и нажать «Играть» заново. Если файлы не докачались, лаунчер продолжит загрузку автоматически.'
-            showLaunchFailure('Ошибка запуска игры', rawMsg + hintMsg)
+            showLaunchFailure('Ошибка запуска игры', rawMsg + hintMsg, err)
             setLaunchEnabled(true)
+            isLaunchInProgress = false
             return
         }
     }

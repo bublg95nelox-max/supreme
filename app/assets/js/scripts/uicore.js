@@ -145,69 +145,39 @@ document.addEventListener('readystatechange', function () {
         loggerUICore.info('UICore Initializing..')
 
         function bindAllWindowControls() {
-            // Direct ID bindings for top-level macOS-style traffic dots
+            const handleClose = (e) => {
+                if (e) e.stopPropagation()
+                try { ipcRenderer.send('window-close') } catch (_e) {}
+            }
+            const handleMax = (e) => {
+                if (e) e.stopPropagation()
+                try { ipcRenderer.send('window-maximize') } catch (_e) {}
+                if (document.activeElement) document.activeElement.blur()
+            }
+            const handleMin = (e) => {
+                if (e) e.stopPropagation()
+                try { ipcRenderer.send('window-minimize') } catch (_e) {}
+                if (document.activeElement) document.activeElement.blur()
+            }
+
             const btnClose = document.getElementById('globalBtnClose')
-            if (btnClose) {
-                btnClose.onclick = (e) => {
-                    e.stopPropagation()
-                    try { ipcRenderer.send('window-close') } catch (_e) {}
-                    try { remote.getCurrentWindow().close() } catch (_e) {}
-                }
-            }
+            if (btnClose) btnClose.onclick = handleClose
+
             const btnMax = document.getElementById('globalBtnMax')
-            if (btnMax) {
-                btnMax.onclick = (e) => {
-                    e.stopPropagation()
-                    try { ipcRenderer.send('window-maximize') } catch (_e) {}
-                    try {
-                        const win = remote.getCurrentWindow()
-                        if (win.isMaximized()) win.unmaximize()
-                        else win.maximize()
-                    } catch (_e) {}
-                    if (document.activeElement) document.activeElement.blur()
-                }
-            }
+            if (btnMax) btnMax.onclick = handleMax
+
             const btnMin = document.getElementById('globalBtnMin')
-            if (btnMin) {
-                btnMin.onclick = (e) => {
-                    e.stopPropagation()
-                    try { ipcRenderer.send('window-minimize') } catch (_e) {}
-                    try { remote.getCurrentWindow().minimize() } catch (_e) {}
-                    if (document.activeElement) document.activeElement.blur()
-                }
-            }
+            if (btnMin) btnMin.onclick = handleMin
 
-            // Bind close button
+            // Legacy frame buttons fallback (if frame is ever unhidden)
             Array.from(document.getElementsByClassName('fCb')).forEach((val) => {
-                val.onclick = (e) => {
-                    e.stopPropagation()
-                    try { ipcRenderer.send('window-close') } catch (_e) {}
-                    try { remote.getCurrentWindow().close() } catch (_e) {}
-                }
+                val.onclick = handleClose
             })
-
-            // Bind restore down / maximize button
             Array.from(document.getElementsByClassName('fRb')).forEach((val) => {
-                val.onclick = (e) => {
-                    e.stopPropagation()
-                    try { ipcRenderer.send('window-maximize') } catch (_e) {}
-                    try {
-                        const win = remote.getCurrentWindow()
-                        if (win.isMaximized()) win.unmaximize()
-                        else win.maximize()
-                    } catch (_e) {}
-                    if (document.activeElement) document.activeElement.blur()
-                }
+                val.onclick = handleMax
             })
-
-            // Bind minimize button
             Array.from(document.getElementsByClassName('fMb')).forEach((val) => {
-                val.onclick = (e) => {
-                    e.stopPropagation()
-                    try { ipcRenderer.send('window-minimize') } catch (_e) {}
-                    try { remote.getCurrentWindow().minimize() } catch (_e) {}
-                    if (document.activeElement) document.activeElement.blur()
-                }
+                val.onclick = handleMin
             })
         }
         bindAllWindowControls()
@@ -216,10 +186,9 @@ document.addEventListener('readystatechange', function () {
             document.body.classList.toggle('maximized', Boolean(isMax))
         })
         try {
-            const curWin = remote.getCurrentWindow()
-            if (curWin && curWin.isMaximized()) {
-                document.body.classList.add('maximized')
-            }
+            ipcRenderer.invoke('window-get-maximize-state').then((isMax) => {
+                document.body.classList.toggle('maximized', Boolean(isMax))
+            }).catch(() => {})
         } catch (_e) {}
 
         // Remove focus from social media buttons once they're clicked.

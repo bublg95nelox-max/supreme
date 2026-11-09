@@ -72,6 +72,10 @@ ipcMain.on('window-close', (event) => {
     const targetWin = BrowserWindow.fromWebContents(event.sender) || win
     if (targetWin) targetWin.close()
 })
+ipcMain.handle('window-get-maximize-state', (event) => {
+    const targetWin = BrowserWindow.fromWebContents(event.sender) || win
+    return Boolean(targetWin && !targetWin.isDestroyed() && targetWin.isMaximized())
+})
 
 // Open channel to listen for update actions.
 ipcMain.on('autoUpdateAction', (event, arg, data) => {
@@ -298,6 +302,9 @@ function createWindow() {
         }
     })
     win.webContents.on('did-finish-load', () => {
+        if (win && !win.isDestroyed() && win.webContents) {
+            win.webContents.send('windowMaximizeState', win.isMaximized())
+        }
         if (lastDistroIndexDone !== null && win && !win.isDestroyed() && win.webContents) {
             win.webContents.send('distributionIndexDone', lastDistroIndexDone)
         }
