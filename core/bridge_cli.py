@@ -37,7 +37,7 @@ import urllib.error
 
 from core.java_manager import JavaManager
 from core.installer import Installer
-from core.sync_engine import SyncEngine
+from core.sync_engine import SyncEngine, SyncNetworkError
 from core.launcher import GameLauncher
 from core.auth import AuthManager
 
@@ -335,6 +335,9 @@ def handle_run(args):
     game_dir = Path(args.game_dir).resolve()
     game_dir.mkdir(parents=True, exist_ok=True)
     
+    if args.server_port is not None and not (1 <= args.server_port <= 65535):
+        raise ValueError(f"Порт сервера должен быть в диапазоне 1..65535 (получено: {args.server_port})")
+
     emit_event("progress", {"percent": 5, "status": "Инициализация параметров..."})
     
     # 1. Java Runtime Setup
@@ -372,7 +375,7 @@ def handle_run(args):
     try:
         sync_engine.sync(manifest_url, progress_callback=on_sync_progress)
         emit_event("progress", {"percent": 65, "status": "Файлы сборки синхронизированы"})
-    except Exception as e:
+    except (SyncNetworkError, TimeoutError, OSError, urllib.error.URLError) as e:
         logger.warning(f"Modpack sync encountered network issue: {e}. Checking local verified files...")
         manifest_cache = game_dir / ".last_manifest.json"
         is_locally_verified = False
@@ -401,8 +404,12 @@ def handle_run(args):
                 )
                 emit_event("progress", {"percent": 65, "status": "Файлы сборки готовы"})
             except Exception as fallback_err:
-                emit_event("error", {"message": f"Сборка повреждена или не загружена, и сеть недоступна: {fallback_err}"})
-                raise RuntimeError(f"Не удалось загрузить или проверить сборку модов: {e}") from fallback_err
+                suggestion = "Проверьте интернет-соединение или повторите запуск позже."
+                if isinstance(e, SyncNetworkError) and not e.retryable:
+                    suggestion = "Ссылка на файл сборки недоступна (код ошибки HTTP); требуется обновить manifest."
+                msg = f"Сборка повреждена или не загружена, и сеть недоступна: {e}. {suggestion}"
+                emit_event("error", {"message": msg})
+                raise RuntimeError(msg) from fallback_err
 
     # Always clean blacklisted mods before launching
     purge_blacklisted_mods(game_dir)

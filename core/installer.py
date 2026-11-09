@@ -327,19 +327,48 @@ class Installer:
                 startupinfo=startupinfo,
             )
 
+            import threading
+            import queue
+            import time
+
             installer_lines = []
             cur_pct = 50
-            if installer_proc.stdout:
-                for raw_line in iter(installer_proc.stdout.readline, ""):
+            last_output_at = time.monotonic()
+            line_queue = queue.Queue()
+
+            def stdout_reader():
+                try:
+                    if installer_proc.stdout:
+                        for raw_line in iter(installer_proc.stdout.readline, ""):
+                            line_queue.put(raw_line)
+                finally:
+                    line_queue.put(None)
+
+            reader_thread = threading.Thread(target=stdout_reader, daemon=True)
+            reader_thread.start()
+
+            while True:
+                try:
+                    raw_line = line_queue.get(timeout=0.3)
+                    if raw_line is None:
+                        break
                     line = raw_line.strip()
                     if not line:
                         continue
                     installer_lines.append(line)
                     logger.info(f"[NeoForge Installer] {line}")
+                    last_output_at = time.monotonic()
                     if progress_callback:
-                        cur_pct = min(96, cur_pct + 1 if len(installer_lines) % 6 == 0 else cur_pct)
+                        cur_pct = min(96, cur_pct + 1 if len(installer_lines) % 5 == 0 else cur_pct)
                         summary = line if len(line) < 55 else f"{line[:52]}..."
                         progress_callback(cur_pct, 100, f"Патчи NeoForge: {summary}")
+                except queue.Empty:
+                    if installer_proc.poll() is not None:
+                        break
+                    if progress_callback and (time.monotonic() - last_output_at >= 3):
+                        cur_pct = min(95, cur_pct + 1)
+                        progress_callback(cur_pct, 100, "Патчи NeoForge: компиляция и проверка библиотек...")
+                        last_output_at = time.monotonic()
 
             installer_proc.wait()
 

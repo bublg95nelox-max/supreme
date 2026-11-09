@@ -15,7 +15,38 @@ class PythonBridge {
      * @returns {boolean}
      */
     static isGameRunning() {
-        return Boolean(PythonBridge.activeProc || PythonBridge.gamePid)
+        const bridgeRunning = PythonBridge.activeProc &&
+            PythonBridge.activeProc.exitCode === null &&
+            !PythonBridge.activeProc.killed
+        return Boolean(bridgeRunning || PythonBridge.gamePid)
+    }
+
+    /**
+     * Safely terminates a process by PID without shell injection vulnerability.
+     * @param {number|string} pid 
+     */
+    static killProcessSafe(pid) {
+        const numericPid = Number.parseInt(pid, 10)
+        if (!Number.isInteger(numericPid) || numericPid <= 0) {
+            return
+        }
+        if (process.platform === 'win32') {
+            try {
+                child_process.execFile('taskkill', ['/F', '/T', '/PID', String(numericPid)], (err) => {
+                    if (err) logger.warn(`taskkill PID ${numericPid} returned:`, err.message)
+                })
+            } catch (e) {
+                logger.warn(`Failed to execute taskkill for PID ${numericPid}:`, e)
+            }
+        } else {
+            try {
+                process.kill(numericPid, 'SIGKILL')
+            } catch (e) {
+                if (e.code !== 'ESRCH') {
+                    logger.warn(`Failed to SIGKILL PID ${numericPid}:`, e)
+                }
+            }
+        }
     }
 
     /**
@@ -24,26 +55,20 @@ class PythonBridge {
     static killGame() {
         logger.info(`Terminating Minecraft... Game PID: ${PythonBridge.gamePid}, Bridge PID: ${PythonBridge.activeProc ? PythonBridge.activeProc.pid : 'none'}`)
         if (PythonBridge.gamePid) {
-            try {
-                if (process.platform === 'win32') {
-                    child_process.exec(`taskkill /F /T /PID ${PythonBridge.gamePid}`)
-                } else {
-                    process.kill(PythonBridge.gamePid, 'SIGKILL')
-                }
-            } catch (e) {
-                logger.warn(`Failed to kill game process ${PythonBridge.gamePid}:`, e)
-            }
+            PythonBridge.killProcessSafe(PythonBridge.gamePid)
             PythonBridge.gamePid = null
         }
         if (PythonBridge.activeProc) {
-            try {
-                if (process.platform === 'win32') {
-                    child_process.exec(`taskkill /F /T /PID ${PythonBridge.activeProc.pid}`)
-                } else {
-                    PythonBridge.activeProc.kill('SIGKILL')
+            if (process.platform === 'win32') {
+                if (PythonBridge.activeProc.pid) {
+                    PythonBridge.killProcessSafe(PythonBridge.activeProc.pid)
                 }
-            } catch (e) {
-                logger.warn('Failed to kill bridge process:', e)
+            } else {
+                try {
+                    PythonBridge.activeProc.kill('SIGKILL')
+                } catch (e) {
+                    logger.warn('Failed to kill bridge process:', e)
+                }
             }
             PythonBridge.activeProc = null
         }
@@ -142,14 +167,20 @@ class PythonBridge {
             if (opts.serverHost) {
                 args.push('--server-host', opts.serverHost)
             }
-            if (opts.serverPort) {
+            if (Number.isInteger(opts.serverPort) && opts.serverPort >= 1 && opts.serverPort <= 65535) {
                 args.push('--server-port', String(opts.serverPort))
             }
             if (opts.javaPath) {
                 args.push('--java-path', opts.javaPath)
             }
 
-            logger.info(`Starting Python Bridge: ${pythonExe} ${args.join(' ')}`)
+            const maskedArgs = args.map((arg, idx) => {
+                if (idx > 0 && args[idx - 1] === '--token') {
+                    return '***'
+                }
+                return arg
+            })
+            logger.info(`Starting Python Bridge: ${pythonExe} ${maskedArgs.join(' ')}`)
 
             const pyPathEnv = [
                 rootDir,
@@ -171,6 +202,27 @@ class PythonBridge {
 
             PythonBridge.activeProc = proc
             PythonBridge.gamePid = null
+
+            let settled = false
+
+            const cleanup = () => {
+                PythonBridge.activeProc = null
+                PythonBridge.gamePid = null
+            }
+
+            const resolveOnce = (val) => {
+                if (settled) return
+                settled = true
+                cleanup()
+                resolve(val)
+            }
+
+            const rejectOnce = (err) => {
+                if (settled) return
+                settled = true
+                cleanup()
+                reject(err)
+            }
 
             let lineBuffer = ''
             let lastErrorMsg = null
@@ -198,6 +250,7 @@ class PythonBridge {
                             } else if (event.type === 'error') {
                                 logger.error(`Bridge error: ${event.message}`)
                                 lastErrorMsg = event.message
+                                rejectOnce(new Error(event.message))
                             }
                         } catch (_err) {
                             logger.warn('Failed to parse bridge event:', trimmed)
@@ -217,25 +270,34 @@ class PythonBridge {
             })
 
             proc.on('close', (code) => {
-                PythonBridge.activeProc = null
-                PythonBridge.gamePid = null
+                const tail = lineBuffer.trim()
+                if (tail) {
+                    if (tail.startsWith('[BRIDGE_EVENT] ')) {
+                        try {
+                            const event = JSON.parse(tail.substring(15))
+                            if (event.type === 'error') {
+                                lastErrorMsg = event.message
+                            }
+                        } catch (_e) {}
+                    } else if (!lastErrorMsg) {
+                        lastErrorMsg = tail
+                    }
+                }
                 logger.info(`Python bridge exited with code ${code}`)
                 if (code === 0) {
-                    resolve(code)
+                    resolveOnce(code)
                 } else {
                     const desc = lastErrorMsg ? `: ${lastErrorMsg}` : ''
-                    reject(new Error(`Minecraft process or bridge exited with error code ${code}${desc}`))
+                    rejectOnce(new Error(`Minecraft process or bridge exited with error code ${code}${desc}`))
                 }
             })
 
             proc.on('error', (err) => {
-                PythonBridge.activeProc = null
-                PythonBridge.gamePid = null
                 logger.error('Failed to spawn Python bridge process:', err)
                 if (err.code === 'ENOENT') {
-                    reject(new Error(`Не удалось найти интерпретатор Python (${pythonExe}). Убедитесь, что Python 3.10+ установлен и добавлен в PATH, либо укажите переменную окружения LOWUNCHER_PYTHON.`))
+                    rejectOnce(new Error(`Не удалось найти интерпретатор Python (${pythonExe}). Убедитесь, что Python 3.10+ установлен и добавлен в PATH, либо укажите переменную окружения LOWUNCHER_PYTHON.`))
                 } else {
-                    reject(err)
+                    rejectOnce(err)
                 }
             })
         })

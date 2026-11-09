@@ -110,12 +110,47 @@ def cleanup_temp_files(game_dir: Path) -> None:
                 pass
 
 
+class SyncNetworkError(RuntimeError):
+    """Normalized network error for modpack synchronization."""
+    def __init__(self, message: str, url: Optional[str] = None, status_code: Optional[int] = None, retryable: bool = False):
+        super().__init__(message)
+        self.url = url
+        self.status_code = status_code
+        self.retryable = retryable
+
+
 class SyncEngine:
     """Synchronizes modpack files according to remote manifest with transactional safety."""
 
     def __init__(self, game_dir: Path):
         self.game_dir = game_dir
         self.headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Lowuncher/1.0"}
+        self.session = None
+        if requests is not None:
+            try:
+                from requests.adapters import HTTPAdapter
+                self.session = requests.Session()
+                self.session.headers.update(self.headers)
+                adapter = HTTPAdapter(pool_connections=16, pool_maxsize=16)
+                self.session.mount("https://", adapter)
+                self.session.mount("http://", adapter)
+            except Exception as e:
+                logger.warning(f"Could not initialize pooled HTTP session: {e}")
+                self.session = None
+
+    def close(self):
+        if self.session is not None:
+            try:
+                self.session.close()
+            except Exception:
+                pass
+            self.session = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
 
     def fetch_manifest(self, manifest_url: str) -> Dict[str, Any]:
         """
@@ -138,14 +173,64 @@ class SyncEngine:
                 raise ValueError("manifest должен использовать HTTPS URL или локальный file:// URL")
             sep = "&" if "?" in manifest_url else "?"
             url_with_cb = f"{manifest_url}{sep}_cb={int(time.time())}"
-            if requests is not None:
-                resp = requests.get(url_with_cb, headers=self.headers, timeout=(10, 15))
-                resp.raise_for_status()
-                manifest = resp.json()
+            if self.session is not None:
+                try:
+                    resp = self.session.get(url_with_cb, timeout=(10, 15))
+                    resp.raise_for_status()
+                    manifest = resp.json()
+                except requests.exceptions.HTTPError as exc:
+                    status = exc.response.status_code if exc.response is not None else None
+                    retryable = status in (408, 429) or (status is not None and status >= 500)
+                    raise SyncNetworkError(
+                        f"Сервер вернул ошибку ({status}) при загрузке manifest: {manifest_url}",
+                        url=manifest_url,
+                        status_code=status,
+                        retryable=retryable,
+                    ) from exc
+                except requests.exceptions.RequestException as exc:
+                    raise SyncNetworkError(
+                        f"Не удалось подключиться к серверу для загрузки manifest: {exc}",
+                        url=manifest_url,
+                        retryable=True,
+                    ) from exc
+            elif requests is not None:
+                try:
+                    resp = requests.get(url_with_cb, headers=self.headers, timeout=(10, 15))
+                    resp.raise_for_status()
+                    manifest = resp.json()
+                except requests.exceptions.HTTPError as exc:
+                    status = exc.response.status_code if exc.response is not None else None
+                    retryable = status in (408, 429) or (status is not None and status >= 500)
+                    raise SyncNetworkError(
+                        f"Сервер вернул ошибку ({status}) при загрузке manifest: {manifest_url}",
+                        url=manifest_url,
+                        status_code=status,
+                        retryable=retryable,
+                    ) from exc
+                except requests.exceptions.RequestException as exc:
+                    raise SyncNetworkError(
+                        f"Не удалось подключиться к серверу для загрузки manifest: {exc}",
+                        url=manifest_url,
+                        retryable=True,
+                    ) from exc
             else:
-                req = urllib.request.Request(url_with_cb, headers=self.headers)
-                with urllib.request.urlopen(req, timeout=15) as resp:
-                    manifest = json.loads(resp.read().decode("utf-8"))
+                try:
+                    req = urllib.request.Request(url_with_cb, headers=self.headers)
+                    with urllib.request.urlopen(req, timeout=15) as resp:
+                        manifest = json.loads(resp.read().decode("utf-8"))
+                except urllib.error.HTTPError as exc:
+                    raise SyncNetworkError(
+                        f"Сервер вернул ошибку ({exc.code}) при загрузке manifest: {manifest_url}",
+                        url=manifest_url,
+                        status_code=exc.code,
+                        retryable=(exc.code >= 500),
+                    ) from exc
+                except (urllib.error.URLError, TimeoutError, OSError) as exc:
+                    raise SyncNetworkError(
+                        f"Ошибка соединения при загрузке manifest: {exc}",
+                        url=manifest_url,
+                        retryable=True,
+                    ) from exc
 
         if not isinstance(manifest, dict) or "minecraft_version" not in manifest or "files" not in manifest:
             raise ValueError("Некорректная структура manifest.json: отсутствует minecraft_version или files")
@@ -363,7 +448,17 @@ class SyncEngine:
                 if attempt < max_retries:
                     time.sleep(0.5 * attempt)
 
-        raise IOError(f"Не удалось загрузить файл {raw_path} после {max_retries} попыток: {last_error}")
+        status = None
+        retryable = True
+        if requests is not None and isinstance(last_error, requests.exceptions.HTTPError):
+            status = last_error.response.status_code if last_error.response is not None else None
+            retryable = status in (408, 429) or (status is not None and status >= 500)
+        raise SyncNetworkError(
+            f"Не удалось загрузить файл {raw_path} ({status or last_error}) после {max_retries} попыток",
+            url=url,
+            status_code=status,
+            retryable=retryable,
+        ) from last_error
 
     def sync(
         self,
@@ -409,15 +504,16 @@ class SyncEngine:
         staging_dir = self.game_dir / ".sync_staging"
         staging_dir.mkdir(parents=True, exist_ok=True)
 
-        session = None
-        if requests is not None:
+        session = self.session
+        if session is None and requests is not None:
             try:
                 from requests.adapters import HTTPAdapter
-                session = requests.Session()
-                session.headers.update(self.headers)
+                self.session = requests.Session()
+                self.session.headers.update(self.headers)
                 adapter = HTTPAdapter(pool_connections=16, pool_maxsize=16)
-                session.mount("https://", adapter)
-                session.mount("http://", adapter)
+                self.session.mount("https://", adapter)
+                self.session.mount("http://", adapter)
+                session = self.session
             except Exception as e:
                 logger.warning(f"Could not initialize pooled HTTP session: {e}")
                 session = None

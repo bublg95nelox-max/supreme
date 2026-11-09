@@ -37,6 +37,46 @@ class LaunchStrategy {
     }
 
     /**
+     * Parses server address into host and port, correctly handling IPv4, IPv6, and hostnames.
+     * 
+     * @param {string} address e.g. "mc.example.com", "mc.example.com:25565", "[2001:db8::1]:25565", "[::1]"
+     * @returns {{ host: string|null, port: number|null }}
+     */
+    static parseServerAddress(address) {
+        if (!address || typeof address !== 'string') {
+            return { host: null, port: null }
+        }
+        const trimmed = address.trim()
+        if (!trimmed) {
+            return { host: null, port: null }
+        }
+
+        // Check for bracketed IPv6: [host]:port or [host]
+        const ipv6BracketMatch = trimmed.match(/^\[([a-fA-F0-9:]+)\](?::(\d+))?$/)
+        if (ipv6BracketMatch) {
+            const host = ipv6BracketMatch[1]
+            const port = ipv6BracketMatch[2] ? Number.parseInt(ipv6BracketMatch[2], 10) : 25565
+            return { host, port: (port >= 1 && port <= 65535) ? port : 25565 }
+        }
+
+        // Count colons. If more than 1 colon and not bracketed, it's a bare IPv6 address without port
+        const colonCount = (trimmed.match(/:/g) || []).length
+        if (colonCount > 1) {
+            return { host: trimmed, port: 25565 }
+        }
+
+        if (colonCount === 1) {
+            const [host, rawPort] = trimmed.split(':')
+            const parsedPort = Number.parseInt(rawPort, 10)
+            const port = (Number.isInteger(parsedPort) && parsedPort >= 1 && parsedPort <= 65535) ? parsedPort : 25565
+            return { host: host || null, port }
+        }
+
+        // No colon: host only
+        return { host: trimmed, port: 25565 }
+    }
+
+    /**
      * Coordinates the game launch using the Python launcher engine.
      * 
      * @param {Object} server The selected distribution server object
@@ -51,13 +91,11 @@ class LaunchStrategy {
         const ramMB = LaunchStrategy.resolveServerRAM(rawServer.id)
 
         let serverHost = null
-        let serverPort = 25565
+        let serverPort = null
         if (rawServer.address) {
-            const parts = rawServer.address.split(':')
-            serverHost = parts[0]
-            if (parts.length > 1) {
-                serverPort = Number.parseInt(parts[1], 10) || 25565
-            }
+            const parsed = LaunchStrategy.parseServerAddress(rawServer.address)
+            serverHost = parsed.host
+            serverPort = parsed.port
         }
 
         const cfg = getConfigManager()
