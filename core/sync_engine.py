@@ -210,6 +210,7 @@ class SyncEngine:
         staging_dir: Path,
         progress_tracker: Optional[Callable[[int], None]] = None,
         max_retries: int = 3,
+        session: Optional[Any] = None,
     ) -> Path:
         """
         Downloads a single file into staging_dir with retry logic and hash verification.
@@ -252,7 +253,17 @@ class SyncEngine:
                             if progress_tracker:
                                 progress_tracker(len(chunk))
                 else:
-                    if requests is not None:
+                    if session is not None:
+                        with session.get(url, stream=True, timeout=(15, 30)) as r:
+                            r.raise_for_status()
+                            with open(temp_download, "wb") as f:
+                                for chunk in r.iter_content(chunk_size=65536):
+                                    if chunk:
+                                        f.write(chunk)
+                                        downloaded += len(chunk)
+                                        if progress_tracker:
+                                            progress_tracker(len(chunk))
+                    elif requests is not None:
                         with requests.get(url, stream=True, headers=self.headers, timeout=(15, 30)) as r:
                             r.raise_for_status()
                             with open(temp_download, "wb") as f:
@@ -339,6 +350,19 @@ class SyncEngine:
         staging_dir = self.game_dir / ".sync_staging"
         staging_dir.mkdir(parents=True, exist_ok=True)
 
+        session = None
+        if requests is not None:
+            try:
+                from requests.adapters import HTTPAdapter
+                session = requests.Session()
+                session.headers.update(self.headers)
+                adapter = HTTPAdapter(pool_connections=16, pool_maxsize=16)
+                session.mount("https://", adapter)
+                session.mount("http://", adapter)
+            except Exception as e:
+                logger.warning(f"Could not initialize pooled HTTP session: {e}")
+                session = None
+
         downloaded_bytes = 0
         total_files = len(to_download)
         completed_files = 0
@@ -359,9 +383,9 @@ class SyncEngine:
         # Phase 1: Download all files into staging directory
         staged_files: List[Tuple[Path, Path]] = []  # (staged_path, final_target_path)
         try:
-            with ThreadPoolExecutor(max_workers=3) as pool:
+            with ThreadPoolExecutor(max_workers=8) as pool:
                 futures = {
-                    pool.submit(self._download_file_to_staging, entry, staging_dir, on_chunk): entry
+                    pool.submit(self._download_file_to_staging, entry, staging_dir, on_chunk, 3, session): entry
                     for entry in to_download
                 }
                 for future in as_completed(futures):
@@ -402,6 +426,11 @@ class SyncEngine:
             logger.error(f"Sync failed, existing installation preserved: {e}")
             raise
         finally:
+            if session:
+                try:
+                    session.close()
+                except Exception:
+                    pass
             # Always clean up staging directory
             if staging_dir.exists():
                 shutil.rmtree(staging_dir, ignore_errors=True)

@@ -657,7 +657,9 @@ async function dlAsync(login = true) {
             setGameRunningState(false)
             toggleLaunchArea(false)
             loggerLaunchSuite.error('Launch error:', err)
-            showLaunchFailure('Ошибка запуска игры', err.message || 'Не удалось запустить процесс Minecraft.')
+            const rawMsg = err.message || 'Не удалось запустить процесс Minecraft.'
+            const hintMsg = '\n\n💡 Совет: Попробуйте перезапустить лаунчер и нажать «Играть» заново. Если файлы не докачались, лаунчер продолжит загрузку автоматически.'
+            showLaunchFailure('Ошибка запуска игры', rawMsg + hintMsg)
             setLaunchEnabled(true)
             return
         }

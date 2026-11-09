@@ -432,6 +432,9 @@ def handle_run(args):
     proc.process.wait()
     if proc.process.returncode != 0:
         logger.error(f"Minecraft process exited with code {proc.process.returncode}")
+        last_logs = "\n".join(list(proc.log_history)[-8:]) if proc.log_history else ""
+        if last_logs:
+            emit_event("error", {"message": f"Minecraft аварийно завершился (код {proc.process.returncode}):\n{last_logs}"})
         sys.exit(proc.process.returncode)
 
 

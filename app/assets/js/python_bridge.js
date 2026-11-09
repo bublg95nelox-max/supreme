@@ -173,6 +173,7 @@ class PythonBridge {
             PythonBridge.gamePid = null
 
             let lineBuffer = ''
+            let lastErrorMsg = null
 
             proc.stdout.on('data', (data) => {
                 lineBuffer += data.toString()
@@ -196,6 +197,7 @@ class PythonBridge {
                                 logger.info(`[MC] ${event.line}`)
                             } else if (event.type === 'error') {
                                 logger.error(`Bridge error: ${event.message}`)
+                                lastErrorMsg = event.message
                             }
                         } catch (_err) {
                             logger.warn('Failed to parse bridge event:', trimmed)
@@ -210,6 +212,7 @@ class PythonBridge {
                 const text = data.toString().trim()
                 if (text) {
                     logger.warn(`[Bridge ERR] ${text}`)
+                    if (!lastErrorMsg) lastErrorMsg = text
                 }
             })
 
@@ -220,7 +223,8 @@ class PythonBridge {
                 if (code === 0) {
                     resolve(code)
                 } else {
-                    reject(new Error(`Minecraft process or bridge exited with error code ${code}`))
+                    const desc = lastErrorMsg ? `: ${lastErrorMsg}` : ''
+                    reject(new Error(`Minecraft process or bridge exited with error code ${code}${desc}`))
                 }
             })
 
