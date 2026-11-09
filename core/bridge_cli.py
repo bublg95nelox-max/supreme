@@ -45,8 +45,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger("lowuncher.bridge")
 
 DEFAULT_MANIFEST_URL = "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/manifest.json"
-DEFAULT_MODPACK_URL = "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.5/modpack-supreme-1.21.1.zip"
-MODPACK_VERSION = "1.0.5"
+DEFAULT_MODPACK_URL = "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.6/modpack-supreme-1.21.1.zip"
+MODPACK_VERSION = "1.0.6"
 
 
 def emit_event(event_type: str, data: dict):
@@ -219,7 +219,7 @@ def ensure_modpack(game_dir: Path, modpack_url: str = None, progress_callback=No
     try:
         req = urllib.request.Request(
             target_url,
-            headers={"User-Agent": "Lowuncher/1.0.5"}
+            headers={"User-Agent": "Lowuncher/1.0.6"}
         )
         with urllib.request.urlopen(req, timeout=60) as resp:
             total_bytes = int(resp.headers.get("Content-Length", 0))
@@ -385,7 +385,7 @@ def handle_run(args):
         session_file = game_dir / ".lowuncher_session.json"
         session_payload = {
             "launcher": "Lowuncher",
-            "version": "1.0.5",
+            "version": "1.0.6",
             "username": args.username,
             "uuid": args.uuid,
             "token": hashlib.sha256(f"Lowuncher-Verified:{args.username}:{args.uuid}:6233".encode("utf-8")).hexdigest(),
