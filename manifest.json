@@ -7,24 +7,8 @@
     "installer_url": ""
   },
   "java_version": 21,
-  "total_files": 110,
+  "total_files": 107,
   "files": [
-    {
-      "path": "mods/justcore-0.2.0.jar",
-      "sha256": "6143c22bda4b5c6c93e5ab4b52f2cd3ecf15e9f96864009257986ece3331cb5d",
-      "size": 1904072,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/justcore-0.2.0.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/justessentials-0.3.1.jar",
-      "sha256": "131a5624bc52fec43fb2d06cfeaf3ef926b70c831623b45eb5e9d414661926f7",
-      "size": 2167912,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/justessentials-0.3.1.jar",
-      "required": true,
-      "overwrite": true
-    },
     {
       "path": "mods/yeetusexperimentus-neoforge-87.0.0.jar",
       "sha256": "9117db8b5905abf18f64fdf8f8d8ca5a91c23abd0a7fa2c9986c21aa17d74e75",
@@ -878,14 +862,6 @@
       "sha256": "b524ccdace2ef8fd19f5b2074f7de1103ac5065c52553f064c00e098346c293e",
       "size": 18382,
       "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/Clumps-neoforge-1.21.1-19.0.0.1.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "defaultconfigs/justessentials-server.toml",
-      "sha256": "6bbe8819e4a51f9938407e8c605edb182600f98f9a8cfe84628420dfaa993f0d",
-      "size": 2249,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/defaultconfigs/justessentials-server.toml",
       "required": true,
       "overwrite": true
     }
