@@ -92,18 +92,20 @@ def file_url_to_path(value: str) -> Path:
     return Path(url2pathname(unquote(parsed.path)))
 
 
-def cleanup_temp_files(game_dir: Path) -> None:
+def cleanup_temp_files(game_dir: Path, clean_staging: bool = True) -> None:
     """
     Removes lingering *.download files or stale .sync_staging directories
     left behind by previous crashes or abrupt terminations.
+    If clean_staging is False, valid staged files are preserved for resume.
     """
-    staging_dir = game_dir / ".sync_staging"
-    if staging_dir.exists():
-        try:
-            shutil.rmtree(staging_dir, ignore_errors=True)
-            logger.info("Cleaned up stale .sync_staging directory")
-        except Exception as e:
-            logger.warning(f"Could not remove stale staging directory: {e}")
+    if clean_staging:
+        staging_dir = game_dir / ".sync_staging"
+        if staging_dir.exists():
+            try:
+                shutil.rmtree(staging_dir, ignore_errors=True)
+                logger.info("Cleaned up stale .sync_staging directory")
+            except Exception as e:
+                logger.warning(f"Could not remove stale staging directory: {e}")
 
     if game_dir.exists():
         for dl_file in game_dir.rglob("*.download"):
@@ -381,16 +383,37 @@ class SyncEngine:
         expected_hash = (file_entry.get("sha256") or "").strip().lower()
         if not expected_hash or len(expected_hash) != 64 or any(c not in "0123456789abcdef" for c in expected_hash):
             raise ValueError(f"Некорректный обязательный SHA-256 для {raw_path}")
+
+        # If file was already staged and matches expected SHA-256, reuse it directly (resume support)
+        if staged_target.is_file():
+            try:
+                if compute_file_sha256(staged_target) == expected_hash:
+                    logger.info(f"Using already staged and verified file: {raw_path}")
+                    if progress_tracker and file_entry.get("size"):
+                        progress_tracker(file_entry.get("size", 0))
+                    return staged_target
+                else:
+                    staged_target.unlink(missing_ok=True)
+            except Exception:
+                pass
+
+        candidate_urls = [url]
+        if "raw.githubusercontent.com" in url:
+            # Fallback mirror for raw.githubusercontent to bypass ISP throttling or packet drops
+            candidate_urls.append(f"https://ghproxy.net/{url}")
+            candidate_urls.append(url.replace("raw.githubusercontent.com", "raw.gitmirror.com"))
+
         last_error = None
 
         for attempt in range(1, max_retries + 1):
+            target_url = candidate_urls[(attempt - 1) % len(candidate_urls)]
             try:
                 if temp_download.exists():
                     temp_download.unlink(missing_ok=True)
 
                 downloaded = 0
-                if url.startswith("file://"):
-                    src_file = file_url_to_path(url)
+                if target_url.startswith("file://"):
+                    src_file = file_url_to_path(target_url)
                     if not src_file.exists():
                         raise FileNotFoundError(f"Локальный файл не найден: {src_file}")
                     with open(src_file, "rb") as sf, open(temp_download, "wb") as df:
@@ -401,7 +424,7 @@ class SyncEngine:
                                 progress_tracker(len(chunk))
                 else:
                     if session is not None:
-                        with session.get(url, stream=True, timeout=(15, 30)) as r:
+                        with session.get(target_url, stream=True, timeout=(15, 45)) as r:
                             r.raise_for_status()
                             with open(temp_download, "wb") as f:
                                 for chunk in r.iter_content(chunk_size=65536):
@@ -411,7 +434,7 @@ class SyncEngine:
                                         if progress_tracker:
                                             progress_tracker(len(chunk))
                     elif requests is not None:
-                        with requests.get(url, stream=True, headers=self.headers, timeout=(15, 30)) as r:
+                        with requests.get(target_url, stream=True, headers=self.headers, timeout=(15, 45)) as r:
                             r.raise_for_status()
                             with open(temp_download, "wb") as f:
                                 for chunk in r.iter_content(chunk_size=65536):
@@ -421,8 +444,8 @@ class SyncEngine:
                                         if progress_tracker:
                                             progress_tracker(len(chunk))
                     else:
-                        req = urllib.request.Request(url, headers=self.headers)
-                        with urllib.request.urlopen(req, timeout=30) as r:
+                        req = urllib.request.Request(target_url, headers=self.headers)
+                        with urllib.request.urlopen(req, timeout=45) as r:
                             with open(temp_download, "wb") as f:
                                 while chunk := r.read(65536):
                                     f.write(chunk)
@@ -440,16 +463,16 @@ class SyncEngine:
 
                 # Atomically promote temp_download to staged_target
                 temp_download.replace(staged_target)
-                logger.info(f"Staged and verified: {raw_path} (попытка {attempt})")
+                logger.info(f"Staged and verified: {raw_path} (попытка {attempt}, URL: {target_url})")
                 return staged_target
 
             except Exception as e:
                 last_error = e
-                logger.warning(f"Ошибка загрузки {raw_path} (попытка {attempt}/{max_retries}): {e}")
+                logger.warning(f"Ошибка загрузки {raw_path} (попытка {attempt}/{max_retries}, {target_url}): {e}")
                 if temp_download.exists():
                     temp_download.unlink(missing_ok=True)
                 if attempt < max_retries:
-                    time.sleep(0.5 * attempt)
+                    time.sleep(min(6.0, 0.8 * (1.8 ** (attempt - 1))))
 
         status = None
         retryable = True
@@ -478,7 +501,7 @@ class SyncEngine:
         5. Atomically commits staged files to game_dir.
         6. Safely cleans up obsolete files.
         """
-        cleanup_temp_files(self.game_dir)
+        cleanup_temp_files(self.game_dir, clean_staging=False)
 
         if progress_callback:
             progress_callback(0, 100, "Проверка обновлений сборки...")
@@ -540,10 +563,11 @@ class SyncEngine:
 
         # Phase 1: Download all files into staging directory
         staged_files: List[Tuple[Path, Path]] = []  # (staged_path, final_target_path)
+        sync_committed = False
         try:
-            with ThreadPoolExecutor(max_workers=8) as pool:
+            with ThreadPoolExecutor(max_workers=4) as pool:
                 futures = {
-                    pool.submit(self._download_file_to_staging, entry, staging_dir, on_chunk, 3, session): entry
+                    pool.submit(self._download_file_to_staging, entry, staging_dir, on_chunk, 5, session): entry
                     for entry in to_download
                 }
                 for future in as_completed(futures):
@@ -599,6 +623,8 @@ class SyncEngine:
                     except Exception:
                         pass
                 raise
+
+            sync_committed = True
 
             # Now that all new files are successfully installed, remove obsolete files
             for obs_file in obsolete:

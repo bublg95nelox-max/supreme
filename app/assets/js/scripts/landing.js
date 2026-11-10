@@ -35,6 +35,11 @@ const {
 // Internal Requirements
 const DiscordWrapper          = require('./assets/js/discordwrapper')
 const ProcessBuilder          = require('./assets/js/processbuilder')
+const LauncherLogger          = require('./assets/js/launcher_logger')
+
+try {
+    LauncherLogger.init()
+} catch (_initErr) {}
 
 // Launch Elements
 const launch_content          = document.getElementById('launch_content')
@@ -441,6 +446,9 @@ let recentLaunchLogs = []
  */
 function showLaunchFailure(title, desc, err = null){
     const errorDetails = err || desc
+    try {
+        LauncherLogger.error(`Launch Failure: ${title} - ${desc}`, err)
+    } catch (_e) {}
     setOverlayContent(
         title,
         desc,

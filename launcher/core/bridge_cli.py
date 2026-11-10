@@ -3,8 +3,26 @@ Bridge CLI for Lowuncher.
 Acts as the communication bridge between HeliosLauncher (Node.js/Electron)
 and the Python Minecraft launch engine (minecraft-launcher-lib, Java 21, NeoForge, SyncEngine).
 """
+from __future__ import annotations
+
 import sys
 import os
+
+# Force UTF-8 encoding on standard streams to eliminate Windows CP1251/CP866 question mark replacement characters
+if sys.platform == "win32":
+    try:
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        if hasattr(sys.stderr, "reconfigure"):
+            sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+        if hasattr(sys.stdin, "reconfigure"):
+            sys.stdin.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+    os.environ["PYTHONIOENCODING"] = "utf-8"
+    os.environ["PYTHONUTF8"] = "1"
+    os.environ["PYTHONLEGACYWINDOWSSTDIO"] = "0"
+
 import json
 import time
 import hashlib
@@ -12,6 +30,7 @@ import argparse
 import logging
 import signal
 from pathlib import Path
+from typing import Optional, Callable, Dict, Any, List
 
 # Ensure lowuncher root and bundled libraries are on sys.path FIRST
 _root_dir = Path(__file__).resolve().parent.parent
@@ -37,15 +56,16 @@ import urllib.error
 
 from core.java_manager import JavaManager
 from core.installer import Installer
-from core.sync_engine import SyncEngine
+from core.sync_engine import SyncEngine, SyncNetworkError
 from core.launcher import GameLauncher
 from core.auth import AuthManager
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("lowuncher.bridge")
 
-DEFAULT_MODPACK_URL = "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.4/modpack-supreme-1.21.1.zip"
-MODPACK_VERSION = "1.0.4"
+DEFAULT_MANIFEST_URL = "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/manifest.json"
+DEFAULT_MODPACK_URL = "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.6/modpack-supreme-1.21.1.zip"
+MODPACK_VERSION = "1.0.6"
 
 
 def emit_event(event_type: str, data: dict):
@@ -97,7 +117,7 @@ def purge_blacklisted_mods(game_dir: Path):
     """
     Purges obsolete or removed mods and their configs.
     Ensures players who downloaded earlier builds get FTB Chunks, Ultimine, Backups 2,
-    and Essentials removed automatically.
+    Essentials, and FTBChecker removed automatically.
     """
     mods_dir = game_dir / "mods"
     if mods_dir.is_dir():
@@ -106,6 +126,7 @@ def purge_blacklisted_mods(game_dir: Path):
             "*ftb*ultimine*",
             "*ftb*backup*",
             "*ftb*essential*",
+            "*ftb*checker*",
         ]
         for pattern in BLACKLIST_JARS:
             for stale in mods_dir.glob(f"{pattern}.jar"):
@@ -118,7 +139,7 @@ def purge_blacklisted_mods(game_dir: Path):
     # Also clean up obsolete FTB config files
     for conf_folder in [game_dir / "config", game_dir / "defaultconfigs"]:
         if conf_folder.is_dir():
-            for conf_pat in ["ftbchunks*", "ftbultimine*", "ftbbackups2*", "ftbessentials*"]:
+            for conf_pat in ["ftbchunks*", "ftbultimine*", "ftbbackups2*", "ftbessentials*", "ftbchecker*"]:
                 for stale_conf in conf_folder.glob(conf_pat):
                     try:
                         stale_conf.unlink()
@@ -127,18 +148,52 @@ def purge_blacklisted_mods(game_dir: Path):
                         logger.warning(f"Could not delete config {stale_conf.name}: {ex}")
 
 
-def ensure_modpack(game_dir: Path, modpack_url: str = None, progress_callback=None):
+def safe_extract_zip(
+    zf,
+    destination: Path,
+    progress_callback: Optional[Callable[[int, int, str], None]] = None,
+    msg_prefix: str = "Распаковка",
+) -> None:
     """
-    Ensures that the Supreme modpack (104 mods, configs, servers.dat) is fully installed in game_dir.
-    If mods are missing or incomplete, downloads and extracts the modpack.
+    Safely extracts a ZIP archive guarding against Path Traversal (Zip Slip).
+    Reports progress for extracted files to prevent UI freeze.
     """
+    root = destination.resolve()
+    members = [info for info in zf.infolist() if not info.is_dir() and not info.filename.startswith(("/", "\\"))]
+    total_files = max(1, len(members))
+
+    for idx, info in enumerate(members, 1):
+        target = (destination / info.filename).resolve()
+        try:
+            target.relative_to(root)
+        except ValueError as exc:
+            raise RuntimeError(f"Небезопасный путь в архиве (Zip Slip): {info.filename}") from exc
+
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with zf.open(info, "r") as source, target.open("wb") as output:
+            shutil.copyfileobj(source, output)
+
+        if progress_callback and (idx % 4 == 0 or idx == total_files):
+            pct = int((idx / total_files) * 100)
+            progress_callback(idx, total_files, f"{msg_prefix} ({idx}/{total_files})... {pct}%")
+
+
+def ensure_modpack(
+    game_dir: Path,
+    modpack_url: Optional[str] = None,
+    progress_callback: Optional[Callable[[int, int, str], None]] = None,
+):
+    """
+    Ensures that the Supreme modpack is fully installed in game_dir.
+    Verifies that EVERY required file/mod is present. If missing/corrupt, restores transactionally.
+    """
+    import zipfile
     mods_dir = game_dir / "mods"
     marker_file = game_dir / ".modpack_installed.json"
 
     # Always purge blacklisted mods first
     purge_blacklisted_mods(game_dir)
 
-    current_mods = list(mods_dir.glob("*.jar")) if mods_dir.is_dir() else []
     installed_ver = None
     if marker_file.is_file():
         try:
@@ -147,41 +202,77 @@ def ensure_modpack(game_dir: Path, modpack_url: str = None, progress_callback=No
         except Exception:
             installed_ver = None
 
-    # If already installed and has all mods, skip download
-    if len(current_mods) >= 95 and installed_ver == MODPACK_VERSION:
-        logger.info(f"Modpack {MODPACK_VERSION} already installed ({len(current_mods)} mods).")
-        if progress_callback:
-            progress_callback(100, 100, f"Сборка модов готова ({len(current_mods)} модов)")
-        return
+    # 1. If manifest cache is available, verify all files by size and SHA-256
+    manifest_cache = game_dir / ".last_manifest.json"
+    if manifest_cache.is_file() and installed_ver == MODPACK_VERSION:
+        try:
+            with open(manifest_cache, "r", encoding="utf-8") as mf:
+                m_data = json.load(mf)
+            sync_eng = SyncEngine(game_dir)
+            invalid = sync_eng.verify_local_installation(m_data)
+            if not invalid:
+                mod_count = len(list(mods_dir.glob("*.jar"))) if mods_dir.is_dir() else 0
+                logger.info(f"Modpack {MODPACK_VERSION} verified: all files intact ({mod_count} mods).")
+                if progress_callback:
+                    progress_callback(100, 100, f"Сборка модов готова ({mod_count} модов)")
+                return
+            logger.warning(f"Local installation has invalid/missing files: {invalid[:5]}")
+        except Exception as ve:
+            logger.warning(f"Could not verify install via manifest cache: {ve}")
 
-    logger.info(f"Modpack sync needed: current mods={len(current_mods)}, installed_ver={installed_ver}")
-
-    # Check local pre-bundled modpack first
+    # Check local pre-bundled modpack archive candidates
     local_candidates = [
-        _root_dir / "dist" / "modpack-supreme-1.21.1.zip",
         _root_dir / "libraries" / "modpack-supreme-1.21.1.zip",
+        _root_dir / "dist" / "modpack-supreme-1.21.1.zip",
+        Path(__file__).resolve().parent.parent / "libraries" / "modpack-supreme-1.21.1.zip",
+        Path(sys.executable).parent.parent / "libraries" / "modpack-supreme-1.21.1.zip",
     ]
+    local_zip = None
     for candidate in local_candidates:
         if candidate.is_file():
-            logger.info(f"Found local modpack archive: {candidate}")
-            if progress_callback:
-                progress_callback(50, 100, "Распаковка локальной сборки модов...")
-            import zipfile
-            with zipfile.ZipFile(candidate, "r") as zf:
-                zf.extractall(game_dir)
+            local_zip = candidate
+            break
+
+    # If local zip is available, extract to staging and commit atomically
+    if local_zip:
+        staging_dir = game_dir / ".modpack_staging"
+        shutil.rmtree(staging_dir, ignore_errors=True)
+        staging_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            with zipfile.ZipFile(local_zip, "r") as zf:
+                logger.info(f"Extracting local modpack {local_zip.name} to staging...")
+                safe_extract_zip(zf, staging_dir, progress_callback, "Распаковка модпака")
+
+            # Move staged files into game_dir
+            for staged_f in staging_dir.rglob("*"):
+                if staged_f.is_file():
+                    rel_p = staged_f.relative_to(staging_dir)
+                    dest_f = game_dir / rel_p
+                    dest_f.parent.mkdir(parents=True, exist_ok=True)
+                    staged_f.replace(dest_f)
+
             purge_blacklisted_mods(game_dir)
             mod_count = len(list((game_dir / "mods").glob("*.jar")))
-            with open(marker_file, "w", encoding="utf-8") as f:
+
+            # Atomic write of marker file
+            marker_tmp = marker_file.with_suffix(".tmp")
+            with open(marker_tmp, "w", encoding="utf-8") as f:
                 json.dump({
                     "version": MODPACK_VERSION,
                     "installed_at": time.time(),
                     "mods_count": mod_count
-                }, f, indent=2)
-            if progress_callback:
-                progress_callback(100, 100, f"Сборка модов распакована ({mod_count} модов)")
-            return
+                }, f, indent=2, ensure_ascii=False)
+            marker_tmp.replace(marker_file)
 
-    # Download from remote release URL using standard library urllib (zero external dependencies)
+            if progress_callback:
+                progress_callback(100, 100, f"Сборка модов готова ({mod_count} модов)")
+            return
+        except Exception as e:
+            logger.warning(f"Could not verify/extract from local zip {local_zip}: {e}")
+        finally:
+            shutil.rmtree(staging_dir, ignore_errors=True)
+
+    # Fallback: Download from remote release URL
     target_url = modpack_url or DEFAULT_MODPACK_URL
     logger.info(f"Downloading modpack from {target_url}...")
     tmp_zip = game_dir / ".modpack_download.tmp"
@@ -189,7 +280,7 @@ def ensure_modpack(game_dir: Path, modpack_url: str = None, progress_callback=No
     try:
         req = urllib.request.Request(
             target_url,
-            headers={"User-Agent": "Lowuncher/1.0.4"}
+            headers={"User-Agent": "Lowuncher/1.0.6"}
         )
         with urllib.request.urlopen(req, timeout=60) as resp:
             total_bytes = int(resp.headers.get("Content-Length", 0))
@@ -217,31 +308,38 @@ def ensure_modpack(game_dir: Path, modpack_url: str = None, progress_callback=No
                         if progress_callback:
                             progress_callback(downloaded, total_bytes or downloaded, msg)
 
-        if progress_callback:
-            progress_callback(downloaded, total_bytes or downloaded, "Распаковка сборки модов...")
+        # Transactional extraction of downloaded zip via staging
+        staging_dir = game_dir / ".modpack_staging"
+        shutil.rmtree(staging_dir, ignore_errors=True)
+        staging_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            with zipfile.ZipFile(tmp_zip, "r") as zf:
+                safe_extract_zip(zf, staging_dir, progress_callback, "Распаковка сборки модов")
 
-        import zipfile
-        with zipfile.ZipFile(tmp_zip, "r") as zf:
-            zf.extractall(game_dir)
+            for staged_f in staging_dir.rglob("*"):
+                if staged_f.is_file():
+                    rel_p = staged_f.relative_to(staging_dir)
+                    dest_f = game_dir / rel_p
+                    dest_f.parent.mkdir(parents=True, exist_ok=True)
+                    staged_f.replace(dest_f)
 
-        purge_blacklisted_mods(game_dir)
-        mod_count = len(list((game_dir / "mods").glob("*.jar")))
-        with open(marker_file, "w", encoding="utf-8") as f:
-            json.dump({
-                "version": MODPACK_VERSION,
-                "installed_at": time.time(),
-                "mods_count": mod_count
-            }, f, indent=2)
+            purge_blacklisted_mods(game_dir)
+            mod_count = len(list((game_dir / "mods").glob("*.jar")))
+            marker_tmp = marker_file.with_suffix(".tmp")
+            with open(marker_tmp, "w", encoding="utf-8") as f:
+                json.dump({
+                    "version": MODPACK_VERSION,
+                    "installed_at": time.time(),
+                    "mods_count": mod_count
+                }, f, indent=2, ensure_ascii=False)
+            marker_tmp.replace(marker_file)
 
-        if progress_callback:
-            progress_callback(100, 100, f"Сборка модов готова ({mod_count} модов)")
+            if progress_callback:
+                progress_callback(100, 100, f"Сборка модов готова ({mod_count} модов)")
+        finally:
+            shutil.rmtree(staging_dir, ignore_errors=True)
 
     except Exception as e:
-        if len(current_mods) >= 10:
-            logger.warning(f"Could not download modpack ({e}), using {len(current_mods)} existing mods.")
-            if progress_callback:
-                progress_callback(100, 100, f"Используется локальная сборка ({len(current_mods)} модов)")
-            return
         logger.error(f"Failed to download modpack: {e}")
         raise RuntimeError(f"Не удалось загрузить моды ({e}). Проверьте подключение к интернету.") from e
     finally:
@@ -256,6 +354,9 @@ def handle_run(args):
     game_dir = Path(args.game_dir).resolve()
     game_dir.mkdir(parents=True, exist_ok=True)
     
+    if args.server_port is not None and not (1 <= args.server_port <= 65535):
+        raise ValueError(f"Порт сервера должен быть в диапазоне 1..65535 (получено: {args.server_port})")
+
     emit_event("progress", {"percent": 5, "status": "Инициализация параметров..."})
     
     # 1. Java Runtime Setup
@@ -275,54 +376,30 @@ def handle_run(args):
             emit_event("progress", {"percent": min(35, pct), "status": status})
             
         java_path = java_mgr.ensure_java_21(progress_callback=on_java_progress)
+
+    if java_path is None:
+        raise RuntimeError("Не удалось найти или установить Java 21. Проверьте интернет, свободное место и права записи.")
+    if not java_mgr.verify_java(java_path):
+        raise RuntimeError(f"Найденный исполняемый файл Java 21 не прошёл проверку: {java_path}")
     emit_event("progress", {"percent": 35, "status": f"Java 21 готова: {java_path.name}"})
 
-    # 2. Modpack Synchronization
-    emit_event("progress", {"percent": 40, "status": "Синхронизация файлов сборки..."})
-    if getattr(args, 'manifest_url', None):
-        sync_engine = SyncEngine(game_dir)
-        def on_sync_progress(curr, total, status):
-            pct = 40 + int((curr / max(1, total)) * 25)
-            emit_event("progress", {"percent": min(65, pct), "status": status})
-        try:
-            sync_engine.sync(args.manifest_url, progress_callback=on_sync_progress)
-            emit_event("progress", {"percent": 65, "status": "Файлы сборки синхронизированы"})
-        except (TimeoutError, OSError) as e:
-            logger.warning(f"Modpack sync skipped because network is unavailable: {e}")
-            emit_event("progress", {"percent": 65, "status": "Синхронизация пропущена: сеть недоступна"})
-        except Exception:
-            logger.exception("Modpack synchronization failed")
-            emit_event("error", {"message": "Синхронизация сборки не прошла проверку целостности"})
-            raise
-    else:
-        def on_modpack_progress(curr, total, status):
-            pct = 40 + int((curr / max(1, total)) * 25)
-            emit_event("progress", {"percent": min(65, pct), "status": status})
-        ensure_modpack(
-            game_dir=game_dir,
-            modpack_url=getattr(args, 'modpack_url', None),
-            progress_callback=on_modpack_progress,
-        )
-        emit_event("progress", {"percent": 65, "status": "Файлы сборки готовы"})
-
-    # Always clean blacklisted mods before launching
-    purge_blacklisted_mods(game_dir)
-
-    # 3. Minecraft & Loader Installation
+    # 2. Minecraft & Loader Installation (Vanilla 1.21.1 + NeoForge 21.1.265)
     installer = Installer(game_dir)
-    mc_version = args.mc_version
-    loader_type = (args.loader or "vanilla").lower()
-    loader_version = args.loader_version
+    mc_version = str(getattr(args, "mc_version", "") or "1.21.1").strip()
+    if not mc_version:
+        mc_version = "1.21.1"
+    loader_type = str(getattr(args, "loader", "neoforge") or "neoforge").strip().lower()
+    loader_version = str(getattr(args, "loader_version", "") or "21.1.265").strip()
     
     def on_install_progress(curr, total, status):
-        pct = 65 + int((curr / max(1, total)) * 25)
-        emit_event("progress", {"percent": min(90, pct), "status": status})
+        pct = 35 + int((curr / max(1, total)) * 25)
+        emit_event("progress", {"percent": min(60, pct), "status": status})
 
     target_version_id = mc_version
     if loader_type == "neoforge":
         if not loader_version:
-            raise ValueError("Для NeoForge требуется указать --loader-version (например 21.1.72)")
-        emit_event("progress", {"percent": 70, "status": f"Проверка NeoForge {loader_version}..."})
+            raise ValueError("Для NeoForge требуется указать --loader-version (например 21.1.265)")
+        emit_event("progress", {"percent": 35, "status": f"Проверка NeoForge {loader_version}..."})
         target_version_id = installer.install_neoforge(
             minecraft_version=mc_version,
             neoforge_version=loader_version,
@@ -330,10 +407,68 @@ def handle_run(args):
             progress_callback=on_install_progress,
         )
     else:
-        emit_event("progress", {"percent": 70, "status": f"Проверка Minecraft {mc_version}..."})
+        emit_event("progress", {"percent": 35, "status": f"Проверка Minecraft {mc_version}..."})
         installer.install_vanilla(mc_version, progress_callback=on_install_progress)
 
-    emit_event("progress", {"percent": 90, "status": "Формирование аргументов запуска..."})
+    emit_event("progress", {"percent": 60, "status": f"Версия Minecraft {mc_version} и {loader_type} готовы"})
+
+    # 3. Modpack Synchronization via GitHub Repository Manifest
+    emit_event("progress", {"percent": 62, "status": "Синхронизация файлов сборки..."})
+    manifest_url = getattr(args, 'manifest_url', None) or DEFAULT_MANIFEST_URL
+    sync_engine = SyncEngine(game_dir)
+    def on_sync_progress(curr, total, status):
+        pct = 62 + int((curr / max(1, total)) * 28)
+        emit_event("progress", {"percent": min(90, pct), "status": status})
+
+    try:
+        sync_engine.sync(manifest_url, progress_callback=on_sync_progress)
+        emit_event("progress", {"percent": 90, "status": "Файлы сборки синхронизированы"})
+    except (SyncNetworkError, TimeoutError, OSError, urllib.error.URLError) as e:
+        logger.warning(f"Modpack sync encountered network issue: {e}. Checking local verified files...")
+        manifest_cache = game_dir / ".last_manifest.json"
+        is_locally_verified = False
+        if manifest_cache.is_file():
+            try:
+                with open(manifest_cache, "r", encoding="utf-8") as f:
+                    cached_manifest = json.load(f)
+                invalid_files = sync_engine.verify_local_installation(cached_manifest)
+                if not invalid_files:
+                    is_locally_verified = True
+                    mod_count = len(list((game_dir / "mods").glob("*.jar"))) if (game_dir / "mods").is_dir() else 0
+                    logger.info(f"Local installation verified intact ({mod_count} mods) despite network error.")
+                    emit_event("progress", {"percent": 90, "status": f"Проверенная локальная сборка готова ({mod_count} модов)"})
+                else:
+                    logger.warning(f"Local installation has invalid/missing files: {invalid_files[:5]}")
+            except Exception as ve:
+                logger.warning(f"Failed to verify local cache: {ve}")
+
+        if not is_locally_verified:
+            modpack_zip_url = getattr(args, 'modpack_url', None)
+            if modpack_zip_url:
+                logger.info("Attempting fallback ensure_modpack from provided modpack zip URL...")
+                try:
+                    ensure_modpack(
+                        game_dir=game_dir,
+                        modpack_url=modpack_zip_url,
+                        progress_callback=on_sync_progress,
+                    )
+                    emit_event("progress", {"percent": 90, "status": "Файлы сборки готовы (резерв)"})
+                    is_locally_verified = True
+                except Exception as fallback_err:
+                    logger.warning(f"Fallback ensure_modpack failed: {fallback_err}")
+
+            if not is_locally_verified:
+                suggestion = "Проверьте интернет-соединение или повторите запуск позже."
+                if isinstance(e, SyncNetworkError) and not e.retryable:
+                    suggestion = "Ссылка на файл сборки недоступна (код ошибки HTTP); требуется обновить manifest."
+                msg = f"Не удалось синхронизировать файлы сборки: {e}. {suggestion}"
+                emit_event("error", {"message": msg})
+                raise RuntimeError(msg) from e
+
+    # Always clean blacklisted mods before launching
+    purge_blacklisted_mods(game_dir)
+
+    emit_event("progress", {"percent": 92, "status": "Формирование аргументов запуска..."})
 
     # 4. Auth & Launch Options
     auth_token = os.environ.get("MINECRAFT_AUTH_TOKEN") or args.token or "0"
@@ -353,7 +488,7 @@ def handle_run(args):
         session_file = game_dir / ".lowuncher_session.json"
         session_payload = {
             "launcher": "Lowuncher",
-            "version": "1.0.4",
+            "version": "1.0.6",
             "username": args.username,
             "uuid": args.uuid,
             "token": hashlib.sha256(f"Lowuncher-Verified:{args.username}:{args.uuid}:6233".encode("utf-8")).hexdigest(),
@@ -400,6 +535,9 @@ def handle_run(args):
     proc.process.wait()
     if proc.process.returncode != 0:
         logger.error(f"Minecraft process exited with code {proc.process.returncode}")
+        last_logs = "\n".join(list(proc.log_history)[-8:]) if proc.log_history else ""
+        if last_logs:
+            emit_event("error", {"message": f"Minecraft аварийно завершился (код {proc.process.returncode}):\n{last_logs}"})
         sys.exit(proc.process.returncode)
 
 

@@ -4,6 +4,7 @@ const tls = require('tls')
 const os = require('os')
 const got = require('got')
 const { LoggerUtil } = require('helios-core')
+const LauncherLogger = require('./launcher_logger')
 
 const logger = LoggerUtil.getLogger('DiscordReporter')
 
@@ -46,20 +47,72 @@ class DiscordReporter {
         if (!logContent || typeof logContent !== 'string' || !logContent.trim()) {
             return null
         }
+        const sanitized = DiscordReporter.sanitizeText(logContent)
         try {
-            const sanitized = DiscordReporter.sanitizeText(logContent)
             const resp = await got.post('https://api.mclo.gs/1/log', {
                 form: { content: sanitized },
                 responseType: 'json',
-                timeout: 5000
+                timeout: 8000
             })
             if (resp.body && resp.body.success && resp.body.url) {
                 logger.info(`Log successfully uploaded to mclo.gs: ${resp.body.url}`)
                 return resp.body.url
             }
         } catch (err) {
-            logger.warn('Failed to upload log to mclo.gs:', err.message)
+            logger.warn('Failed to upload log directly to mclo.gs:', err.message)
         }
+
+        // Fallback: try proxy tunnel if configured
+        const proxyCandidate = process.env.HTTPS_PROXY || process.env.HTTP_PROXY || 'http://127.0.0.1:10809'
+        try {
+            const proxyUrl = new URL(proxyCandidate)
+            const formBody = 'content=' + encodeURIComponent(sanitized)
+            const proxyRes = await new Promise((resolve, reject) => {
+                const connectReq = http.request({
+                    host: proxyUrl.hostname || '127.0.0.1',
+                    port: Number.parseInt(proxyUrl.port, 10) || 10809,
+                    method: 'CONNECT',
+                    path: 'api.mclo.gs:443',
+                    timeout: 5000
+                })
+                connectReq.on('connect', (res, socket) => {
+                    if (res.statusCode !== 200) return reject(new Error(`Proxy status ${res.statusCode}`))
+                    const tlsSocket = tls.connect({ socket, servername: 'api.mclo.gs' }, () => {
+                        const req = https.request({
+                            host: 'api.mclo.gs',
+                            path: '/1/log',
+                            method: 'POST',
+                            createConnection: () => tlsSocket,
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'Content-Length': Buffer.byteLength(formBody),
+                                'User-Agent': 'Lowuncher/1.0.6'
+                            },
+                            timeout: 8000
+                        }, (resp) => {
+                            let out = ''
+                            resp.on('data', chunk => out += chunk)
+                            resp.on('end', () => resolve({ statusCode: resp.statusCode, body: out }))
+                        })
+                        req.on('error', reject)
+                        req.write(formBody)
+                        req.end()
+                    })
+                    tlsSocket.on('error', reject)
+                })
+                connectReq.on('error', reject)
+                connectReq.on('timeout', () => connectReq.destroy(new Error('Proxy connect timed out')))
+                connectReq.end()
+            })
+            if (proxyRes && proxyRes.statusCode === 200) {
+                const parsed = JSON.parse(proxyRes.body)
+                if (parsed.success && parsed.url) {
+                    logger.info(`Log successfully uploaded to mclo.gs via proxy: ${parsed.url}`)
+                    return parsed.url
+                }
+            }
+        } catch (_proxyErr) {}
+
         return null
     }
 
@@ -184,10 +237,23 @@ class DiscordReporter {
         const playerUuid = opts.uuid || (authUser ? authUser.uuid : null)
 
         let logLines = []
-        if (Array.isArray(opts.logs)) {
-            logLines = opts.logs.map(l => String(l))
-        } else if (typeof opts.logs === 'string') {
-            logLines = opts.logs.split('\n')
+
+        // 1. Always gather persistent launcher logs (disk + buffer)
+        try {
+            const diskLogs = LauncherLogger.getRecentLogs(500)
+            if (diskLogs && diskLogs.length > 0) {
+                logLines.push('=== LOWUNCHER LAUNCHER.LOG ===')
+                logLines.push(...diskLogs)
+            }
+        } catch (_logErr) {}
+
+        // 2. Append runtime logs passed by caller (e.g. from UI recentLaunchLogs or instance latest.log)
+        if (Array.isArray(opts.logs) && opts.logs.length > 0) {
+            logLines.push('\n=== ADDITIONAL / INSTANCE LOGS ===')
+            logLines.push(...opts.logs.map(l => String(l)))
+        } else if (typeof opts.logs === 'string' && opts.logs.trim()) {
+            logLines.push('\n=== ADDITIONAL / INSTANCE LOGS ===')
+            logLines.push(opts.logs.trim())
         }
 
         const rawLogText = logLines.join('\n')
@@ -197,8 +263,8 @@ class DiscordReporter {
         const freeRamGB = Math.round(os.freemem() / (1024 * 1024 * 1024))
         const sysDesc = `${os.type()} ${os.release()} (${os.arch()}), ОЗУ: ${totalRamGB} ГБ (свободно ~${freeRamGB} ГБ)`
 
-        // Recent log snippet (last 15-20 lines)
-        const logSnippet = logLines.slice(-20).join('\n').trim()
+        // Recent log snippet (last 25 lines)
+        const logSnippet = logLines.slice(-25).join('\n').trim()
 
         // 1. Prepare structured payload for Cloudflare Worker
         const workerPayload = {

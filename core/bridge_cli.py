@@ -7,6 +7,22 @@ from __future__ import annotations
 
 import sys
 import os
+
+# Force UTF-8 encoding on standard streams to eliminate Windows CP1251/CP866 question mark replacement characters
+if sys.platform == "win32":
+    try:
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        if hasattr(sys.stderr, "reconfigure"):
+            sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+        if hasattr(sys.stdin, "reconfigure"):
+            sys.stdin.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+    os.environ["PYTHONIOENCODING"] = "utf-8"
+    os.environ["PYTHONUTF8"] = "1"
+    os.environ["PYTHONLEGACYWINDOWSSTDIO"] = "0"
+
 import json
 import time
 import hashlib
@@ -367,17 +383,46 @@ def handle_run(args):
         raise RuntimeError(f"Найденный исполняемый файл Java 21 не прошёл проверку: {java_path}")
     emit_event("progress", {"percent": 35, "status": f"Java 21 готова: {java_path.name}"})
 
-    # 2. Modpack Synchronization via GitHub Repository Manifest
-    emit_event("progress", {"percent": 40, "status": "Синхронизация файлов сборки..."})
+    # 2. Minecraft & Loader Installation (Vanilla 1.21.1 + NeoForge 21.1.265)
+    installer = Installer(game_dir)
+    mc_version = str(getattr(args, "mc_version", "") or "1.21.1").strip()
+    if not mc_version:
+        mc_version = "1.21.1"
+    loader_type = str(getattr(args, "loader", "neoforge") or "neoforge").strip().lower()
+    loader_version = str(getattr(args, "loader_version", "") or "21.1.265").strip()
+    
+    def on_install_progress(curr, total, status):
+        pct = 35 + int((curr / max(1, total)) * 25)
+        emit_event("progress", {"percent": min(60, pct), "status": status})
+
+    target_version_id = mc_version
+    if loader_type == "neoforge":
+        if not loader_version:
+            raise ValueError("Для NeoForge требуется указать --loader-version (например 21.1.265)")
+        emit_event("progress", {"percent": 35, "status": f"Проверка NeoForge {loader_version}..."})
+        target_version_id = installer.install_neoforge(
+            minecraft_version=mc_version,
+            neoforge_version=loader_version,
+            java_path=java_path,
+            progress_callback=on_install_progress,
+        )
+    else:
+        emit_event("progress", {"percent": 35, "status": f"Проверка Minecraft {mc_version}..."})
+        installer.install_vanilla(mc_version, progress_callback=on_install_progress)
+
+    emit_event("progress", {"percent": 60, "status": f"Версия Minecraft {mc_version} и {loader_type} готовы"})
+
+    # 3. Modpack Synchronization via GitHub Repository Manifest
+    emit_event("progress", {"percent": 62, "status": "Синхронизация файлов сборки..."})
     manifest_url = getattr(args, 'manifest_url', None) or DEFAULT_MANIFEST_URL
     sync_engine = SyncEngine(game_dir)
     def on_sync_progress(curr, total, status):
-        pct = 40 + int((curr / max(1, total)) * 25)
-        emit_event("progress", {"percent": min(65, pct), "status": status})
+        pct = 62 + int((curr / max(1, total)) * 28)
+        emit_event("progress", {"percent": min(90, pct), "status": status})
 
     try:
         sync_engine.sync(manifest_url, progress_callback=on_sync_progress)
-        emit_event("progress", {"percent": 65, "status": "Файлы сборки синхронизированы"})
+        emit_event("progress", {"percent": 90, "status": "Файлы сборки синхронизированы"})
     except (SyncNetworkError, TimeoutError, OSError, urllib.error.URLError) as e:
         logger.warning(f"Modpack sync encountered network issue: {e}. Checking local verified files...")
         manifest_cache = game_dir / ".last_manifest.json"
@@ -391,60 +436,39 @@ def handle_run(args):
                     is_locally_verified = True
                     mod_count = len(list((game_dir / "mods").glob("*.jar"))) if (game_dir / "mods").is_dir() else 0
                     logger.info(f"Local installation verified intact ({mod_count} mods) despite network error.")
-                    emit_event("progress", {"percent": 65, "status": f"Проверенная локальная сборка готова ({mod_count} модов)"})
+                    emit_event("progress", {"percent": 90, "status": f"Проверенная локальная сборка готова ({mod_count} модов)"})
                 else:
                     logger.warning(f"Local installation has invalid/missing files: {invalid_files[:5]}")
             except Exception as ve:
                 logger.warning(f"Failed to verify local cache: {ve}")
 
         if not is_locally_verified:
-            logger.info("Attempting fallback ensure_modpack from local/remote zip...")
-            try:
-                ensure_modpack(
-                    game_dir=game_dir,
-                    modpack_url=getattr(args, 'modpack_url', None),
-                    progress_callback=on_sync_progress,
-                )
-                emit_event("progress", {"percent": 65, "status": "Файлы сборки готовы"})
-            except Exception as fallback_err:
+            modpack_zip_url = getattr(args, 'modpack_url', None)
+            if modpack_zip_url:
+                logger.info("Attempting fallback ensure_modpack from provided modpack zip URL...")
+                try:
+                    ensure_modpack(
+                        game_dir=game_dir,
+                        modpack_url=modpack_zip_url,
+                        progress_callback=on_sync_progress,
+                    )
+                    emit_event("progress", {"percent": 90, "status": "Файлы сборки готовы (резерв)"})
+                    is_locally_verified = True
+                except Exception as fallback_err:
+                    logger.warning(f"Fallback ensure_modpack failed: {fallback_err}")
+
+            if not is_locally_verified:
                 suggestion = "Проверьте интернет-соединение или повторите запуск позже."
                 if isinstance(e, SyncNetworkError) and not e.retryable:
                     suggestion = "Ссылка на файл сборки недоступна (код ошибки HTTP); требуется обновить manifest."
-                msg = f"Сборка повреждена или не загружена, и сеть недоступна: {e}. {suggestion}"
+                msg = f"Не удалось синхронизировать файлы сборки: {e}. {suggestion}"
                 emit_event("error", {"message": msg})
-                raise RuntimeError(msg) from fallback_err
+                raise RuntimeError(msg) from e
 
     # Always clean blacklisted mods before launching
     purge_blacklisted_mods(game_dir)
 
-    # 3. Minecraft & Loader Installation
-    installer = Installer(game_dir)
-    mc_version = str(getattr(args, "mc_version", "") or "1.21.1").strip()
-    if not mc_version:
-        mc_version = "1.21.1"
-    loader_type = str(getattr(args, "loader", "neoforge") or "neoforge").strip().lower()
-    loader_version = str(getattr(args, "loader_version", "") or "21.1.265").strip()
-    
-    def on_install_progress(curr, total, status):
-        pct = 65 + int((curr / max(1, total)) * 25)
-        emit_event("progress", {"percent": min(90, pct), "status": status})
-
-    target_version_id = mc_version
-    if loader_type == "neoforge":
-        if not loader_version:
-            raise ValueError("Для NeoForge требуется указать --loader-version (например 21.1.72)")
-        emit_event("progress", {"percent": 70, "status": f"Проверка NeoForge {loader_version}..."})
-        target_version_id = installer.install_neoforge(
-            minecraft_version=mc_version,
-            neoforge_version=loader_version,
-            java_path=java_path,
-            progress_callback=on_install_progress,
-        )
-    else:
-        emit_event("progress", {"percent": 70, "status": f"Проверка Minecraft {mc_version}..."})
-        installer.install_vanilla(mc_version, progress_callback=on_install_progress)
-
-    emit_event("progress", {"percent": 90, "status": "Формирование аргументов запуска..."})
+    emit_event("progress", {"percent": 92, "status": "Формирование аргументов запуска..."})
 
     # 4. Auth & Launch Options
     auth_token = os.environ.get("MINECRAFT_AUTH_TOKEN") or args.token or "0"

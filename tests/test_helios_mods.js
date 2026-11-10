@@ -143,4 +143,17 @@ assert(modernCss.includes('-webkit-app-region: no-drag !important'), 'Window con
 assert(launcherCss.includes('overlayDiscordReportBtn'), 'overlayDiscordReportBtn must be styled in launcher.css')
 console.log('✔ UI window controls and Discord diagnostic button templates verified')
 
+// 13. Verify LauncherLogger functionality & persistent logging
+const LauncherLogger = require('../app/assets/js/launcher_logger')
+LauncherLogger.init()
+LauncherLogger.info('Тестовая запись лаунчера с русским текстом')
+LauncherLogger.warn('Тестовое предупреждение с паролем: password="my_secret_password"')
+const recentLogs = LauncherLogger.getRecentLogs(20)
+assert.ok(recentLogs.length > 0, 'LauncherLogger must record log entries')
+const hasRussianText = recentLogs.some(l => l.includes('Тестовая запись лаунчера с русским текстом'))
+assert.ok(hasRussianText, 'LauncherLogger must record and preserve Russian UTF-8 text')
+const maskedLog = recentLogs.find(l => l.includes('Тестовое предупреждение'))
+assert.ok(maskedLog && maskedLog.includes('***') && !maskedLog.includes('my_secret_password'), 'LauncherLogger must sanitize passwords')
+console.log('✔ LauncherLogger persistent logging and UTF-8 sanitization verified')
+
 console.log('\n--- ALL HELIOS MODIFICATION TESTS PASSED ---')

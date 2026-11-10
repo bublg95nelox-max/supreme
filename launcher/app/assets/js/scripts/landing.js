@@ -35,6 +35,11 @@ const {
 // Internal Requirements
 const DiscordWrapper          = require('./assets/js/discordwrapper')
 const ProcessBuilder          = require('./assets/js/processbuilder')
+const LauncherLogger          = require('./assets/js/launcher_logger')
+
+try {
+    LauncherLogger.init()
+} catch (_initErr) {}
 
 // Launch Elements
 const launch_content          = document.getElementById('launch_content')
@@ -126,6 +131,8 @@ function setLaunchEnabled(val){
     if(launchBtn) launchBtn.disabled = !val
 }
 
+let isLaunchInProgress = false
+
 // Bind launch button
 document.getElementById('launch_button').addEventListener('click', async e => {
     const PythonBridge = require('./assets/js/python_bridge')
@@ -136,12 +143,25 @@ document.getElementById('launch_button').addEventListener('click', async e => {
         if(textSpan) textSpan.innerText = 'ОСТАНОВКА...'
         launchBtn.disabled = true
         PythonBridge.killGame()
-        setTimeout(() => {
-            setGameRunningState(false)
-            toggleLaunchArea(false)
-        }, 600)
+        let checks = 0
+        const pollTimer = setInterval(() => {
+            checks++
+            if (!PythonBridge.isGameRunning() || checks >= 10) {
+                clearInterval(pollTimer)
+                setGameRunningState(false)
+                toggleLaunchArea(false)
+                setLaunchEnabled(true)
+                isLaunchInProgress = false
+            }
+        }, 200)
         return
     }
+
+    if (isLaunchInProgress) {
+        loggerLanding.warn('Launch already in progress, ignoring duplicate click.')
+        return
+    }
+    isLaunchInProgress = true
 
     loggerLanding.info('Launching game..')
     setLaunchEnabled(false)
@@ -175,8 +195,9 @@ document.getElementById('launch_button').addEventListener('click', async e => {
         }
     } catch(err) {
         loggerLanding.error('Unhandled error in during launch process.', err)
-        showLaunchFailure(Lang.queryJS('landing.launch.failureTitle'), Lang.queryJS('landing.launch.failureText'))
+        showLaunchFailure(Lang.queryJS('landing.launch.failureTitle'), Lang.queryJS('landing.launch.failureText'), err)
         setLaunchEnabled(true)
+        isLaunchInProgress = false
     }
 })
 
@@ -414,22 +435,88 @@ let mojangStatusListener = setInterval(() => refreshMojangStatuses(true), 60*60*
 // Set refresh rate to once every 5 minutes.
 let serverStatusListener = setInterval(() => refreshServerStatus(true), 300000)
 
+let recentLaunchLogs = []
+
 /**
- * Shows an error overlay, toggles off the launch area.
+ * Shows an error overlay, toggles off the launch area, and provides a Discord reporting button.
  * 
  * @param {string} title The overlay title.
  * @param {string} desc The overlay description.
+ * @param {Error|string} [err] Optional error instance or details for Discord reporting.
  */
-function showLaunchFailure(title, desc){
+function showLaunchFailure(title, desc, err = null){
+    const errorDetails = err || desc
+    try {
+        LauncherLogger.error(`Launch Failure: ${title} - ${desc}`, err)
+    } catch (_e) {}
     setOverlayContent(
         title,
         desc,
-        Lang.queryJS('landing.launch.okay')
+        'Понятно',
+        '🚨 Отправить отчёт разработчику в Discord'
     )
-    setOverlayHandler(null)
-    toggleOverlay(true)
+    const dismissBtn = document.getElementById('overlayDismiss')
+    if (dismissBtn) {
+        dismissBtn.classList.add('overlayDiscordReportBtn')
+        dismissBtn.style.display = 'inline-flex'
+        dismissBtn.disabled = false
+    }
+    setOverlayHandler(() => {
+        if (dismissBtn) dismissBtn.classList.remove('overlayDiscordReportBtn')
+        toggleOverlay(false)
+    })
+    setDismissHandler(async () => {
+        if (dismissBtn) {
+            dismissBtn.disabled = true
+            dismissBtn.innerText = 'Отправка отчёта в Discord... ⏳'
+        }
+        try {
+            const DiscordReporter = require('./assets/js/discord_reporter')
+            let combinedLogs = []
+            if (recentLaunchLogs && recentLaunchLogs.length > 0) {
+                combinedLogs.push('=== RECENT LAUNCH LOGS ===')
+                combinedLogs.push(...recentLaunchLogs.slice(-250))
+            }
+            try {
+                const serv = (DistroAPI.distro) ? DistroAPI.distro.getServerById(ConfigManager.getSelectedServer()) : null
+                const servId = (serv && serv.rawServer) ? serv.rawServer.id : 'Lowuncher-School'
+                const instanceDir = pathLib.join(ConfigManager.getInstanceDirectory(), servId)
+                const latestLogPath = pathLib.join(instanceDir, 'logs', 'latest.log')
+                if (fsExtra.existsSync(latestLogPath)) {
+                    const content = fsExtra.readFileSync(latestLogPath, 'utf8')
+                    const lines = content.split('\n')
+                    combinedLogs.push('\n=== INSTANCE LATEST.LOG (LAST 300 LINES) ===')
+                    combinedLogs.push(...lines.slice(-300))
+                }
+            } catch (_fErr) {}
+
+            const res = await DiscordReporter.sendReport({
+                error: errorDetails,
+                logs: combinedLogs.length > 0 ? combinedLogs : recentLaunchLogs,
+                title: title
+            })
+            if (res.success) {
+                if (dismissBtn) dismissBtn.innerText = '✓ Отчёт успешно отправлен!'
+                const descEl = document.getElementById('overlayDesc')
+                const linkNotice = res.mclogsUrl ? `<br><span style="display:inline-block; margin-top:6px; font-size:12px; color:#cbd5e1;">📄 Лог на mclo.gs: <a href="${res.mclogsUrl}" target="_blank" style="color: #60a5fa; text-decoration: underline;">${res.mclogsUrl}</a></span>` : ''
+                if (descEl) descEl.innerHTML = desc + `<div style="margin-top: 14px; padding: 10px 14px; background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.35); border-radius: 8px; color: #4ade80; text-align: left;"><b style="color: #4ade80;">✓ Отчёт успешно отправлен разработчику в Discord!</b>${linkNotice}</div>`
+            } else {
+                if (dismissBtn) {
+                    dismissBtn.disabled = false
+                    dismissBtn.innerText = 'Повторить отправку'
+                }
+            }
+        } catch (_sendErr) {
+            if (dismissBtn) {
+                dismissBtn.disabled = false
+                dismissBtn.innerText = 'Ошибка отправки (повторить)'
+            }
+        }
+    })
+    toggleOverlay(true, true)
     toggleLaunchArea(false)
     setLaunchEnabled(true)
+    isLaunchInProgress = false
 }
 
 /* System (Java) Scan */
@@ -629,6 +716,7 @@ async function dlAsync(login = true) {
         const authUser = ConfigManager.getSelectedAccount()
 
         try {
+            recentLaunchLogs = []
             if (typeof startPlaytimeTracker === 'function') startPlaytimeTracker()
             await LaunchStrategy.launch(serv, authUser, {
                 onProgress: (percent, status) => {
@@ -641,6 +729,8 @@ async function dlAsync(login = true) {
                     setGameRunningState(true)
                 },
                 onLog: (line) => {
+                    recentLaunchLogs.push(line)
+                    if (recentLaunchLogs.length > 250) recentLaunchLogs.shift()
                     if(GAME_LAUNCH_REGEX.test(line)) {
                         toggleLaunchArea(false)
                         setGameRunningState(true)
@@ -651,14 +741,18 @@ async function dlAsync(login = true) {
             setGameRunningState(false)
             toggleLaunchArea(false)
             setLaunchEnabled(true)
+            isLaunchInProgress = false
             return
         } catch(err) {
             if (typeof stopPlaytimeTracker === 'function') stopPlaytimeTracker()
             setGameRunningState(false)
             toggleLaunchArea(false)
             loggerLaunchSuite.error('Launch error:', err)
-            showLaunchFailure('Ошибка запуска игры', err.message || 'Не удалось запустить процесс Minecraft.')
+            const rawMsg = err.message || 'Не удалось запустить процесс Minecraft.'
+            const hintMsg = '\n\n💡 Совет: Попробуйте перезапустить лаунчер и нажать «Играть» заново. Если файлы не докачались, лаунчер продолжит загрузку автоматически.'
+            showLaunchFailure('Ошибка запуска игры', rawMsg + hintMsg, err)
             setLaunchEnabled(true)
+            isLaunchInProgress = false
             return
         }
     }
@@ -1292,6 +1386,121 @@ if(heroBtnFolder) {
         fsExtra.ensureDirSync(instanceDir)
         shell.openPath(instanceDir)
     }
+}
+
+/**
+ * Triggers a manual diagnostic report collection and dispatch to Discord.
+ * @param {HTMLElement} [btnEl] 
+ */
+async function triggerDiagnosticReport(btnEl = null) {
+    if (btnEl) {
+        btnEl.disabled = true
+        btnEl.dataset.origText = btnEl.innerHTML
+        btnEl.innerHTML = 'Сбор логов...'
+    }
+
+    try {
+        const DiscordReporter = require('./assets/js/discord_reporter')
+        let combinedLogs = []
+        if (recentLaunchLogs && recentLaunchLogs.length > 0) {
+            combinedLogs.push('=== RECENT LAUNCH LOGS ===')
+            combinedLogs.push(...recentLaunchLogs.slice(-250))
+        }
+
+        try {
+            const serv = (DistroAPI.distro) ? DistroAPI.distro.getServerById(ConfigManager.getSelectedServer()) : null
+            const servId = (serv && serv.rawServer) ? serv.rawServer.id : 'Lowuncher-School'
+            const instanceDir = pathLib.join(ConfigManager.getInstanceDirectory(), servId)
+
+            const latestLogPath = pathLib.join(instanceDir, 'logs', 'latest.log')
+            if (fsExtra.existsSync(latestLogPath)) {
+                const content = fsExtra.readFileSync(latestLogPath, 'utf8')
+                const lines = content.split('\n')
+                combinedLogs.push('\n=== INSTANCE LATEST.LOG (LAST 300 LINES) ===')
+                combinedLogs.push(...lines.slice(-300))
+            }
+
+            const crashDir = pathLib.join(instanceDir, 'crash-reports')
+            if (fsExtra.existsSync(crashDir)) {
+                const files = fsExtra.readdirSync(crashDir).filter(f => f.endsWith('.txt'))
+                if (files.length > 0) {
+                    files.sort((a, b) => {
+                        return fsExtra.statSync(pathLib.join(crashDir, b)).mtimeMs - fsExtra.statSync(pathLib.join(crashDir, a)).mtimeMs
+                    })
+                    const newestCrash = files[0]
+                    const crashContent = fsExtra.readFileSync(pathLib.join(crashDir, newestCrash), 'utf8')
+                    combinedLogs.push(`\n=== CRASH REPORT: ${newestCrash} ===`)
+                    combinedLogs.push(crashContent.slice(0, 15000))
+                }
+            }
+        } catch (_fileErr) {
+            console.warn('Could not read instance files for diagnostics:', _fileErr)
+        }
+
+        if (btnEl) btnEl.innerHTML = 'Отправка в Discord...'
+
+        const res = await DiscordReporter.sendReport({
+            title: 'Пользовательский диагностический отчёт',
+            logs: combinedLogs,
+            error: 'Пользователь запросил отправку отчёта и логов разработчику'
+        })
+
+        if (btnEl) {
+            btnEl.disabled = false
+            btnEl.innerHTML = btnEl.dataset.origText || 'Отправить отчёт в Discord'
+        }
+
+        const dismissBtn = document.getElementById('overlayDismiss')
+        if (dismissBtn) {
+            dismissBtn.classList.remove('overlayDiscordReportBtn')
+            dismissBtn.style.display = 'none'
+        }
+
+        if (res.success) {
+            const linkNotice = res.mclogsUrl ? `<br><br><span style="display:inline-block; margin-top:8px; padding:6px 12px; background:rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.3); border-radius:6px; font-size:12px;">📄 Ссылка на лог mclo.gs: <a href="${res.mclogsUrl}" target="_blank" style="color: #60a5fa; text-decoration: underline;">${res.mclogsUrl}</a></span>` : ''
+            setOverlayContent(
+                'Отчёт отправлен',
+                `Диагностические данные и логи успешно отправлены разработчику в Discord!${linkNotice}`,
+                'Закрыть'
+            )
+            setOverlayHandler(() => toggleOverlay(false))
+            setDismissHandler(null)
+            toggleOverlay(true, true)
+        } else {
+            setOverlayContent(
+                'Ошибка отправки',
+                `Не удалось отправить отчёт в Discord: ${res.error || 'Сетевой сбой'}. Проверьте подключение к интернету.`,
+                'Закрыть'
+            )
+            setOverlayHandler(() => toggleOverlay(false))
+            setDismissHandler(null)
+            toggleOverlay(true, true)
+        }
+    } catch (err) {
+        if (btnEl) {
+            btnEl.disabled = false
+            btnEl.innerHTML = btnEl.dataset.origText || 'Отправить отчёт в Discord'
+        }
+        setOverlayContent(
+            'Ошибка',
+            `Произошла ошибка при отправке отчёта: ${err.message}`,
+            'Закрыть'
+        )
+        setOverlayHandler(() => toggleOverlay(false))
+        setDismissHandler(null)
+        toggleOverlay(true, true)
+    }
+}
+
+// Dedicated Report buttons
+const heroBtnReport = document.getElementById('heroBtnReport')
+if (heroBtnReport) {
+    heroBtnReport.onclick = () => triggerDiagnosticReport(heroBtnReport)
+}
+
+const modernBtnSendReport = document.getElementById('modernBtnSendReport')
+if (modernBtnSendReport) {
+    modernBtnSendReport.onclick = () => triggerDiagnosticReport(modernBtnSendReport)
 }
 
 // Hero version pill
@@ -2071,6 +2280,11 @@ function loadModernSettings() {
         }
     }
 
+    const curAppVersion = remote && remote.app ? remote.app.getVersion() : '1.0.6'
+    const appVerLabel = document.getElementById('modernAppVersionLabel')
+    if (appVerLabel) appVerLabel.innerText = `Версия ${curAppVersion} (Release)`
+    if (updateStatusBox) updateStatusBox.innerText = `Текущая версия актуальна (${curAppVersion}).`
+
     window.addEventListener('lowuncher-autoupdate', (e) => {
         const { action, info } = e.detail || {}
         if (action === 'checking-for-update') {
@@ -2100,7 +2314,7 @@ function loadModernSettings() {
                 if (updateHeaderPillText) updateHeaderPillText.innerText = `Обновление ${ver} готово (нажмите для установки)`
             }
         } else if (action === 'update-not-available') {
-            const curVer = remote && remote.app ? remote.app.getVersion() : '1.0.4'
+            const curVer = remote && remote.app ? remote.app.getVersion() : '1.0.6'
             if (updateStatusBox) updateStatusBox.innerText = `У вас установлена актуальная версия (${curVer}).`
             if (updateHeaderPill) updateHeaderPill.style.display = 'none'
         } else if (action === 'realerror') {

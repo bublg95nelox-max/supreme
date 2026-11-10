@@ -1,7 +1,9 @@
 const child_process = require('child_process')
 const path = require('path')
 const fs = require('fs-extra')
+const { StringDecoder } = require('string_decoder')
 const { LoggerUtil } = require('helios-core')
+const LauncherLogger = require('./launcher_logger')
 
 const logger = LoggerUtil.getLogger('PythonBridge')
 
@@ -180,7 +182,9 @@ class PythonBridge {
                 }
                 return arg
             })
-            logger.info(`Starting Python Bridge: ${pythonExe} ${maskedArgs.join(' ')}`)
+            const maskedCmd = `${pythonExe} ${maskedArgs.join(' ')}`
+            logger.info(`Starting Python Bridge: ${maskedCmd}`)
+            LauncherLogger.info(`Starting Python Bridge: ${maskedCmd}`)
 
             const pyPathEnv = [
                 rootDir,
@@ -196,6 +200,11 @@ class PythonBridge {
                     ...process.env,
                     PYTHONPATH: pyPathEnv,
                     PYTHONUNBUFFERED: '1',
+                    PYTHONIOENCODING: 'utf-8',
+                    PYTHONUTF8: '1',
+                    PYTHONLEGACYWINDOWSSTDIO: '0',
+                    LANG: 'ru_RU.UTF-8',
+                    LC_ALL: 'ru_RU.UTF-8',
                     MINECRAFT_AUTH_TOKEN: opts.token || '0'
                 }
             })
@@ -224,11 +233,13 @@ class PythonBridge {
                 reject(err)
             }
 
+            const stdoutDecoder = new StringDecoder('utf8')
+            const stderrDecoder = new StringDecoder('utf8')
             let lineBuffer = ''
             let lastErrorMsg = null
 
             proc.stdout.on('data', (data) => {
-                lineBuffer += data.toString()
+                lineBuffer += stdoutDecoder.write(data)
                 const lines = lineBuffer.split('\n')
                 lineBuffer = lines.pop() // keep unended fragment
 
@@ -237,39 +248,50 @@ class PythonBridge {
                     if (trimmed.startsWith('[BRIDGE_EVENT] ')) {
                         try {
                             const event = JSON.parse(trimmed.substring(15))
-                            if (event.type === 'progress' && opts.onProgress) {
-                                opts.onProgress(event.percent, event.status)
+                            if (event.type === 'progress') {
+                                LauncherLogger.info(`[Progress ${event.percent}%] ${event.status}`)
+                                if (opts.onProgress) opts.onProgress(event.percent, event.status)
                             } else if (event.type === 'started') {
                                 PythonBridge.gamePid = event.pid
+                                LauncherLogger.info(`[Started] Game PID: ${event.pid}, Version: ${event.version || '1.21.1'}`)
                                 if (opts.onStarted) {
                                     opts.onStarted(event.pid, event.version)
                                 }
                             } else if (event.type === 'log') {
                                 if (opts.onLog) opts.onLog(event.line)
                                 logger.info(`[MC] ${event.line}`)
+                                LauncherLogger.info(`[MC] ${event.line}`)
                             } else if (event.type === 'error') {
                                 logger.error(`Bridge error: ${event.message}`)
+                                LauncherLogger.error(`Bridge error: ${event.message}`)
                                 lastErrorMsg = event.message
+                                if (opts.onLog) opts.onLog(`[ERROR] ${event.message}`)
                                 rejectOnce(new Error(event.message))
                             }
                         } catch (_err) {
                             logger.warn('Failed to parse bridge event:', trimmed)
+                            LauncherLogger.warn(`Failed to parse bridge event: ${trimmed}`)
                         }
                     } else if (trimmed) {
                         logger.info(`[Bridge] ${trimmed}`)
+                        LauncherLogger.info(`[Bridge] ${trimmed}`)
+                        if (opts.onLog) opts.onLog(`[Bridge] ${trimmed}`)
                     }
                 }
             })
 
             proc.stderr.on('data', (data) => {
-                const text = data.toString().trim()
+                const text = stderrDecoder.write(data).trim()
                 if (text) {
                     logger.warn(`[Bridge ERR] ${text}`)
+                    LauncherLogger.warn(`[Bridge ERR] ${text}`)
+                    if (opts.onLog) opts.onLog(`[Bridge ERR] ${text}`)
                     if (!lastErrorMsg) lastErrorMsg = text
                 }
             })
 
             proc.on('close', (code) => {
+                lineBuffer += stdoutDecoder.end()
                 const tail = lineBuffer.trim()
                 if (tail) {
                     if (tail.startsWith('[BRIDGE_EVENT] ')) {
@@ -282,8 +304,10 @@ class PythonBridge {
                     } else if (!lastErrorMsg) {
                         lastErrorMsg = tail
                     }
+                    LauncherLogger.info(`[Bridge Tail] ${tail}`)
                 }
                 logger.info(`Python bridge exited with code ${code}`)
+                LauncherLogger.info(`Python bridge exited with code ${code}`)
                 if (code === 0) {
                     resolveOnce(code)
                 } else {

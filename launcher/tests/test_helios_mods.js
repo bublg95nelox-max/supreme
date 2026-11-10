@@ -1,4 +1,5 @@
 const assert = require('assert')
+const fs = require('fs')
 const path = require('path')
 const os = require('os')
 const crypto = require('crypto')
@@ -102,5 +103,57 @@ assert.throws(() => {
     registerOrVerifyAccount('Player123', 'wrongpassword')
 }, /Неверный пароль/)
 console.log('✔ Password verification (rejects wrong password, accepts correct) verified')
+
+// 9. Verify server address parsing (IPv4, IPv6, port)
+assert.deepStrictEqual(LaunchStrategy.parseServerAddress('mc.example.com'), { host: 'mc.example.com', port: 25565 })
+assert.deepStrictEqual(LaunchStrategy.parseServerAddress('mc.example.com:27160'), { host: 'mc.example.com', port: 27160 })
+assert.deepStrictEqual(LaunchStrategy.parseServerAddress('[2001:db8::1]:25565'), { host: '2001:db8::1', port: 25565 })
+assert.deepStrictEqual(LaunchStrategy.parseServerAddress('[::1]'), { host: '::1', port: 25565 })
+assert.deepStrictEqual(LaunchStrategy.parseServerAddress('89.248.236.145:27160'), { host: '89.248.236.145', port: 27160 })
+assert.deepStrictEqual(LaunchStrategy.parseServerAddress(''), { host: null, port: null })
+console.log('✔ LaunchStrategy IPv4/IPv6 server address parser verified')
+
+// 10. Verify PythonBridge safe process termination
+assert.doesNotThrow(() => {
+    PythonBridge.killProcessSafe(-1)
+    PythonBridge.killProcessSafe('invalid')
+    PythonBridge.killProcessSafe(0)
+})
+console.log('✔ PythonBridge.killProcessSafe validation verified')
+
+// 11. Verify DiscordReporter log sanitizer
+const DiscordReporter = require('../app/assets/js/discord_reporter')
+const sampleLog = 'java -jar game.jar --username Player --token superSecretToken12345 --ram 4096'
+const sanitized = DiscordReporter.sanitizeText(sampleLog)
+assert.strictEqual(sanitized, 'java -jar game.jar --username Player --token *** --ram 4096')
+assert.strictEqual(DiscordReporter.sanitizeText('password: secretPassWord123'), 'password: ***')
+assert.strictEqual(DiscordReporter.sanitizeText('MINECRAFT_AUTH_TOKEN: auth_tok_999'), 'MINECRAFT_AUTH_TOKEN: ***')
+console.log('✔ DiscordReporter sanitization (token/password masking) verified')
+
+// 12. Verify window controls and Discord diagnostic buttons in UI files
+const landingEjs = fs.readFileSync(path.join(__dirname, '../app/landing.ejs'), 'utf8')
+const modernCss = fs.readFileSync(path.join(__dirname, '../app/assets/css/modern_ui.css'), 'utf8')
+const launcherCss = fs.readFileSync(path.join(__dirname, '../app/assets/css/launcher.css'), 'utf8')
+
+assert(landingEjs.includes('id="modernWindowControls"'), 'modernWindowControls must be present in landing.ejs')
+assert(landingEjs.includes('id="modernBtnClose"'), 'modernBtnClose must be present in landing.ejs')
+assert(landingEjs.includes('id="heroBtnReport"'), 'heroBtnReport must be present in heroActionRow')
+assert(landingEjs.includes('id="modernBtnSendReport"'), 'modernBtnSendReport must be present in Settings')
+assert(modernCss.includes('-webkit-app-region: no-drag !important'), 'Window controls must have no-drag !important')
+assert(launcherCss.includes('overlayDiscordReportBtn'), 'overlayDiscordReportBtn must be styled in launcher.css')
+console.log('✔ UI window controls and Discord diagnostic button templates verified')
+
+// 13. Verify LauncherLogger functionality & persistent logging
+const LauncherLogger = require('../app/assets/js/launcher_logger')
+LauncherLogger.init()
+LauncherLogger.info('Тестовая запись лаунчера с русским текстом')
+LauncherLogger.warn('Тестовое предупреждение с паролем: password="my_secret_password"')
+const recentLogs = LauncherLogger.getRecentLogs(20)
+assert.ok(recentLogs.length > 0, 'LauncherLogger must record log entries')
+const hasRussianText = recentLogs.some(l => l.includes('Тестовая запись лаунчера с русским текстом'))
+assert.ok(hasRussianText, 'LauncherLogger must record and preserve Russian UTF-8 text')
+const maskedLog = recentLogs.find(l => l.includes('Тестовое предупреждение'))
+assert.ok(maskedLog && maskedLog.includes('***') && !maskedLog.includes('my_secret_password'), 'LauncherLogger must sanitize passwords')
+console.log('✔ LauncherLogger persistent logging and UTF-8 sanitization verified')
 
 console.log('\n--- ALL HELIOS MODIFICATION TESTS PASSED ---')

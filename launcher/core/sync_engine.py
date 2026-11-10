@@ -3,6 +3,7 @@ Modpack synchronization engine for Lowuncher.
 Compares local game files with remote manifest.json and performs robust, transactional sync.
 """
 import os
+import sys
 import time
 import json
 import shutil
@@ -11,7 +12,12 @@ import hashlib
 from pathlib import Path
 from typing import Callable, Optional, Dict, Any, List, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import requests
+try:
+    import requests
+except ImportError:
+    requests = None
+import urllib.request
+import urllib.error
 from urllib.parse import urlparse, unquote
 
 logger = logging.getLogger("lowuncher.sync")
@@ -70,18 +76,36 @@ def check_free_space(target_dir: Path, required_bytes: int, safety_margin_mb: in
         )
 
 
-def cleanup_temp_files(game_dir: Path) -> None:
+def file_url_to_path(value: str) -> Path:
+    """Safely converts file:// URL or local path to Path object, supporting Windows drive letters."""
+    if not isinstance(value, str):
+        return Path(value)
+    parsed = urlparse(value)
+    if parsed.scheme != "file":
+        return Path(value)
+    from urllib.request import url2pathname
+    # If netloc is a Windows drive letter (e.g. C: in file://C:/path)
+    if len(parsed.netloc) == 2 and parsed.netloc[1] == ":":
+        return Path(url2pathname(unquote(f"{parsed.netloc}{parsed.path}")))
+    if parsed.netloc and parsed.netloc not in ("", "localhost"):
+        raise ValueError("UNC file:// URLs are not supported")
+    return Path(url2pathname(unquote(parsed.path)))
+
+
+def cleanup_temp_files(game_dir: Path, clean_staging: bool = True) -> None:
     """
     Removes lingering *.download files or stale .sync_staging directories
     left behind by previous crashes or abrupt terminations.
+    If clean_staging is False, valid staged files are preserved for resume.
     """
-    staging_dir = game_dir / ".sync_staging"
-    if staging_dir.exists():
-        try:
-            shutil.rmtree(staging_dir, ignore_errors=True)
-            logger.info("Cleaned up stale .sync_staging directory")
-        except Exception as e:
-            logger.warning(f"Could not remove stale staging directory: {e}")
+    if clean_staging:
+        staging_dir = game_dir / ".sync_staging"
+        if staging_dir.exists():
+            try:
+                shutil.rmtree(staging_dir, ignore_errors=True)
+                logger.info("Cleaned up stale .sync_staging directory")
+            except Exception as e:
+                logger.warning(f"Could not remove stale staging directory: {e}")
 
     if game_dir.exists():
         for dl_file in game_dir.rglob("*.download"):
@@ -91,22 +115,61 @@ def cleanup_temp_files(game_dir: Path) -> None:
                 pass
 
 
+class SyncNetworkError(RuntimeError):
+    """Normalized network error for modpack synchronization."""
+    def __init__(self, message: str, url: Optional[str] = None, status_code: Optional[int] = None, retryable: bool = False):
+        super().__init__(message)
+        self.url = url
+        self.status_code = status_code
+        self.retryable = retryable
+
+
 class SyncEngine:
     """Synchronizes modpack files according to remote manifest with transactional safety."""
 
     def __init__(self, game_dir: Path):
         self.game_dir = game_dir
         self.headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Lowuncher/1.0"}
+        self.session = None
+        if requests is not None:
+            try:
+                from requests.adapters import HTTPAdapter
+                self.session = requests.Session()
+                self.session.headers.update(self.headers)
+                adapter = HTTPAdapter(pool_connections=16, pool_maxsize=16)
+                self.session.mount("https://", adapter)
+                self.session.mount("http://", adapter)
+            except Exception as e:
+                logger.warning(f"Could not initialize pooled HTTP session: {e}")
+                self.session = None
+
+    def close(self):
+        if self.session is not None:
+            try:
+                self.session.close()
+            except Exception:
+                pass
+            self.session = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
 
     def fetch_manifest(self, manifest_url: str) -> Dict[str, Any]:
         """
         Fetches manifest.json. Supports HTTP/HTTPS URLs and local file paths.
         """
+        if not isinstance(manifest_url, str) or not manifest_url.strip():
+            raise ValueError("URL manifest.json не задан")
+        manifest_url = manifest_url.strip()
+
         logger.info(f"Fetching manifest from {manifest_url}")
 
         # Support local file path or file:// URL
         if manifest_url.startswith("file://") or Path(manifest_url).is_file():
-            file_path = Path(unquote(urlparse(manifest_url).path)) if manifest_url.startswith("file://") else Path(manifest_url)
+            file_path = file_url_to_path(manifest_url)
             with open(file_path, "r", encoding="utf-8") as f:
                 manifest = json.load(f)
         else:
@@ -115,9 +178,64 @@ class SyncEngine:
                 raise ValueError("manifest должен использовать HTTPS URL или локальный file:// URL")
             sep = "&" if "?" in manifest_url else "?"
             url_with_cb = f"{manifest_url}{sep}_cb={int(time.time())}"
-            resp = requests.get(url_with_cb, headers=self.headers, timeout=(10, 15))
-            resp.raise_for_status()
-            manifest = resp.json()
+            if self.session is not None:
+                try:
+                    resp = self.session.get(url_with_cb, timeout=(10, 15))
+                    resp.raise_for_status()
+                    manifest = resp.json()
+                except requests.exceptions.HTTPError as exc:
+                    status = exc.response.status_code if exc.response is not None else None
+                    retryable = status in (408, 429) or (status is not None and status >= 500)
+                    raise SyncNetworkError(
+                        f"Сервер вернул ошибку ({status}) при загрузке manifest: {manifest_url}",
+                        url=manifest_url,
+                        status_code=status,
+                        retryable=retryable,
+                    ) from exc
+                except requests.exceptions.RequestException as exc:
+                    raise SyncNetworkError(
+                        f"Не удалось подключиться к серверу для загрузки manifest: {exc}",
+                        url=manifest_url,
+                        retryable=True,
+                    ) from exc
+            elif requests is not None:
+                try:
+                    resp = requests.get(url_with_cb, headers=self.headers, timeout=(10, 15))
+                    resp.raise_for_status()
+                    manifest = resp.json()
+                except requests.exceptions.HTTPError as exc:
+                    status = exc.response.status_code if exc.response is not None else None
+                    retryable = status in (408, 429) or (status is not None and status >= 500)
+                    raise SyncNetworkError(
+                        f"Сервер вернул ошибку ({status}) при загрузке manifest: {manifest_url}",
+                        url=manifest_url,
+                        status_code=status,
+                        retryable=retryable,
+                    ) from exc
+                except requests.exceptions.RequestException as exc:
+                    raise SyncNetworkError(
+                        f"Не удалось подключиться к серверу для загрузки manifest: {exc}",
+                        url=manifest_url,
+                        retryable=True,
+                    ) from exc
+            else:
+                try:
+                    req = urllib.request.Request(url_with_cb, headers=self.headers)
+                    with urllib.request.urlopen(req, timeout=15) as resp:
+                        manifest = json.loads(resp.read().decode("utf-8"))
+                except urllib.error.HTTPError as exc:
+                    raise SyncNetworkError(
+                        f"Сервер вернул ошибку ({exc.code}) при загрузке manifest: {manifest_url}",
+                        url=manifest_url,
+                        status_code=exc.code,
+                        retryable=(exc.code >= 500),
+                    ) from exc
+                except (urllib.error.URLError, TimeoutError, OSError) as exc:
+                    raise SyncNetworkError(
+                        f"Ошибка соединения при загрузке manifest: {exc}",
+                        url=manifest_url,
+                        retryable=True,
+                    ) from exc
 
         if not isinstance(manifest, dict) or "minecraft_version" not in manifest or "files" not in manifest:
             raise ValueError("Некорректная структура manifest.json: отсутствует minecraft_version или files")
@@ -125,7 +243,48 @@ class SyncEngine:
         if not isinstance(manifest.get("files"), list):
             raise ValueError("Некорректный манифест: поле 'files' должно быть списком")
 
+        # Cache successfully loaded manifest for offline resilience
+        try:
+            cache_file = self.game_dir / ".last_manifest.json"
+            cache_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(cache_file, "w", encoding="utf-8") as cf:
+                json.dump(manifest, cf, indent=2, ensure_ascii=False)
+        except Exception:
+            pass
+
         return manifest
+
+    def verify_local_installation(self, manifest: Dict[str, Any]) -> List[str]:
+        """
+        Verifies all files in manifest against existing local files.
+        Returns a list of errors/mismatches. Empty list means installation is 100% verified.
+        """
+        invalid = []
+        for file_entry in manifest.get("files", []):
+            if not isinstance(file_entry, dict) or "path" not in file_entry:
+                continue
+            rel_p = file_entry["path"]
+            try:
+                target = safe_resolve_path(self.game_dir, rel_p)
+            except ValueError:
+                invalid.append(f"{rel_p}: unsafe path")
+                continue
+
+            if not target.is_file():
+                invalid.append(f"{rel_p}: missing")
+                continue
+
+            expected_size = file_entry.get("size")
+            if expected_size is not None and target.stat().st_size != expected_size:
+                invalid.append(f"{rel_p}: size mismatch ({target.stat().st_size} != {expected_size})")
+                continue
+
+            expected_hash = (file_entry.get("sha256") or "").strip().lower()
+            if expected_hash and len(expected_hash) == 64:
+                actual_hash = compute_file_sha256(target)
+                if actual_hash != expected_hash:
+                    invalid.append(f"{rel_p}: sha256 mismatch")
+        return invalid
 
     def plan_sync(self, manifest: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[Path]]:
         """
@@ -200,6 +359,7 @@ class SyncEngine:
         staging_dir: Path,
         progress_tracker: Optional[Callable[[int], None]] = None,
         max_retries: int = 3,
+        session: Optional[Any] = None,
     ) -> Path:
         """
         Downloads a single file into staging_dir with retry logic and hash verification.
@@ -223,16 +383,37 @@ class SyncEngine:
         expected_hash = (file_entry.get("sha256") or "").strip().lower()
         if not expected_hash or len(expected_hash) != 64 or any(c not in "0123456789abcdef" for c in expected_hash):
             raise ValueError(f"Некорректный обязательный SHA-256 для {raw_path}")
+
+        # If file was already staged and matches expected SHA-256, reuse it directly (resume support)
+        if staged_target.is_file():
+            try:
+                if compute_file_sha256(staged_target) == expected_hash:
+                    logger.info(f"Using already staged and verified file: {raw_path}")
+                    if progress_tracker and file_entry.get("size"):
+                        progress_tracker(file_entry.get("size", 0))
+                    return staged_target
+                else:
+                    staged_target.unlink(missing_ok=True)
+            except Exception:
+                pass
+
+        candidate_urls = [url]
+        if "raw.githubusercontent.com" in url:
+            # Fallback mirror for raw.githubusercontent to bypass ISP throttling or packet drops
+            candidate_urls.append(f"https://ghproxy.net/{url}")
+            candidate_urls.append(url.replace("raw.githubusercontent.com", "raw.gitmirror.com"))
+
         last_error = None
 
         for attempt in range(1, max_retries + 1):
+            target_url = candidate_urls[(attempt - 1) % len(candidate_urls)]
             try:
                 if temp_download.exists():
                     temp_download.unlink(missing_ok=True)
 
                 downloaded = 0
-                if url.startswith("file://"):
-                    src_file = Path(unquote(parsed_url.path))
+                if target_url.startswith("file://"):
+                    src_file = file_url_to_path(target_url)
                     if not src_file.exists():
                         raise FileNotFoundError(f"Локальный файл не найден: {src_file}")
                     with open(src_file, "rb") as sf, open(temp_download, "wb") as df:
@@ -242,11 +423,31 @@ class SyncEngine:
                             if progress_tracker:
                                 progress_tracker(len(chunk))
                 else:
-                    with requests.get(url, stream=True, headers=self.headers, timeout=(15, 30)) as r:
-                        r.raise_for_status()
-                        with open(temp_download, "wb") as f:
-                            for chunk in r.iter_content(chunk_size=65536):
-                                if chunk:
+                    if session is not None:
+                        with session.get(target_url, stream=True, timeout=(15, 45)) as r:
+                            r.raise_for_status()
+                            with open(temp_download, "wb") as f:
+                                for chunk in r.iter_content(chunk_size=65536):
+                                    if chunk:
+                                        f.write(chunk)
+                                        downloaded += len(chunk)
+                                        if progress_tracker:
+                                            progress_tracker(len(chunk))
+                    elif requests is not None:
+                        with requests.get(target_url, stream=True, headers=self.headers, timeout=(15, 45)) as r:
+                            r.raise_for_status()
+                            with open(temp_download, "wb") as f:
+                                for chunk in r.iter_content(chunk_size=65536):
+                                    if chunk:
+                                        f.write(chunk)
+                                        downloaded += len(chunk)
+                                        if progress_tracker:
+                                            progress_tracker(len(chunk))
+                    else:
+                        req = urllib.request.Request(target_url, headers=self.headers)
+                        with urllib.request.urlopen(req, timeout=45) as r:
+                            with open(temp_download, "wb") as f:
+                                while chunk := r.read(65536):
                                     f.write(chunk)
                                     downloaded += len(chunk)
                                     if progress_tracker:
@@ -262,18 +463,28 @@ class SyncEngine:
 
                 # Atomically promote temp_download to staged_target
                 temp_download.replace(staged_target)
-                logger.info(f"Staged and verified: {raw_path} (попытка {attempt})")
+                logger.info(f"Staged and verified: {raw_path} (попытка {attempt}, URL: {target_url})")
                 return staged_target
 
             except Exception as e:
                 last_error = e
-                logger.warning(f"Ошибка загрузки {raw_path} (попытка {attempt}/{max_retries}): {e}")
+                logger.warning(f"Ошибка загрузки {raw_path} (попытка {attempt}/{max_retries}, {target_url}): {e}")
                 if temp_download.exists():
                     temp_download.unlink(missing_ok=True)
                 if attempt < max_retries:
-                    time.sleep(0.5 * attempt)
+                    time.sleep(min(6.0, 0.8 * (1.8 ** (attempt - 1))))
 
-        raise IOError(f"Не удалось загрузить файл {raw_path} после {max_retries} попыток: {last_error}")
+        status = None
+        retryable = True
+        if requests is not None and isinstance(last_error, requests.exceptions.HTTPError):
+            status = last_error.response.status_code if last_error.response is not None else None
+            retryable = status in (408, 429) or (status is not None and status >= 500)
+        raise SyncNetworkError(
+            f"Не удалось загрузить файл {raw_path} ({status or last_error}) после {max_retries} попыток",
+            url=url,
+            status_code=status,
+            retryable=retryable,
+        ) from last_error
 
     def sync(
         self,
@@ -290,7 +501,7 @@ class SyncEngine:
         5. Atomically commits staged files to game_dir.
         6. Safely cleans up obsolete files.
         """
-        cleanup_temp_files(self.game_dir)
+        cleanup_temp_files(self.game_dir, clean_staging=False)
 
         if progress_callback:
             progress_callback(0, 100, "Проверка обновлений сборки...")
@@ -319,6 +530,20 @@ class SyncEngine:
         staging_dir = self.game_dir / ".sync_staging"
         staging_dir.mkdir(parents=True, exist_ok=True)
 
+        session = self.session
+        if session is None and requests is not None:
+            try:
+                from requests.adapters import HTTPAdapter
+                self.session = requests.Session()
+                self.session.headers.update(self.headers)
+                adapter = HTTPAdapter(pool_connections=16, pool_maxsize=16)
+                self.session.mount("https://", adapter)
+                self.session.mount("http://", adapter)
+                session = self.session
+            except Exception as e:
+                logger.warning(f"Could not initialize pooled HTTP session: {e}")
+                session = None
+
         downloaded_bytes = 0
         total_files = len(to_download)
         completed_files = 0
@@ -338,10 +563,11 @@ class SyncEngine:
 
         # Phase 1: Download all files into staging directory
         staged_files: List[Tuple[Path, Path]] = []  # (staged_path, final_target_path)
+        sync_committed = False
         try:
-            with ThreadPoolExecutor(max_workers=3) as pool:
+            with ThreadPoolExecutor(max_workers=4) as pool:
                 futures = {
-                    pool.submit(self._download_file_to_staging, entry, staging_dir, on_chunk): entry
+                    pool.submit(self._download_file_to_staging, entry, staging_dir, on_chunk, 5, session): entry
                     for entry in to_download
                 }
                 for future in as_completed(futures):
@@ -361,9 +587,44 @@ class SyncEngine:
             if progress_callback:
                 progress_callback(total_bytes, total_bytes, "Применение обновлений сборки...")
 
-            for staged_path, final_path in staged_files:
-                final_path.parent.mkdir(parents=True, exist_ok=True)
-                staged_path.replace(final_path)
+            committed_backups: List[Tuple[Path, Path]] = []
+            try:
+                for staged_path, final_path in staged_files:
+                    final_path.parent.mkdir(parents=True, exist_ok=True)
+                    backup_path = staged_path.with_suffix(".backup")
+                    if final_path.exists():
+                        try:
+                            final_path.replace(backup_path)
+                            committed_backups.append((backup_path, final_path))
+                        except Exception:
+                            pass
+
+                    # On Windows, antivirus or background indexing can briefly lock freshly downloaded files
+                    for attempt in range(5):
+                        try:
+                            if sys.platform == "win32" and final_path.exists():
+                                try:
+                                    final_path.unlink(missing_ok=True)
+                                except Exception:
+                                    pass
+                            staged_path.replace(final_path)
+                            break
+                        except (PermissionError, OSError) as pe:
+                            if attempt == 4:
+                                logger.error(f"Failed to commit staged file {final_path} after 5 attempts: {pe}")
+                                raise
+                            time.sleep(0.2)
+            except Exception as commit_err:
+                logger.error(f"Commit interrupted: {commit_err}. Rolling back committed files...")
+                for backup_path, final_path in committed_backups:
+                    try:
+                        if backup_path.exists():
+                            backup_path.replace(final_path)
+                    except Exception:
+                        pass
+                raise
+
+            sync_committed = True
 
             # Now that all new files are successfully installed, remove obsolete files
             for obs_file in obsolete:
@@ -382,6 +643,11 @@ class SyncEngine:
             logger.error(f"Sync failed, existing installation preserved: {e}")
             raise
         finally:
+            if session:
+                try:
+                    session.close()
+                except Exception:
+                    pass
             # Always clean up staging directory
             if staging_dir.exists():
                 shutil.rmtree(staging_dir, ignore_errors=True)
