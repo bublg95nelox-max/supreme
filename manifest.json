@@ -7,117 +7,53 @@
     "installer_url": ""
   },
   "java_version": 21,
-  "total_files": 107,
+  "total_files": 110,
   "files": [
     {
-      "path": "mods/baguettelib-1.21.1-NeoForge-2.0.7.jar",
-      "sha256": "a1af3ae5c2945240bff3afa779621d9d8e21fb23bb6b1433f584e746735bae24",
-      "size": 85738,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/baguettelib-1.21.1-NeoForge-2.0.7.jar",
+      "path": "mods/justcore-0.2.0.jar",
+      "sha256": "6143c22bda4b5c6c93e5ab4b52f2cd3ecf15e9f96864009257986ece3331cb5d",
+      "size": 1904072,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/justcore-0.2.0.jar",
       "required": true,
       "overwrite": true
     },
     {
-      "path": "mods/gravestonecurioscompat-1.21.1-NeoForge-4.2.0.jar",
-      "sha256": "ad1959bca2a0b49270828e20d34a8b7545e6c2bec168ace8274cca49bc55e2b7",
-      "size": 17583,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/gravestonecurioscompat-1.21.1-NeoForge-4.2.0.jar",
+      "path": "mods/justessentials-0.3.1.jar",
+      "sha256": "131a5624bc52fec43fb2d06cfeaf3ef926b70c831623b45eb5e9d414661926f7",
+      "size": 2167912,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/justessentials-0.3.1.jar",
       "required": true,
       "overwrite": true
     },
     {
-      "path": "mods/gravestone-neoforge-1.21.1-1.0.40.jar",
-      "sha256": "204be9ccb8632a56a87aee9aab4c7874d0f6749f566c07f5dd420d24e24dc8b0",
-      "size": 322082,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/gravestone-neoforge-1.21.1-1.0.40.jar",
+      "path": "mods/yeetusexperimentus-neoforge-87.0.0.jar",
+      "sha256": "9117db8b5905abf18f64fdf8f8d8ca5a91c23abd0a7fa2c9986c21aa17d74e75",
+      "size": 570057,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/yeetusexperimentus-neoforge-87.0.0.jar",
       "required": true,
       "overwrite": true
     },
     {
-      "path": "mods/antixray-neoforge-1.4.8+1.21.1.jar",
-      "sha256": "5420a6ff3bc2d53db330583e09d6b5bf43bdd67e2aea2a5f43add3c9bbd5104f",
-      "size": 128621,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/antixray-neoforge-1.4.8+1.21.1.jar",
+      "path": "mods/xaeroworldmap-neoforge-1.21.1-1.47.0.jar",
+      "sha256": "6a42b6f01bd96b496e5fcc07d4541bad1a699d9ec8ad58ad40d5dcfe23a7d4c7",
+      "size": 1427078,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/xaeroworldmap-neoforge-1.21.1-1.47.0.jar",
       "required": true,
       "overwrite": true
     },
     {
-      "path": "mods/lowuncher-guard-1.21.1.jar",
-      "sha256": "33b8e822a9760280d072fbbb76223db5e89263aa2c8f7679c7b2cc65ebcff080",
-      "size": 4009,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/lowuncher-guard-1.21.1.jar",
+      "path": "mods/waystones-neoforge-1.21.1-21.1.46.jar",
+      "sha256": "ca76a4457160e8353b1f013a21ab377b264141f466d84ec8952a123058b8af78",
+      "size": 1223229,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/waystones-neoforge-1.21.1-21.1.46.jar",
       "required": true,
       "overwrite": true
     },
     {
-      "path": "mods/skinrestorer-2.11.1+1.21-neoforge.jar",
-      "sha256": "f2c6962fd3102743f795d174d9419cf03ffd5b58f545903b04ee991b5e371a16",
-      "size": 286154,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/skinrestorer-2.11.1+1.21-neoforge.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/refurbished_furniture-neoforge-1.21.1-1.0.22.jar",
-      "sha256": "953a7840261eb79959769a97caa60cba2ee141700a4cbe208825268327136bdf",
-      "size": 7133477,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/refurbished_furniture-neoforge-1.21.1-1.0.22.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/framework-neoforge-1.21.1-0.13.11.jar",
-      "sha256": "429ea90a162d7c25c1463ee60979e4d7b1ddb525d9384a3a2a2f45d70bda03f5",
-      "size": 387334,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/framework-neoforge-1.21.1-0.13.11.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/betsyross-3.1.1+mc.1.21.1-neoforge.jar",
-      "sha256": "395d3909c439f8c154a2a06d7ab23d5bb22a0871a55679f591c5acd3fb8358be",
-      "size": 198584,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/betsyross-3.1.1+mc.1.21.1-neoforge.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/kotlinforforge-5.12.0-all.jar",
-      "sha256": "2785a4dd6de5c6c56065fd8eb789c82771bd2ee773c30794c23160a3b2c39139",
-      "size": 7279264,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/kotlinforforge-5.12.0-all.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/immersive_paintings-neoforge-1.21.1-0.8.0.jar",
-      "sha256": "baf3ecd72d45baebd8f19b82a3b78363190d3b7bd9505cb6d59628ef7e49e4c9",
-      "size": 5548915,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/immersive_paintings-neoforge-1.21.1-0.8.0.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/fzzy_config-0.7.7+fix1+1.21+neoforge.jar",
-      "sha256": "414782aba00502349da192c1affcd4cbaf653119ec26605453f1b0690b3f8cc5",
-      "size": 2392720,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/fzzy_config-0.7.7+fix1+1.21+neoforge.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/puzzleslib-v21.1.66-mc1.21.1+neoforge.jar",
-      "sha256": "cb02de7e1d4a133746ec7b43a64eddc2cb621122cdc49e134a15272f456c31f2",
-      "size": 1451120,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/puzzleslib-v21.1.66-mc1.21.1+neoforge.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/PickUpNotifier-v21.1.1-1.21.1-NeoForge.jar",
-      "sha256": "b49535698de9c7b5a879c8ec99175771d87d5261d5cc4c6152ba1fa51fc5676a",
-      "size": 97094,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/PickUpNotifier-v21.1.1-1.21.1-NeoForge.jar",
+      "path": "mods/voicechat-neoforge-1.21.1-2.6.27.jar",
+      "sha256": "ca517aa9062b916a446a5424c643176ca845b95add682aca980efe298b2b44df",
+      "size": 4936802,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/voicechat-neoforge-1.21.1-2.6.27.jar",
       "required": true,
       "overwrite": true
     },
@@ -130,30 +66,6 @@
       "overwrite": true
     },
     {
-      "path": "mods/ironfurnaces-neoforge-1.21.1-4.3.2.jar",
-      "sha256": "97c0d7c323fda4aa852fdce69bf1250a40323bb9d34ef6c87790e07334d1c2de",
-      "size": 576866,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/ironfurnaces-neoforge-1.21.1-4.3.2.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/gjeb-neoforge-1.21.1-1.3.0.40.jar",
-      "sha256": "b42bf1484a5ac3ab3da0f4cd4ac27b38851bdfb44819ddf67c74d4cc9d7ed89b",
-      "size": 78696,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/gjeb-neoforge-1.21.1-1.3.0.40.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/TreeChop-1.21.1-neoforge-0.19.3.jar",
-      "sha256": "2a5ec9cca187b4a031e9dd7e5eec8d0872f7d2bc355d88bda633021fa7eb71b0",
-      "size": 517750,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/TreeChop-1.21.1-neoforge-0.19.3.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
       "path": "mods/toms_storage-1.21-2.4.2.jar",
       "sha256": "a703e28391b914298223a515238c8729007606f2f967a83b65b8d5cb39e0789d",
       "size": 856803,
@@ -162,26 +74,34 @@
       "overwrite": true
     },
     {
-      "path": "mods/CrashAssistant-neoforge-1.20.6-1.21.4-discord-relay.jar",
-      "sha256": "85c6703ce82ab92c37266637c35a9044387f1ed8a178073ec39695e5cb8793e4",
-      "size": 3480838,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/CrashAssistant-neoforge-1.20.6-1.21.4-discord-relay.jar",
+      "path": "mods/t_and_t-fabric-neoforge-1.13.11.jar",
+      "sha256": "270fc0d1c99e54bc15f43d64bdaac60a90cb896efc357af624988e677136440f",
+      "size": 3553006,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/t_and_t-fabric-neoforge-1.13.11.jar",
       "required": true,
       "overwrite": true
     },
     {
-      "path": "mods/polylib-2100.1.0-build.183-neoforge.jar",
-      "sha256": "6861974b2300c899627374470b81cf4922378cd042363c383c36d758fb3808cb",
-      "size": 1299974,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/polylib-2100.1.0-build.183-neoforge.jar",
+      "path": "mods/sophisticatedcore-1.21.1-1.5.31.2460.jar",
+      "sha256": "32eed2cd6540a06fbafe73b60df5e7c26f8c277b0bb5abc349261f78ab66c5bf",
+      "size": 1845838,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/sophisticatedcore-1.21.1-1.5.31.2460.jar",
       "required": true,
       "overwrite": true
     },
     {
-      "path": "mods/sodium-extra-neoforge-0.9.5+mc1.21.1.jar",
-      "sha256": "37c33efdee16fc515392fd422b6ec8769cbc1079f6a2eb6cff2072411d511faf",
-      "size": 483373,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/sodium-extra-neoforge-0.9.5+mc1.21.1.jar",
+      "path": "mods/sophisticatedbackpacks-1.21.1-3.26.20.2244.jar",
+      "sha256": "4104a0f47ee849a8d610faa76eb652453d7fbf98a38ff2516b972f70fc9d9edf",
+      "size": 1264515,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/sophisticatedbackpacks-1.21.1-3.26.20.2244.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/sodiumdynamiclights-neoforge-1.0.10-1.21.1.jar",
+      "sha256": "d78002d50865db928fbf2c17c716ffcbbd6d33bff88aa1f0f3a04152a2665e25",
+      "size": 299353,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/sodiumdynamiclights-neoforge-1.0.10-1.21.1.jar",
       "required": true,
       "overwrite": true
     },
@@ -194,10 +114,58 @@
       "overwrite": true
     },
     {
+      "path": "mods/sodium-extra-neoforge-0.9.5+mc1.21.1.jar",
+      "sha256": "37c33efdee16fc515392fd422b6ec8769cbc1079f6a2eb6cff2072411d511faf",
+      "size": 483373,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/sodium-extra-neoforge-0.9.5+mc1.21.1.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/skinrestorer-2.11.1+1.21-neoforge.jar",
+      "sha256": "f2c6962fd3102743f795d174d9419cf03ffd5b58f545903b04ee991b5e371a16",
+      "size": 286154,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/skinrestorer-2.11.1+1.21-neoforge.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/sable-neoforge-1.21.1-2.0.6.jar",
+      "sha256": "9c199157843bf953a47dff625fc5bb41c01a90538d35ad18e6996bbcb8a617c2",
+      "size": 12986135,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/sable-neoforge-1.21.1-2.0.6.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
       "path": "mods/rrls-5.0.11+mc1.21.1-forge.jar",
       "sha256": "c8341f82ea582a624a2b27b6401bb7dadb64c28535eebc9beb8f9850e29904be",
       "size": 180458,
       "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/rrls-5.0.11+mc1.21.1-forge.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/ritchiesprojectilelib-2.1.2+mc.1.21.1-neoforge.jar",
+      "sha256": "cc509060833736fb650aa4c36b1ce33a7eeeb9ca6e9f8e80a7c951c9e7487b24",
+      "size": 76369,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/ritchiesprojectilelib-2.1.2+mc.1.21.1-neoforge.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/resourcefullib-neoforge-1.21-3.0.12.jar",
+      "sha256": "5e36f2c69de008dc5795f730c84ab767688f15c810944b585485349a0c911261",
+      "size": 484332,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/resourcefullib-neoforge-1.21-3.0.12.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/refurbished_furniture-neoforge-1.21.1-1.0.22.jar",
+      "sha256": "953a7840261eb79959769a97caa60cba2ee141700a4cbe208825268327136bdf",
+      "size": 7133477,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/refurbished_furniture-neoforge-1.21.1-1.0.22.jar",
       "required": true,
       "overwrite": true
     },
@@ -210,10 +178,58 @@
       "overwrite": true
     },
     {
+      "path": "mods/railways-0.3.0-beta.2+neoforge-mc1.21.1.jar",
+      "sha256": "64b74ddad661deae1cfe7e8334cfa3d39bb8ef7b761f83595ba0476c4a9bb1d5",
+      "size": 18728584,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/railways-0.3.0-beta.2+neoforge-mc1.21.1.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/puzzleslib-v21.1.66-mc1.21.1+neoforge.jar",
+      "sha256": "cb02de7e1d4a133746ec7b43a64eddc2cb621122cdc49e134a15272f456c31f2",
+      "size": 1451120,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/puzzleslib-v21.1.66-mc1.21.1+neoforge.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/prickle-neoforge-1.21.1-21.1.11.jar",
+      "sha256": "ccf46c442ed3c7fe41ad056f0940560829ec4dd88360985dfacd78f4614eb167",
+      "size": 84812,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/prickle-neoforge-1.21.1-21.1.11.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
       "path": "mods/polytone-1.21-5.3.5-neoforge.jar",
       "sha256": "091282a8f4017bb270603bdde18f2196967f8232f8ba7bc4f3eb95c6d3bb1397",
       "size": 1803060,
       "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/polytone-1.21-5.3.5-neoforge.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/polylib-2100.1.0-build.183-neoforge.jar",
+      "sha256": "6861974b2300c899627374470b81cf4922378cd042363c383c36d758fb3808cb",
+      "size": 1299974,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/polylib-2100.1.0-build.183-neoforge.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/ok_zoomer-neo-10.0.0-beta.13.jar",
+      "sha256": "61da322358127329d40b36a028faa7d91c370a3708e08becf1f1b8b242c5eb61",
+      "size": 208085,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/ok_zoomer-neo-10.0.0-beta.13.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/notenoughanimations-neoforge-1.12.7-mc1.21.1.jar",
+      "sha256": "5b8107cf01128523233287d9b0789f743f9d6186bda651de838e02350b311828",
+      "size": 1868196,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/notenoughanimations-neoforge-1.12.7-mc1.21.1.jar",
       "required": true,
       "overwrite": true
     },
@@ -234,10 +250,90 @@
       "overwrite": true
     },
     {
+      "path": "mods/mezz_config-1.21.1-neoforge-0.6.11-standalone.jar",
+      "sha256": "f4b93ad61fca9c95d6293384a66b9d4ef83c6b6ee1b304996cf899a06c136aa8",
+      "size": 346826,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/mezz_config-1.21.1-neoforge-0.6.11-standalone.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/lowuncher-guard-1.21.1.jar",
+      "sha256": "33b8e822a9760280d072fbbb76223db5e89263aa2c8f7679c7b2cc65ebcff080",
+      "size": 4009,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/lowuncher-guard-1.21.1.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/lootr-neoforge-1.21.1-1.11.38.127.jar",
+      "sha256": "5c74de4709d1c13b25880fdd241a89d5d9f331346d20edc76f80ccd4d99dc66c",
+      "size": 1075929,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/lootr-neoforge-1.21.1-1.11.38.127.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
       "path": "mods/lithium-neoforge-0.15.4+mc1.21.1.jar",
       "sha256": "488f33216030c1cb0baa33e59de3d657d08d5795a6c2080c8c8bbbc133fc8757",
       "size": 774220,
       "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/lithium-neoforge-0.15.4+mc1.21.1.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/kotlinforforge-5.12.0-all.jar",
+      "sha256": "2785a4dd6de5c6c56065fd8eb789c82771bd2ee773c30794c23160a3b2c39139",
+      "size": 7279264,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/kotlinforforge-5.12.0-all.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/konkrete_neoforge_1.9.9_MC_1.21.jar",
+      "sha256": "791c5538751dd3015ef3a2ce92d98719e1a28a48ebbd817b78506771256654cd",
+      "size": 618842,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/konkrete_neoforge_1.9.9_MC_1.21.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/justenoughbreeding-neoforge-1.21.1-3.3.1.jar",
+      "sha256": "6541ebcbaeb6cd6638ce01e509c38122e744e1d849bfdbd94e4097b54cd555d3",
+      "size": 626813,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/justenoughbreeding-neoforge-1.21.1-3.3.1.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/jeioptimizer-1.21.1-1.2.2-19.70.jar",
+      "sha256": "668ee53a7bc91cce4770c005d6540a1e5ac6d76dde74f8ca196725e6b1be369b",
+      "size": 26843,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/jeioptimizer-1.21.1-1.2.2-19.70.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/jei-1.21.1-neoforge-19.70.0.469.jar",
+      "sha256": "9ab82d9bdbc8d9a08b80bc2023e1d886f6335b92f937d3afac878c9ea995dc33",
+      "size": 4784333,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/jei-1.21.1-neoforge-19.70.0.469.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/jeed-1.21-2.3.5-neoforge.jar",
+      "sha256": "de2c468b259f2557f5004c8b06eff750348d13f29bcac63d4ab9aa56bd8f7731",
+      "size": 166779,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/jeed-1.21-2.3.5-neoforge.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/ironfurnaces-neoforge-1.21.1-4.3.2.jar",
+      "sha256": "97c0d7c323fda4aa852fdce69bf1250a40323bb9d34ef6c87790e07334d1c2de",
+      "size": 576866,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/ironfurnaces-neoforge-1.21.1-4.3.2.jar",
       "required": true,
       "overwrite": true
     },
@@ -250,10 +346,58 @@
       "overwrite": true
     },
     {
-      "path": "mods/entityculling-neoforge-1.11.3-mc1.21.1.jar",
-      "sha256": "fa73ac70a3766568203b730a1573b4b54d88fb48dff4a33d8c4a80be9b8d17d5",
-      "size": 1510075,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/entityculling-neoforge-1.11.3-mc1.21.1.jar",
+      "path": "mods/interiors-1.21.1-neoforge-0.6.1.jar",
+      "sha256": "0d1326fb8b67623ae1c69a63b788dcdcecaf8df400c7d8e5e55ace79a5166fe5",
+      "size": 486912,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/interiors-1.21.1-neoforge-0.6.1.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/immersive_paintings-neoforge-1.21.1-0.8.0.jar",
+      "sha256": "baf3ecd72d45baebd8f19b82a3b78363190d3b7bd9505cb6d59628ef7e49e4c9",
+      "size": 5548915,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/immersive_paintings-neoforge-1.21.1-0.8.0.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/handcrafted-neoforge-1.21.1-4.0.3.jar",
+      "sha256": "6f2a776fb28ed07d370899814e5e711fbeebe31396097d78a3b550439b364948",
+      "size": 7132842,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/handcrafted-neoforge-1.21.1-4.0.3.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/gravestonecurioscompat-1.21.1-NeoForge-4.2.0.jar",
+      "sha256": "ad1959bca2a0b49270828e20d34a8b7545e6c2bec168ace8274cca49bc55e2b7",
+      "size": 17583,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/gravestonecurioscompat-1.21.1-NeoForge-4.2.0.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/gravestone-neoforge-1.21.1-1.0.40.jar",
+      "sha256": "204be9ccb8632a56a87aee9aab4c7874d0f6749f566c07f5dd420d24e24dc8b0",
+      "size": 322082,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/gravestone-neoforge-1.21.1-1.0.40.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/gjeb-neoforge-1.21.1-1.3.0.40.jar",
+      "sha256": "b42bf1484a5ac3ab3da0f4cd4ac27b38851bdfb44819ddf67c74d4cc9d7ed89b",
+      "size": 78696,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/gjeb-neoforge-1.21.1-1.3.0.40.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/fzzy_config-0.7.7+fix1+1.21+neoforge.jar",
+      "sha256": "414782aba00502349da192c1affcd4cbaf653119ec26605453f1b0690b3f8cc5",
+      "size": 2392720,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/fzzy_config-0.7.7+fix1+1.21+neoforge.jar",
       "required": true,
       "overwrite": true
     },
@@ -266,106 +410,10 @@
       "overwrite": true
     },
     {
-      "path": "mods/entity_texture_features-7.2.7-1.21-neoforge.jar",
-      "sha256": "6e4b1870d59ef6e337961c12a93760b05900e1e51c97def7953a4c5a551153ee",
-      "size": 811876,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/entity_texture_features-7.2.7-1.21-neoforge.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/entity_model_features-3.3.12-1.21-neoforge.jar",
-      "sha256": "3ba0bf7b487660920d12cc0ff6cb5de1763f024a080fe0cd7d64e1c8e0f7f190",
-      "size": 656382,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/entity_model_features-3.3.12-1.21-neoforge.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/ImmediatelyFast-NeoForge-1.6.15+1.21.1.jar",
-      "sha256": "7d7b1d7b9f71d5303e42b2fa45f222a5ab06e0ef5982abb6da5dd9cc449b3702",
-      "size": 368896,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/ImmediatelyFast-NeoForge-1.6.15+1.21.1.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/railways-0.3.0-beta.2+neoforge-mc1.21.1.jar",
-      "sha256": "64b74ddad661deae1cfe7e8334cfa3d39bb8ef7b761f83595ba0476c4a9bb1d5",
-      "size": 18728584,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/railways-0.3.0-beta.2+neoforge-mc1.21.1.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/YungsApi-1.21.1-NeoForge-5.1.9.jar",
-      "sha256": "375e0b2f988ab4f5bde182166c0f0b102377adc8f823660c24ade08b0b3cde56",
-      "size": 413763,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/YungsApi-1.21.1-NeoForge-5.1.9.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/cristellib-neoforge-1.21.1-3.1.7.jar",
-      "sha256": "11e05dbc97bd3fe1790bd6361747240e314c1dbf40b590ea20cc691dc8396c38",
-      "size": 583525,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/cristellib-neoforge-1.21.1-3.1.7.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/t_and_t-fabric-neoforge-1.13.11.jar",
-      "sha256": "270fc0d1c99e54bc15f43d64bdaac60a90cb896efc357af624988e677136440f",
-      "size": 3553006,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/t_and_t-fabric-neoforge-1.13.11.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/Geophilic v3.7.mod.jar",
-      "sha256": "9e6a98b438e078f2e4f5b79f71bfc715a730369f8cf42fd287c6e43c7441cfae",
-      "size": 1115993,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/Geophilic v3.7.mod.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/YungsBetterDungeons-1.21.1-NeoForge-5.1.4.jar",
-      "sha256": "61816c3b7c9d92c6b44f93dce87ceb0a22827f20285d5d9c4d10d519d734de04",
-      "size": 782160,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/YungsBetterDungeons-1.21.1-NeoForge-5.1.4.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/YungsBetterNetherFortresses-1.21.1-NeoForge-3.1.5.jar",
-      "sha256": "5450a64a7036237f449496837e08f3e5b3aa1d7974a10df43944172def75d8ff",
-      "size": 609639,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/YungsBetterNetherFortresses-1.21.1-NeoForge-3.1.5.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/YungsBetterEndIsland-1.21.1-NeoForge-3.1.2.jar",
-      "sha256": "8005f1ea798d09fc05dad07a21ed1f393a523a718197cdbd37b1ce6d9a17e4a4",
-      "size": 398130,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/YungsBetterEndIsland-1.21.1-NeoForge-3.1.2.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/YungsBetterJungleTemples-1.21.1-NeoForge-3.1.2.jar",
-      "sha256": "a0d57b78c7a1891796f342b1f09c214bc27bedf0a3a894f029dfdb2db9f813d0",
-      "size": 795839,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/YungsBetterJungleTemples-1.21.1-NeoForge-3.1.2.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/YungsBetterStrongholds-1.21.1-NeoForge-5.1.3.jar",
-      "sha256": "a9cab2fc01538368862365691f7d215309801aed0b390351681b6b60a1db7b58",
-      "size": 461244,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/YungsBetterStrongholds-1.21.1-NeoForge-5.1.3.jar",
+      "path": "mods/ftb-teams-neoforge-2101.1.12.jar",
+      "sha256": "b3f33436070b7ae4a706280561f1d2f1d1eb1a089cb13ec9851e99646165aed2",
+      "size": 308430,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/ftb-teams-neoforge-2101.1.12.jar",
       "required": true,
       "overwrite": true
     },
@@ -386,146 +434,66 @@
       "overwrite": true
     },
     {
-      "path": "mods/ftb-teams-neoforge-2101.1.12.jar",
-      "sha256": "b3f33436070b7ae4a706280561f1d2f1d1eb1a089cb13ec9851e99646165aed2",
-      "size": 308430,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/ftb-teams-neoforge-2101.1.12.jar",
+      "path": "mods/framework-neoforge-1.21.1-0.13.11.jar",
+      "sha256": "429ea90a162d7c25c1463ee60979e4d7b1ddb525d9384a3a2a2f45d70bda03f5",
+      "size": 387334,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/framework-neoforge-1.21.1-0.13.11.jar",
       "required": true,
       "overwrite": true
     },
     {
-      "path": "mods/architectury-13.0.11-neoforge.jar",
-      "sha256": "9cc92f2c09533fc5482c60f993bd891c655a0e32b637037cdcb7c2b23adedeeb",
-      "size": 584734,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/architectury-13.0.11-neoforge.jar",
+      "path": "mods/ferritecore-7.0.3-neoforge.jar",
+      "sha256": "d87ea28262715ebff45b8a82d493e6b468e7a4521bc021df5d88302196d030a8",
+      "size": 121559,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/ferritecore-7.0.3-neoforge.jar",
       "required": true,
       "overwrite": true
     },
     {
-      "path": "mods/sable-neoforge-1.21.1-2.0.6.jar",
-      "sha256": "9c199157843bf953a47dff625fc5bb41c01a90538d35ad18e6996bbcb8a617c2",
-      "size": 12986135,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/sable-neoforge-1.21.1-2.0.6.jar",
+      "path": "mods/entityculling-neoforge-1.11.3-mc1.21.1.jar",
+      "sha256": "fa73ac70a3766568203b730a1573b4b54d88fb48dff4a33d8c4a80be9b8d17d5",
+      "size": 1510075,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/entityculling-neoforge-1.11.3-mc1.21.1.jar",
       "required": true,
       "overwrite": true
     },
     {
-      "path": "mods/alexsmobs-1.22.17.jar",
-      "sha256": "6e502855f79e4c9f2a11d560a9b88a3ab295aa378c44b0f0a0dd95f95d0301a6",
-      "size": 26620546,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/alexsmobs-1.22.17.jar",
+      "path": "mods/entity_texture_features-7.2.7-1.21-neoforge.jar",
+      "sha256": "6e4b1870d59ef6e337961c12a93760b05900e1e51c97def7953a4c5a551153ee",
+      "size": 811876,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/entity_texture_features-7.2.7-1.21-neoforge.jar",
       "required": true,
       "overwrite": true
     },
     {
-      "path": "mods/create-aeronautics-bundled-1.21.1-1.3.2.jar",
-      "sha256": "a3f330d4757640f8715d991a43eedb826e4d0e51558d859c843ae6693bd35f1e",
-      "size": 33123131,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/create-aeronautics-bundled-1.21.1-1.3.2.jar",
+      "path": "mods/entity_model_features-3.3.12-1.21-neoforge.jar",
+      "sha256": "3ba0bf7b487660920d12cc0ff6cb5de1763f024a080fe0cd7d64e1c8e0f7f190",
+      "size": 656382,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/entity_model_features-3.3.12-1.21-neoforge.jar",
       "required": true,
       "overwrite": true
     },
     {
-      "path": "mods/citadel-1.21.1-2.7.6.jar",
-      "sha256": "9e12468c49e5a95b7adbf22b3b4d05bc55565989b89c40b985cd73bdfe63c3c2",
-      "size": 3028943,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/citadel-1.21.1-2.7.6.jar",
+      "path": "mods/enchdesc-neoforge-1.21.1-21.1.11.jar",
+      "sha256": "868d3eab3305d96dd3ecf510d18a7aa7444e2aea168695cf4aff23a96bec975f",
+      "size": 82648,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/enchdesc-neoforge-1.21.1-21.1.11.jar",
       "required": true,
       "overwrite": true
     },
     {
-      "path": "mods/sophisticatedcore-1.21.1-1.5.31.2460.jar",
-      "sha256": "32eed2cd6540a06fbafe73b60df5e7c26f8c277b0bb5abc349261f78ab66c5bf",
-      "size": 1845838,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/sophisticatedcore-1.21.1-1.5.31.2460.jar",
+      "path": "mods/dynamic-fps-3.11.4+minecraft-1.21.0-neoforge.jar",
+      "sha256": "78cb67c9faeff5d1cb4da48d41e48ecc47baddaaec0f792e6edc8207aee0ab8e",
+      "size": 220193,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/dynamic-fps-3.11.4+minecraft-1.21.0-neoforge.jar",
       "required": true,
       "overwrite": true
     },
     {
-      "path": "mods/Zeta-1.1-40.jar",
-      "sha256": "4f17d1a2b9fd6d18ddb7697aa451db7fb154053b8648f79de279ae0d7e68a2fa",
-      "size": 763725,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/Zeta-1.1-40.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/ritchiesprojectilelib-2.1.2+mc.1.21.1-neoforge.jar",
-      "sha256": "cc509060833736fb650aa4c36b1ce33a7eeeb9ca6e9f8e80a7c951c9e7487b24",
-      "size": 76369,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/ritchiesprojectilelib-2.1.2+mc.1.21.1-neoforge.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/balm-neoforge-1.21.1-21.0.67.jar",
-      "sha256": "eaae887582a67a02f55a970ec2d7353f1886a99924ed6144aa4d898266606c34",
-      "size": 786010,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/balm-neoforge-1.21.1-21.0.67.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/resourcefullib-neoforge-1.21-3.0.12.jar",
-      "sha256": "5e36f2c69de008dc5795f730c84ab767688f15c810944b585485349a0c911261",
-      "size": 484332,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/resourcefullib-neoforge-1.21-3.0.12.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/prickle-neoforge-1.21.1-21.1.11.jar",
-      "sha256": "ccf46c442ed3c7fe41ad056f0940560829ec4dd88360985dfacd78f4614eb167",
-      "size": 84812,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/prickle-neoforge-1.21.1-21.1.11.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/bookshelf-neoforge-1.21.1-21.1.81.jar",
-      "sha256": "19e88d40da2b6a114c2b808f7fb469d96e66a5379df0a8a43fcb7834498b3e76",
-      "size": 328813,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/bookshelf-neoforge-1.21.1-21.1.81.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/Searchables-neoforge-1.21.1-1.0.2.jar",
-      "sha256": "ca193f0c69033d8f709f9e073a7c1ef4ea46714e5c2f94eb23ace12781c6aa68",
-      "size": 77326,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/Searchables-neoforge-1.21.1-1.0.2.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/mezz_config-1.21.1-neoforge-0.6.11-standalone.jar",
-      "sha256": "f4b93ad61fca9c95d6293384a66b9d4ef83c6b6ee1b304996cf899a06c136aa8",
-      "size": 346826,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/mezz_config-1.21.1-neoforge-0.6.11-standalone.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/create_sophback_compat-1.0.jar",
-      "sha256": "5eee67aff06d3355cbd06b6190551e109884a43465da3671f9d2735a07eba3c3",
-      "size": 679850,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/create_sophback_compat-1.0.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/sophisticatedbackpacks-1.21.1-3.26.20.2244.jar",
-      "sha256": "4104a0f47ee849a8d610faa76eb652453d7fbf98a38ff2516b972f70fc9d9edf",
-      "size": 1264515,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/sophisticatedbackpacks-1.21.1-3.26.20.2244.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/FTBQuestsOptimizer-neoforge-3.2.0-1.21.1.jar",
-      "sha256": "db758ec0b563f2956f5e959725e0f1c18a1df63d562f786e116350c3cf10cefa",
-      "size": 18059,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/FTBQuestsOptimizer-neoforge-3.2.0-1.21.1.jar",
+      "path": "mods/cwb-5.0.0+1.21.0.neoforge.jar",
+      "sha256": "6c687b0415202f054724576cc64e6618cff784f0eb8d98a480286f3de37b7557",
+      "size": 88984,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/cwb-5.0.0+1.21.0.neoforge.jar",
       "required": true,
       "overwrite": true
     },
@@ -538,74 +506,10 @@
       "overwrite": true
     },
     {
-      "path": "mods/JustEnoughProfessions-neoforge-1.21.1-4.0.5.jar",
-      "sha256": "b320b47f1791f56df9e1a05138f0e312e6e54541945ff15f2f1fd398cd1d4d9d",
-      "size": 24879,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/JustEnoughProfessions-neoforge-1.21.1-4.0.5.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/JustEnoughResources-NeoForge-1.21.1-1.6.0.66.jar",
-      "sha256": "5f7073a3412817bad8bd035318d7d192e8d1d33d96d4ae18f00ecacad02f1f35",
-      "size": 301921,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/JustEnoughResources-NeoForge-1.21.1-1.6.0.66.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/justenoughbreeding-neoforge-1.21.1-3.3.1.jar",
-      "sha256": "6541ebcbaeb6cd6638ce01e509c38122e744e1d849bfdbd94e4097b54cd555d3",
-      "size": 626813,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/justenoughbreeding-neoforge-1.21.1-3.3.1.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/FarmersDelight-1.21.1-1.3.4.jar",
-      "sha256": "139ad7696462c89c03eea463f805abffa552526c5dadaadae221dd9624cb197c",
-      "size": 3160490,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/FarmersDelight-1.21.1-1.3.4.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/jeed-1.21-2.3.5-neoforge.jar",
-      "sha256": "de2c468b259f2557f5004c8b06eff750348d13f29bcac63d4ab9aa56bd8f7731",
-      "size": 166779,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/jeed-1.21-2.3.5-neoforge.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/jeioptimizer-1.21.1-1.2.2-19.70.jar",
-      "sha256": "668ee53a7bc91cce4770c005d6540a1e5ac6d76dde74f8ca196725e6b1be369b",
-      "size": 26843,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/jeioptimizer-1.21.1-1.2.2-19.70.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/Quark-4.1-488.jar",
-      "sha256": "f693092c4bc54e8ef427ff98f93926fd85875e45d2697b9db7c45f551ae24feb",
-      "size": 15614268,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/Quark-4.1-488.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/createdieselgenerators-1.21.1-1.3.15.jar",
-      "sha256": "56ef1d574278fc311f1ffa223dbd613077b899354a18d01ae8dca2578a4e2990",
-      "size": 3154746,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/createdieselgenerators-1.21.1-1.3.15.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/create_connected-1.3.3-mc1.21.1.jar",
-      "sha256": "0c5eb9ffb5c8d71e6e2a39023feb85c51adfb10d38949bc47c4abbd53b351a4f",
-      "size": 6786783,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/create_connected-1.3.3-mc1.21.1.jar",
+      "path": "mods/cristellib-neoforge-1.21.1-3.1.7.jar",
+      "sha256": "11e05dbc97bd3fe1790bd6361747240e314c1dbf40b590ea20cc691dc8396c38",
+      "size": 583525,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/cristellib-neoforge-1.21.1-3.1.7.jar",
       "required": true,
       "overwrite": true
     },
@@ -618,18 +522,10 @@
       "overwrite": true
     },
     {
-      "path": "mods/interiors-1.21.1-neoforge-0.6.1.jar",
-      "sha256": "0d1326fb8b67623ae1c69a63b788dcdcecaf8df400c7d8e5e55ace79a5166fe5",
-      "size": 486912,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/interiors-1.21.1-neoforge-0.6.1.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/create-1.21.1-6.0.10.jar",
-      "sha256": "ef87fe5709f1ba1f5b8bb20a2925b5afb4669e178fd6d8bf10c167759eefe37a",
-      "size": 19123767,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/create-1.21.1-6.0.10.jar",
+      "path": "mods/createdieselgenerators-1.21.1-1.3.15.jar",
+      "sha256": "56ef1d574278fc311f1ffa223dbd613077b899354a18d01ae8dca2578a4e2990",
+      "size": 3154746,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/createdieselgenerators-1.21.1-1.3.15.jar",
       "required": true,
       "overwrite": true
     },
@@ -642,10 +538,42 @@
       "overwrite": true
     },
     {
-      "path": "mods/handcrafted-neoforge-1.21.1-4.0.3.jar",
-      "sha256": "6f2a776fb28ed07d370899814e5e711fbeebe31396097d78a3b550439b364948",
-      "size": 7132842,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/handcrafted-neoforge-1.21.1-4.0.3.jar",
+      "path": "mods/createaddition-1.7.2.jar",
+      "sha256": "71e9c3ac39089e72c1e47a129a44e41eb55efc9534eecfdead8da8fb64313414",
+      "size": 1772844,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/createaddition-1.7.2.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/create_sophback_compat-1.0.jar",
+      "sha256": "5eee67aff06d3355cbd06b6190551e109884a43465da3671f9d2735a07eba3c3",
+      "size": 679850,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/create_sophback_compat-1.0.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/create_connected-1.3.3-mc1.21.1.jar",
+      "sha256": "0c5eb9ffb5c8d71e6e2a39023feb85c51adfb10d38949bc47c4abbd53b351a4f",
+      "size": 6786783,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/create_connected-1.3.3-mc1.21.1.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/create-aeronautics-bundled-1.21.1-1.3.2.jar",
+      "sha256": "a3f330d4757640f8715d991a43eedb826e4d0e51558d859c843ae6693bd35f1e",
+      "size": 33123131,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/create-aeronautics-bundled-1.21.1-1.3.2.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/create-1.21.1-6.0.10.jar",
+      "sha256": "ef87fe5709f1ba1f5b8bb20a2925b5afb4669e178fd6d8bf10c167759eefe37a",
+      "size": 19123767,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/create-1.21.1-6.0.10.jar",
       "required": true,
       "overwrite": true
     },
@@ -658,14 +586,6 @@
       "overwrite": true
     },
     {
-      "path": "mods/createaddition-1.7.2.jar",
-      "sha256": "71e9c3ac39089e72c1e47a129a44e41eb55efc9534eecfdead8da8fb64313414",
-      "size": 1772844,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/createaddition-1.7.2.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
       "path": "mods/comforts-neoforge-9.0.5+1.21.1.jar",
       "sha256": "6b0fd35a1349107e08a45539adbde9683bb203febc43a3305f6fc4ac73e59615",
       "size": 422658,
@@ -674,18 +594,26 @@
       "overwrite": true
     },
     {
-      "path": "mods/lootr-neoforge-1.21.1-1.11.38.127.jar",
-      "sha256": "5c74de4709d1c13b25880fdd241a89d5d9f331346d20edc76f80ccd4d99dc66c",
-      "size": 1075929,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/lootr-neoforge-1.21.1-1.11.38.127.jar",
+      "path": "mods/cloth-config-15.0.140-neoforge.jar",
+      "sha256": "65e722e0d98431a07c45f8bdd8d529a217cc8c175fde1740248bd5c1b4f3c0d4",
+      "size": 1163890,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/cloth-config-15.0.140-neoforge.jar",
       "required": true,
       "overwrite": true
     },
     {
-      "path": "mods/waystones-neoforge-1.21.1-21.1.46.jar",
-      "sha256": "ca76a4457160e8353b1f013a21ab377b264141f466d84ec8952a123058b8af78",
-      "size": 1223229,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/waystones-neoforge-1.21.1-21.1.46.jar",
+      "path": "mods/citresewn-neoforge-1.21.1-0.jar",
+      "sha256": "b0447d544c345acb958b611b1fe85d47d9c997a7c7e75a4a14266e8f7e95686f",
+      "size": 203987,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/citresewn-neoforge-1.21.1-0.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/citadel-1.21.1-2.7.6.jar",
+      "sha256": "9e12468c49e5a95b7adbf22b3b4d05bc55565989b89c40b985cd73bdfe63c3c2",
+      "size": 3028943,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/citadel-1.21.1-2.7.6.jar",
       "required": true,
       "overwrite": true
     },
@@ -706,34 +634,234 @@
       "overwrite": true
     },
     {
-      "path": "mods/cwb-5.0.0+1.21.0.neoforge.jar",
-      "sha256": "6c687b0415202f054724576cc64e6618cff784f0eb8d98a480286f3de37b7557",
-      "size": 88984,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/cwb-5.0.0+1.21.0.neoforge.jar",
+      "path": "mods/bookshelf-neoforge-1.21.1-21.1.81.jar",
+      "sha256": "19e88d40da2b6a114c2b808f7fb469d96e66a5379df0a8a43fcb7834498b3e76",
+      "size": 328813,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/bookshelf-neoforge-1.21.1-21.1.81.jar",
       "required": true,
       "overwrite": true
     },
     {
-      "path": "mods/enchdesc-neoforge-1.21.1-21.1.11.jar",
-      "sha256": "868d3eab3305d96dd3ecf510d18a7aa7444e2aea168695cf4aff23a96bec975f",
-      "size": 82648,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/enchdesc-neoforge-1.21.1-21.1.11.jar",
+      "path": "mods/betsyross-3.1.1+mc.1.21.1-neoforge.jar",
+      "sha256": "395d3909c439f8c154a2a06d7ab23d5bb22a0871a55679f591c5acd3fb8358be",
+      "size": 198584,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/betsyross-3.1.1+mc.1.21.1-neoforge.jar",
       "required": true,
       "overwrite": true
     },
     {
-      "path": "mods/voicechat-neoforge-1.21.1-2.6.27.jar",
-      "sha256": "ca517aa9062b916a446a5424c643176ca845b95add682aca980efe298b2b44df",
-      "size": 4936802,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/voicechat-neoforge-1.21.1-2.6.27.jar",
+      "path": "mods/balm-neoforge-1.21.1-21.0.67.jar",
+      "sha256": "eaae887582a67a02f55a970ec2d7353f1886a99924ed6144aa4d898266606c34",
+      "size": 786010,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/balm-neoforge-1.21.1-21.0.67.jar",
       "required": true,
       "overwrite": true
     },
     {
-      "path": "mods/jei-1.21.1-neoforge-19.70.0.469.jar",
-      "sha256": "9ab82d9bdbc8d9a08b80bc2023e1d886f6335b92f937d3afac878c9ea995dc33",
-      "size": 4784333,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/jei-1.21.1-neoforge-19.70.0.469.jar",
+      "path": "mods/baguettelib-1.21.1-NeoForge-2.0.7.jar",
+      "sha256": "a1af3ae5c2945240bff3afa779621d9d8e21fb23bb6b1433f584e746735bae24",
+      "size": 85738,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/baguettelib-1.21.1-NeoForge-2.0.7.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/architectury-13.0.11-neoforge.jar",
+      "sha256": "9cc92f2c09533fc5482c60f993bd891c655a0e32b637037cdcb7c2b23adedeeb",
+      "size": 584734,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/architectury-13.0.11-neoforge.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/appleskin-neoforge-mc1.21-3.0.9.jar",
+      "sha256": "38b48dd6231341c9f964ce6e42c57ec866c6cc8f72bec938390a59bafb3922df",
+      "size": 75804,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/appleskin-neoforge-mc1.21-3.0.9.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/antixray-neoforge-1.4.8+1.21.1.jar",
+      "sha256": "5420a6ff3bc2d53db330583e09d6b5bf43bdd67e2aea2a5f43add3c9bbd5104f",
+      "size": 128621,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/antixray-neoforge-1.4.8+1.21.1.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/alexsmobs-1.22.17.jar",
+      "sha256": "6e502855f79e4c9f2a11d560a9b88a3ab295aa378c44b0f0a0dd95f95d0301a6",
+      "size": 26620546,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/alexsmobs-1.22.17.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/Zeta-1.1-40.jar",
+      "sha256": "4f17d1a2b9fd6d18ddb7697aa451db7fb154053b8648f79de279ae0d7e68a2fa",
+      "size": 763725,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/Zeta-1.1-40.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/YungsBetterStrongholds-1.21.1-NeoForge-5.1.3.jar",
+      "sha256": "a9cab2fc01538368862365691f7d215309801aed0b390351681b6b60a1db7b58",
+      "size": 461244,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/YungsBetterStrongholds-1.21.1-NeoForge-5.1.3.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/YungsBetterNetherFortresses-1.21.1-NeoForge-3.1.5.jar",
+      "sha256": "5450a64a7036237f449496837e08f3e5b3aa1d7974a10df43944172def75d8ff",
+      "size": 609639,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/YungsBetterNetherFortresses-1.21.1-NeoForge-3.1.5.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/YungsBetterJungleTemples-1.21.1-NeoForge-3.1.2.jar",
+      "sha256": "a0d57b78c7a1891796f342b1f09c214bc27bedf0a3a894f029dfdb2db9f813d0",
+      "size": 795839,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/YungsBetterJungleTemples-1.21.1-NeoForge-3.1.2.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/YungsBetterEndIsland-1.21.1-NeoForge-3.1.2.jar",
+      "sha256": "8005f1ea798d09fc05dad07a21ed1f393a523a718197cdbd37b1ce6d9a17e4a4",
+      "size": 398130,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/YungsBetterEndIsland-1.21.1-NeoForge-3.1.2.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/YungsBetterDungeons-1.21.1-NeoForge-5.1.4.jar",
+      "sha256": "61816c3b7c9d92c6b44f93dce87ceb0a22827f20285d5d9c4d10d519d734de04",
+      "size": 782160,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/YungsBetterDungeons-1.21.1-NeoForge-5.1.4.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/YungsApi-1.21.1-NeoForge-5.1.9.jar",
+      "sha256": "375e0b2f988ab4f5bde182166c0f0b102377adc8f823660c24ade08b0b3cde56",
+      "size": 413763,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/YungsApi-1.21.1-NeoForge-5.1.9.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/TreeChop-1.21.1-neoforge-0.19.3.jar",
+      "sha256": "2a5ec9cca187b4a031e9dd7e5eec8d0872f7d2bc355d88bda633021fa7eb71b0",
+      "size": 517750,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/TreeChop-1.21.1-neoforge-0.19.3.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/Searchables-neoforge-1.21.1-1.0.2.jar",
+      "sha256": "ca193f0c69033d8f709f9e073a7c1ef4ea46714e5c2f94eb23ace12781c6aa68",
+      "size": 77326,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/Searchables-neoforge-1.21.1-1.0.2.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/Quark-4.1-488.jar",
+      "sha256": "f693092c4bc54e8ef427ff98f93926fd85875e45d2697b9db7c45f551ae24feb",
+      "size": 15614268,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/Quark-4.1-488.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/PickUpNotifier-v21.1.1-1.21.1-NeoForge.jar",
+      "sha256": "b49535698de9c7b5a879c8ec99175771d87d5261d5cc4c6152ba1fa51fc5676a",
+      "size": 97094,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/PickUpNotifier-v21.1.1-1.21.1-NeoForge.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/NoChatReports-NEOFORGE-1.21.1-v2.9.1.jar",
+      "sha256": "866ac9a47afcd829bdb03890b5d8f80bb4c6f47332c64717b6e909bee51337b6",
+      "size": 306668,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/NoChatReports-NEOFORGE-1.21.1-v2.9.1.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/MouseTweaks-neoforge-mc1.21-2.26.1.jar",
+      "sha256": "68e6f4201c5de97b77929a7215c9552495696ca6a3bf3ae4eacc34e135f6cc8b",
+      "size": 73938,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/MouseTweaks-neoforge-mc1.21-2.26.1.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/JustEnoughResources-NeoForge-1.21.1-1.6.0.66.jar",
+      "sha256": "5f7073a3412817bad8bd035318d7d192e8d1d33d96d4ae18f00ecacad02f1f35",
+      "size": 301921,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/JustEnoughResources-NeoForge-1.21.1-1.6.0.66.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/JustEnoughProfessions-neoforge-1.21.1-4.0.5.jar",
+      "sha256": "b320b47f1791f56df9e1a05138f0e312e6e54541945ff15f2f1fd398cd1d4d9d",
+      "size": 24879,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/JustEnoughProfessions-neoforge-1.21.1-4.0.5.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/Jade-1.21.1-NeoForge-15.10.6.jar",
+      "sha256": "276f1f65a20d04f536989c4f311949d770b52c440c23c2b904a08860f3c93810",
+      "size": 726853,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/Jade-1.21.1-NeoForge-15.10.6.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/ImmediatelyFast-NeoForge-1.6.15+1.21.1.jar",
+      "sha256": "7d7b1d7b9f71d5303e42b2fa45f222a5ab06e0ef5982abb6da5dd9cc449b3702",
+      "size": 368896,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/ImmediatelyFast-NeoForge-1.6.15+1.21.1.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/Geophilic v3.7.mod.jar",
+      "sha256": "9e6a98b438e078f2e4f5b79f71bfc715a730369f8cf42fd287c6e43c7441cfae",
+      "size": 1115993,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/Geophilic v3.7.mod.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/FarmersDelight-1.21.1-1.3.4.jar",
+      "sha256": "139ad7696462c89c03eea463f805abffa552526c5dadaadae221dd9624cb197c",
+      "size": 3160490,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/FarmersDelight-1.21.1-1.3.4.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/FTBQuestsOptimizer-neoforge-3.2.0-1.21.1.jar",
+      "sha256": "db758ec0b563f2956f5e959725e0f1c18a1df63d562f786e116350c3cf10cefa",
+      "size": 18059,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/FTBQuestsOptimizer-neoforge-3.2.0-1.21.1.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/CrashAssistant-neoforge-1.20.6-1.21.4-discord-relay.jar",
+      "sha256": "85c6703ce82ab92c37266637c35a9044387f1ed8a178073ec39695e5cb8793e4",
+      "size": 3480838,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/CrashAssistant-neoforge-1.20.6-1.21.4-discord-relay.jar",
       "required": true,
       "overwrite": true
     },
@@ -754,114 +882,10 @@
       "overwrite": true
     },
     {
-      "path": "mods/notenoughanimations-neoforge-1.12.7-mc1.21.1.jar",
-      "sha256": "5b8107cf01128523233287d9b0789f743f9d6186bda651de838e02350b311828",
-      "size": 1868196,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/notenoughanimations-neoforge-1.12.7-mc1.21.1.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/xaeroworldmap-neoforge-1.21.1-1.47.0.jar",
-      "sha256": "6a42b6f01bd96b496e5fcc07d4541bad1a699d9ec8ad58ad40d5dcfe23a7d4c7",
-      "size": 1427078,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/xaeroworldmap-neoforge-1.21.1-1.47.0.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/Jade-1.21.1-NeoForge-15.10.6.jar",
-      "sha256": "276f1f65a20d04f536989c4f311949d770b52c440c23c2b904a08860f3c93810",
-      "size": 726853,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/Jade-1.21.1-NeoForge-15.10.6.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/MouseTweaks-neoforge-mc1.21-2.26.1.jar",
-      "sha256": "68e6f4201c5de97b77929a7215c9552495696ca6a3bf3ae4eacc34e135f6cc8b",
-      "size": 73938,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/MouseTweaks-neoforge-mc1.21-2.26.1.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/appleskin-neoforge-mc1.21-3.0.9.jar",
-      "sha256": "38b48dd6231341c9f964ce6e42c57ec866c6cc8f72bec938390a59bafb3922df",
-      "size": 75804,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/appleskin-neoforge-mc1.21-3.0.9.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/cloth-config-15.0.140-neoforge.jar",
-      "sha256": "65e722e0d98431a07c45f8bdd8d529a217cc8c175fde1740248bd5c1b4f3c0d4",
-      "size": 1163890,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/cloth-config-15.0.140-neoforge.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/sodiumdynamiclights-neoforge-1.0.10-1.21.1.jar",
-      "sha256": "d78002d50865db928fbf2c17c716ffcbbd6d33bff88aa1f0f3a04152a2665e25",
-      "size": 299353,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/sodiumdynamiclights-neoforge-1.0.10-1.21.1.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/yeetusexperimentus-neoforge-87.0.0.jar",
-      "sha256": "9117db8b5905abf18f64fdf8f8d8ca5a91c23abd0a7fa2c9986c21aa17d74e75",
-      "size": 570057,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/yeetusexperimentus-neoforge-87.0.0.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/NoChatReports-NEOFORGE-1.21.1-v2.9.1.jar",
-      "sha256": "866ac9a47afcd829bdb03890b5d8f80bb4c6f47332c64717b6e909bee51337b6",
-      "size": 306668,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/NoChatReports-NEOFORGE-1.21.1-v2.9.1.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/ferritecore-7.0.3-neoforge.jar",
-      "sha256": "d87ea28262715ebff45b8a82d493e6b468e7a4521bc021df5d88302196d030a8",
-      "size": 121559,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/ferritecore-7.0.3-neoforge.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/dynamic-fps-3.11.4+minecraft-1.21.0-neoforge.jar",
-      "sha256": "78cb67c9faeff5d1cb4da48d41e48ecc47baddaaec0f792e6edc8207aee0ab8e",
-      "size": 220193,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/dynamic-fps-3.11.4+minecraft-1.21.0-neoforge.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/ok_zoomer-neo-10.0.0-beta.13.jar",
-      "sha256": "61da322358127329d40b36a028faa7d91c370a3708e08becf1f1b8b242c5eb61",
-      "size": 208085,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/ok_zoomer-neo-10.0.0-beta.13.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/konkrete_neoforge_1.9.9_MC_1.21.jar",
-      "sha256": "791c5538751dd3015ef3a2ce92d98719e1a28a48ebbd817b78506771256654cd",
-      "size": 618842,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/konkrete_neoforge_1.9.9_MC_1.21.jar",
-      "required": true,
-      "overwrite": true
-    },
-    {
-      "path": "mods/citresewn-neoforge-1.21.1-0.jar",
-      "sha256": "b0447d544c345acb958b611b1fe85d47d9c997a7c7e75a4a14266e8f7e95686f",
-      "size": 203987,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/citresewn-neoforge-1.21.1-0.jar",
+      "path": "defaultconfigs/justessentials-server.toml",
+      "sha256": "6bbe8819e4a51f9938407e8c605edb182600f98f9a8cfe84628420dfaa993f0d",
+      "size": 2249,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/defaultconfigs/justessentials-server.toml",
       "required": true,
       "overwrite": true
     }

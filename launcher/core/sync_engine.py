@@ -243,15 +243,6 @@ class SyncEngine:
         if not isinstance(manifest.get("files"), list):
             raise ValueError("Некорректный манифест: поле 'files' должно быть списком")
 
-        # Cache successfully loaded manifest for offline resilience
-        try:
-            cache_file = self.game_dir / ".last_manifest.json"
-            cache_file.parent.mkdir(parents=True, exist_ok=True)
-            with open(cache_file, "w", encoding="utf-8") as cf:
-                json.dump(manifest, cf, indent=2, ensure_ascii=False)
-        except Exception:
-            pass
-
         return manifest
 
     def verify_local_installation(self, manifest: Dict[str, Any]) -> List[str]:
@@ -286,11 +277,18 @@ class SyncEngine:
                     invalid.append(f"{rel_p}: sha256 mismatch")
         return invalid
 
-    def plan_sync(self, manifest: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[Path]]:
+    def plan_sync(
+        self,
+        manifest: Dict[str, Any],
+        tracked_modpack_files: Optional[Set[str]] = None,
+    ) -> Tuple[List[Dict[str, Any]], List[Path]]:
         """
         Plans which files need to be downloaded and which obsolete mods need removal.
         Validates all paths for path traversal safety.
         Returns: (files_to_download, obsolete_files_to_delete)
+
+        NOTE: Only mods that were part of a previously installed modpack version are considered obsolete.
+        Custom mods added manually by players or developers are NEVER deleted!
         """
         files_to_download: List[Dict[str, Any]] = []
         manifest_relative_paths = set()
@@ -337,19 +335,36 @@ class SyncEngine:
                     logger.info(f"Size mismatch for {clean_rel}: local={local_path.stat().st_size}, expected={expected_size}")
                     files_to_download.append(file_entry)
 
-        # Detect obsolete jars in mods/ (excluding temp files and staging)
-        obsolete_files: List[Path] = []
-        mods_dir = self.game_dir / "mods"
-        if mods_dir.exists():
-            for local_mod in mods_dir.rglob("*.jar"):
-                if local_mod.name.endswith(".download") or ".sync_staging" in local_mod.as_posix():
-                    continue
+        # Determine tracked modpack files from previous installation
+        if tracked_modpack_files is None:
+            tracked_modpack_files = set()
+            cache_file = self.game_dir / ".last_manifest.json"
+            if cache_file.exists():
                 try:
-                    mod_rel = local_mod.relative_to(self.game_dir.resolve()).as_posix()
-                    if mod_rel not in manifest_relative_paths:
-                        obsolete_files.append(local_mod)
-                except ValueError:
-                    continue
+                    with open(cache_file, "r", encoding="utf-8") as cf:
+                        old_manifest = json.load(cf)
+                        for f in old_manifest.get("files", []):
+                            if isinstance(f, dict) and "path" in f:
+                                clean_old = f["path"].replace("\\", "/").strip().lstrip("/")
+                                tracked_modpack_files.add(clean_old)
+                except Exception as e:
+                    logger.warning(f"Could not read previous manifest cache for obsolete tracking: {e}")
+
+        # Detect obsolete jars in mods/ ONLY among tracked modpack files.
+        # User-added custom mods were never in tracked_modpack_files and are NEVER deleted!
+        obsolete_files: List[Path] = []
+        if tracked_modpack_files:
+            mods_dir = self.game_dir / "mods"
+            if mods_dir.exists():
+                for local_mod in mods_dir.rglob("*.jar"):
+                    if local_mod.name.endswith(".download") or ".sync_staging" in local_mod.as_posix():
+                        continue
+                    try:
+                        mod_rel = local_mod.relative_to(self.game_dir.resolve()).as_posix()
+                        if mod_rel in tracked_modpack_files and mod_rel not in manifest_relative_paths:
+                            obsolete_files.append(local_mod)
+                    except ValueError:
+                        continue
 
         return files_to_download, obsolete_files
 
@@ -518,6 +533,13 @@ class SyncEngine:
                         obs_file.unlink(missing_ok=True)
                     except Exception as e:
                         logger.warning(f"Could not delete obsolete file {obs_file}: {e}")
+            try:
+                cache_file = self.game_dir / ".last_manifest.json"
+                cache_file.parent.mkdir(parents=True, exist_ok=True)
+                with open(cache_file, "w", encoding="utf-8") as cf:
+                    json.dump(manifest, cf, indent=2, ensure_ascii=False)
+            except Exception as ce:
+                logger.warning(f"Could not save manifest cache: {ce}")
             logger.info("All modpack files are up to date.")
             if progress_callback:
                 progress_callback(100, 100, "Сборка обновлена")
@@ -633,6 +655,14 @@ class SyncEngine:
                     obs_file.unlink(missing_ok=True)
                 except Exception as e:
                     logger.warning(f"Could not delete obsolete file {obs_file}: {e}")
+
+            try:
+                cache_file = self.game_dir / ".last_manifest.json"
+                cache_file.parent.mkdir(parents=True, exist_ok=True)
+                with open(cache_file, "w", encoding="utf-8") as cf:
+                    json.dump(manifest, cf, indent=2, ensure_ascii=False)
+            except Exception as ce:
+                logger.warning(f"Could not save manifest cache: {ce}")
 
             if progress_callback:
                 progress_callback(total_bytes, total_bytes, "Сборка успешно обновлена")

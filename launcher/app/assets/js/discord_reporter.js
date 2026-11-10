@@ -9,7 +9,7 @@ const LauncherLogger = require('./launcher_logger')
 const logger = LoggerUtil.getLogger('DiscordReporter')
 
 const WORKER_URL = 'https://crash-assistant-discord-relay.crash-assistant-discord-relay.workers.dev'
-const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1568698650274828431/pnepBE0NtieCzaL9gujeBxu2s61WBdDpJgUjt4OKg7v_xq_qeGrv21rVt1DLF3Or6sy8'
+const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1569726539153543238/_ee4jYHOUa_VnbIQVHcrlDaD8qAnE2BUgj_hwown1bkjhjqfFSDTRDeVdnsPh1wHv0Lu'
 
 let ConfigManager = null
 function getConfigManager() {
@@ -192,10 +192,25 @@ class DiscordReporter {
             })
             return { success: true, body: resp.body }
         } catch (directErr) {
-            logger.warn(`Direct request to ${targetUrl} failed: ${directErr.message}. Attempting proxy tunnel fallback...`)
+            logger.warn(`Direct request to ${targetUrl} failed: ${directErr.message}. Attempting mirror / proxy fallback...`)
         }
 
-        // 2. Try proxy tunnel fallback if available
+        // 2. If it is a discord webhook and direct failed, try discord webhook mirror
+        if (targetUrl.includes('discord.com/api/webhooks/')) {
+            const mirrorUrl = targetUrl.replace('discord.com', 'webhook.lewisakura.moe')
+            try {
+                const resp = await got.post(mirrorUrl, {
+                    json: payload,
+                    timeout: 5000,
+                    headers: { 'User-Agent': 'Lowuncher/1.0.6' }
+                })
+                return { success: true, body: resp.body }
+            } catch (mirrorErr) {
+                logger.warn(`Discord mirror request to ${mirrorUrl} failed: ${mirrorErr.message}. Attempting proxy tunnel fallback...`)
+            }
+        }
+
+        // 3. Try proxy tunnel fallback if available
         const proxyCandidate = process.env.HTTPS_PROXY || process.env.HTTP_PROXY || 'http://127.0.0.1:10809'
         try {
             const proxyUrl = new URL(proxyCandidate)

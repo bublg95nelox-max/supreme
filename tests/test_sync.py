@@ -63,10 +63,12 @@ class TestSyncEngine(unittest.TestCase):
         manifest = generate_manifest(self.source_dir, "http://example.com")
         engine = SyncEngine(self.client_dir)
 
-        # Create an obsolete mod in client mods
+        # Create an obsolete mod in client mods (tracked in previous manifest)
         (self.client_dir / "mods").mkdir(parents=True)
         obsolete_mod = self.client_dir / "mods" / "old-deleted-mod.jar"
         obsolete_mod.write_text("old")
+        with open(self.client_dir / ".last_manifest.json", "w", encoding="utf-8") as f:
+            json.dump({"files": [{"path": "mods/old-deleted-mod.jar"}]}, f)
 
         to_download, obsolete = engine.plan_sync(manifest)
 
@@ -149,6 +151,8 @@ class TestSyncEngine(unittest.TestCase):
         existing_working_mod.write_text("working-v1")
         obsolete_mod = mods_dir / "old-obsolete.jar"
         obsolete_mod.write_text("old-mod")
+        with open(self.client_dir / ".last_manifest.json", "w", encoding="utf-8") as f:
+            json.dump({"files": [{"path": "mods/existing-mod.jar"}, {"path": "mods/old-obsolete.jar"}]}, f)
 
         engine = SyncEngine(self.client_dir)
 
@@ -207,6 +211,8 @@ class TestSyncEngine(unittest.TestCase):
         mods_dir.mkdir(parents=True, exist_ok=True)
         obsolete_mod = mods_dir / "old-obsolete.jar"
         obsolete_mod.write_text("old-mod")
+        with open(self.client_dir / ".last_manifest.json", "w", encoding="utf-8") as f:
+            json.dump({"files": [{"path": "mods/existing-mod.jar"}, {"path": "mods/old-obsolete.jar"}]}, f)
 
         engine = SyncEngine(self.client_dir)
 
@@ -241,6 +247,41 @@ class TestSyncEngine(unittest.TestCase):
         # Check that obsolete mod was removed
         self.assertFalse(obsolete_mod.exists())
         self.assertFalse((self.client_dir / ".sync_staging").exists())
+
+    def test_custom_user_mods_never_deleted(self):
+        """
+        Verify that user-added custom mods (or test mods) are NEVER deleted during sync.
+        Only mods that were part of previous modpack manifests can be pruned.
+        """
+        mods_dir = self.client_dir / "mods"
+        mods_dir.mkdir(parents=True, exist_ok=True)
+        custom_mod = mods_dir / "my-custom-test-mod.jar"
+        custom_mod.write_text("custom-mod-content")
+
+        with open(self.client_dir / ".last_manifest.json", "w", encoding="utf-8") as f:
+            json.dump({"files": [{"path": "mods/sample-mod.jar"}]}, f)
+
+        engine = SyncEngine(self.client_dir)
+        sample_file = self.source_dir / "mods" / "sample-mod.jar"
+        manifest = {
+            "minecraft_version": "1.21.1",
+            "files": [
+                {
+                    "path": "mods/sample-mod.jar",
+                    "sha256": compute_sha256(sample_file),
+                    "size": sample_file.stat().st_size,
+                    "url": f"file://{sample_file.resolve().as_posix()}",
+                    "overwrite": True,
+                }
+            ],
+        }
+        manifest_path = self.root / "good_manifest.json"
+        with open(manifest_path, "w", encoding="utf-8") as f:
+            json.dump(manifest, f)
+
+        engine.sync(str(manifest_path))
+        self.assertTrue(custom_mod.exists(), "Custom user mod must NEVER be deleted during sync!")
+        self.assertEqual(custom_mod.read_text(), "custom-mod-content")
 
 
 if __name__ == "__main__":
