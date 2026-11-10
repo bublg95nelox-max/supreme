@@ -320,6 +320,13 @@ class JavaManager:
                     tf.extractall(self.java21_dir)
             else:
                 raise ValueError(f"Unknown archive format: {filename}")
+
+            if sys.platform != "win32":
+                for bin_file in self.java21_dir.glob("**/bin/*"):
+                    try:
+                        bin_file.chmod(bin_file.stat().st_mode | 0o755)
+                    except Exception:
+                        pass
         except ValueError as exc:
             raise RuntimeError(f"Unsafe Java archive: {exc}") from exc
         finally:

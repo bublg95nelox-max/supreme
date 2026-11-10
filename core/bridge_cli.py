@@ -8,20 +8,16 @@ from __future__ import annotations
 import sys
 import os
 
-# Force UTF-8 encoding on standard streams to eliminate Windows CP1251/CP866 question mark replacement characters
-if sys.platform == "win32":
+# Force UTF-8 encoding on standard streams to eliminate question mark replacement characters
+for stream in (sys.stdout, sys.stderr, sys.stdin):
     try:
-        if hasattr(sys.stdout, "reconfigure"):
-            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-        if hasattr(sys.stderr, "reconfigure"):
-            sys.stderr.reconfigure(encoding="utf-8", errors="replace")
-        if hasattr(sys.stdin, "reconfigure"):
-            sys.stdin.reconfigure(encoding="utf-8", errors="replace")
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
         pass
-    os.environ["PYTHONIOENCODING"] = "utf-8"
-    os.environ["PYTHONUTF8"] = "1"
-    os.environ["PYTHONLEGACYWINDOWSSTDIO"] = "0"
+os.environ["PYTHONIOENCODING"] = "utf-8"
+os.environ["PYTHONUTF8"] = "1"
+os.environ["PYTHONLEGACYWINDOWSSTDIO"] = "0"
 
 import json
 import time
@@ -64,8 +60,13 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger("lowuncher.bridge")
 
 DEFAULT_MANIFEST_URL = "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/manifest.json"
-DEFAULT_MODPACK_URL = "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.6/modpack-supreme-1.21.1.zip"
-MODPACK_VERSION = "1.0.6"
+DEFAULT_MODPACK_URL = "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.5/modpack-supreme-1.21.1.zip"
+FALLBACK_MODPACK_URLS = [
+    "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.5/modpack-supreme-1.21.1.zip",
+    "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.6/modpack-supreme-1.21.1.zip",
+    "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.7/modpack-supreme-1.21.1.zip",
+]
+MODPACK_VERSION = "1.0.7"
 
 
 def emit_event(event_type: str, data: dict):
@@ -273,41 +274,63 @@ def ensure_modpack(
             shutil.rmtree(staging_dir, ignore_errors=True)
 
     # Fallback: Download from remote release URL
-    target_url = modpack_url or DEFAULT_MODPACK_URL
-    logger.info(f"Downloading modpack from {target_url}...")
+    target_candidates = []
+    if modpack_url:
+        target_candidates.append(modpack_url)
+    for u in FALLBACK_MODPACK_URLS:
+        if u not in target_candidates:
+            target_candidates.append(u)
+
     tmp_zip = game_dir / ".modpack_download.tmp"
+    download_success = False
+    last_dl_error = None
+
+    for target_url in target_candidates:
+        logger.info(f"Downloading modpack from {target_url}...")
+        tmp_zip.unlink(missing_ok=True)
+        try:
+            req = urllib.request.Request(
+                target_url,
+                headers={"User-Agent": "Lowuncher/1.0.7"}
+            )
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                total_bytes = int(resp.headers.get("Content-Length", 0))
+                downloaded = 0
+                last_report = 0
+
+                with open(tmp_zip, "wb") as f:
+                    while True:
+                        chunk = resp.read(131072)
+                        if not chunk:
+                            break
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        now = time.time()
+                        if now - last_report > 0.3 or (total_bytes > 0 and downloaded == total_bytes):
+                            last_report = now
+                            if total_bytes > 0:
+                                pct = int((downloaded / total_bytes) * 100)
+                                dl_mb = downloaded / 1048576
+                                tot_mb = total_bytes / 1048576
+                                msg = f"Загрузка сборки модов ({dl_mb:.1f} / {tot_mb:.1f} МБ)... {pct}%"
+                            else:
+                                dl_mb = downloaded / 1048576
+                                msg = f"Загрузка сборки модов ({dl_mb:.1f} МБ)..."
+                            if progress_callback:
+                                progress_callback(downloaded, total_bytes or downloaded, msg)
+
+            if tmp_zip.is_file() and tmp_zip.stat().st_size > 1000000:
+                download_success = True
+                break
+        except Exception as dle:
+            logger.warning(f"Modpack URL {target_url} failed: {dle}")
+            last_dl_error = dle
+            tmp_zip.unlink(missing_ok=True)
+
+    if not download_success:
+        raise RuntimeError(f"Не удалось загрузить моды ни с одного зеркала ({last_dl_error}). Проверьте подключение к интернету.")
 
     try:
-        req = urllib.request.Request(
-            target_url,
-            headers={"User-Agent": "Lowuncher/1.0.6"}
-        )
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            total_bytes = int(resp.headers.get("Content-Length", 0))
-            downloaded = 0
-            last_report = 0
-
-            with open(tmp_zip, "wb") as f:
-                while True:
-                    chunk = resp.read(131072)
-                    if not chunk:
-                        break
-                    f.write(chunk)
-                    downloaded += len(chunk)
-                    now = time.time()
-                    if now - last_report > 0.3 or (total_bytes > 0 and downloaded == total_bytes):
-                        last_report = now
-                        if total_bytes > 0:
-                            pct = int((downloaded / total_bytes) * 100)
-                            dl_mb = downloaded / 1048576
-                            tot_mb = total_bytes / 1048576
-                            msg = f"Загрузка сборки модов ({dl_mb:.1f} / {tot_mb:.1f} МБ)... {pct}%"
-                        else:
-                            dl_mb = downloaded / 1048576
-                            msg = f"Загрузка сборки модов ({dl_mb:.1f} МБ)..."
-                        if progress_callback:
-                            progress_callback(downloaded, total_bytes or downloaded, msg)
-
         # Transactional extraction of downloaded zip via staging
         staging_dir = game_dir / ".modpack_staging"
         shutil.rmtree(staging_dir, ignore_errors=True)
@@ -488,7 +511,7 @@ def handle_run(args):
         session_file = game_dir / ".lowuncher_session.json"
         session_payload = {
             "launcher": "Lowuncher",
-            "version": "1.0.6",
+            "version": "1.0.7",
             "username": args.username,
             "uuid": args.uuid,
             "token": hashlib.sha256(f"Lowuncher-Verified:{args.username}:{args.uuid}:6233".encode("utf-8")).hexdigest(),

@@ -119,7 +119,7 @@ class LaunchStrategy {
             token: authUser ? (authUser.accessToken || '0') : '0',
             ram: ramMB,
             manifestUrl: rawServer.manifestUrl || 'https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/manifest.json',
-            modpackUrl: rawServer.modpackUrl || 'https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.6/modpack-supreme-1.21.1.zip',
+            modpackUrl: rawServer.modpackUrl || 'https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.5/modpack-supreme-1.21.1.zip',
             serverHost,
             serverPort,
             javaPath,

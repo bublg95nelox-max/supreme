@@ -144,9 +144,13 @@ ipcMain.handle(SHELL_OPCODE.TRASH_ITEM, async (event, ...args) => {
     }
 })
 
-// Disable hardware acceleration.
-// https://electronjs.org/docs/tutorial/offscreen-rendering
-app.disableHardwareAcceleration()
+// Hardware acceleration control.
+// By default, GPU acceleration is active for smooth 60fps rendering and DWM/X11 compositing.
+// Users on broken graphics drivers can pass --disable-gpu or LOWUNCHER_DISABLE_GPU=1.
+if (process.argv.includes('--disable-gpu') || process.env.LOWUNCHER_DISABLE_GPU === '1') {
+    console.log('[Main] Hardware acceleration disabled by user flag (--disable-gpu or LOWUNCHER_DISABLE_GPU=1).')
+    app.disableHardwareAcceleration()
+}
 
 
 const REDIRECT_URI_PREFIX = 'https://login.microsoftonline.com/common/oauth2/nativeclient?'
@@ -273,8 +277,9 @@ function createWindow() {
         icon: iconPath,
         frame: false,
         transparent: true,
-        backgroundColor: '#00000000',
+        backgroundColor: '#141416',
         hasShadow: true,
+        show: false,
         webPreferences: {
             preload: path.join(__dirname, 'app', 'assets', 'js', 'preloader.js'),
             nodeIntegration: true,
@@ -328,9 +333,18 @@ function createWindow() {
         console.error('Renderer process exited:', details)
     })
 
-    /*win.once('ready-to-show', () => {
-        win.show()
-    })*/
+    win.once('ready-to-show', () => {
+        if (win && !win.isDestroyed() && !win.isVisible()) {
+            win.show()
+        }
+    })
+    // Safe fallback: ensure window is shown even if ready-to-show took longer on slower systems
+    setTimeout(() => {
+        if (win && !win.isDestroyed() && !win.isVisible()) {
+            console.log('[Main] Showing window via timeout fallback.')
+            win.show()
+        }
+    }, 1500)
 
     win.removeMenu()
 

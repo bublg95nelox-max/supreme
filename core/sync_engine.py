@@ -429,9 +429,9 @@ class SyncEngine:
 
         candidate_urls = [url]
         if "raw.githubusercontent.com" in url:
-            # Fallback mirror for raw.githubusercontent to bypass ISP throttling or packet drops
+            # Fallback mirrors for raw.githubusercontent to bypass ISP throttling or packet drops
             candidate_urls.append(f"https://ghproxy.net/{url}")
-            candidate_urls.append(url.replace("raw.githubusercontent.com", "raw.gitmirror.com"))
+            candidate_urls.append(f"https://gh-proxy.com/{url}")
 
         last_error = None
 

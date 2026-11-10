@@ -3,6 +3,7 @@
  * Loaded after core UI functions are initialized in uicore.js.
  */
 // Requirements
+var fs            = require('fs-extra')
 var path          = require('path')
 var { ipcRenderer } = require('electron')
 var remote        = require('@electron/remote')

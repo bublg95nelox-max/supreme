@@ -7,6 +7,11 @@ const LauncherLogger = require('./launcher_logger')
 
 const logger = LoggerUtil.getLogger('PythonBridge')
 
+function cleanBridgeString(str) {
+    if (!str || typeof str !== 'string') return ''
+    return str.replace(/\uFFFD+/g, ' ').replace(/\s{2,}/g, ' ').trim()
+}
+
 class PythonBridge {
 
     static activeProc = null
@@ -149,6 +154,7 @@ class PythonBridge {
             const rootDir = PythonBridge.resolveRootDir()
 
             const args = [
+                '-X', 'utf8',
                 '-m', 'core.bridge_cli', 'run',
                 '--game-dir', opts.gameDir,
                 '--mc-version', opts.mcVersion || '1.21.1',
@@ -311,7 +317,8 @@ class PythonBridge {
                 if (code === 0) {
                     resolveOnce(code)
                 } else {
-                    const desc = lastErrorMsg ? `: ${lastErrorMsg}` : ''
+                    const cleanDesc = cleanBridgeString(lastErrorMsg)
+                    const desc = cleanDesc ? `: ${cleanDesc}` : ''
                     rejectOnce(new Error(`Minecraft process or bridge exited with error code ${code}${desc}`))
                 }
             })

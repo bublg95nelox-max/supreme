@@ -11,7 +11,7 @@ publish:
 copyright: 'Copyright © 2026 Lowuncher'
 
 asar: true
-compression: 'maximum'
+compression: 'normal'
 
 files:
   - '!{dist,.gitignore,.vscode,docs,dev-app-update.yml,.nvmrc,eslint.config.mjs,archive,.venv}'
