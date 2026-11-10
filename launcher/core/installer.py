@@ -8,6 +8,7 @@ import json
 import shutil
 import tempfile
 import logging
+import hashlib
 import subprocess
 from pathlib import Path
 from typing import Callable, Optional, Dict, Any
@@ -24,6 +25,14 @@ import minecraft_launcher_lib as mll
 logger = logging.getLogger("lowuncher.installer")
 
 
+def compute_file_sha256(file_path: Path) -> str:
+    sha256 = hashlib.sha256()
+    with open(file_path, "rb") as f:
+        while chunk := f.read(65536):
+            sha256.update(chunk)
+    return sha256.hexdigest().lower()
+
+
 class Installer:
     """Manages installation of Minecraft and NeoForge."""
 
@@ -33,9 +42,74 @@ class Installer:
         self.versions_dir.mkdir(parents=True, exist_ok=True)
 
     def is_version_installed(self, version_id: str) -> bool:
-        """Checks if a specific version directory and json exist."""
-        version_json = self.versions_dir / version_id / f"{version_id}.json"
-        return version_json.exists() and version_json.stat().st_size > 0
+        """
+        Checks if a specific version directory, json, and key artifacts actually exist and are intact.
+        Guards against half-installed / interrupted states.
+        """
+        version_dir = self.versions_dir / version_id
+        version_json = version_dir / f"{version_id}.json"
+        if not version_json.is_file() or version_json.stat().st_size < 1000:
+            return False
+
+        try:
+            profile = json.loads(version_json.read_text(encoding="utf-8"))
+        except Exception:
+            logger.warning(f"Version JSON corrupted for '{version_id}'. Marking as not installed.")
+            return False
+
+        # If it's a NeoForge version, ensure the universal jar exists in libraries and critical libraries exist
+        if "neoforge" in version_id.lower():
+            # version_id is like 'neoforge-21.1.265'
+            parts = version_id.split("-", 1)
+            nf_ver = parts[1] if len(parts) > 1 else ""
+            if nf_ver:
+                universal_jar = (
+                    self.game_dir
+                    / "libraries"
+                    / "net"
+                    / "neoforged"
+                    / "neoforge"
+                    / nf_ver
+                    / f"neoforge-{nf_ver}-universal.jar"
+                )
+                if not universal_jar.is_file() or universal_jar.stat().st_size < 1000000:
+                    logger.warning(
+                        f"NeoForge version '{version_id}' has JSON ({version_json.stat().st_size} bytes) "
+                        f"but missing or incomplete universal jar ({universal_jar}). Marking as not installed."
+                    )
+                    return False
+
+            # Verify client vanilla jar also exists for inherited vanilla version
+            inherits_from = profile.get("inheritsFrom", "1.21.1")
+            vanilla_jar = self.versions_dir / inherits_from / f"{inherits_from}.jar"
+            if not vanilla_jar.is_file() or vanilla_jar.stat().st_size < 10000000:
+                logger.warning(f"NeoForge '{version_id}' missing inherited vanilla jar ({vanilla_jar}).")
+                return False
+
+            # Verify downloaded library artifacts listed in profile
+            for lib in profile.get("libraries", []):
+                artifact = lib.get("downloads", {}).get("artifact")
+                if artifact and artifact.get("path"):
+                    lib_path = self.game_dir / "libraries" / artifact["path"]
+                    if not lib_path.is_file() or lib_path.stat().st_size == 0:
+                        logger.warning(f"NeoForge '{version_id}' missing library artifact: {lib_path}")
+                        return False
+
+        # If it's vanilla Minecraft, ensure the client jar is intact
+        if version_id == "1.21.1" or (
+            "neoforge" not in version_id.lower()
+            and "forge" not in version_id.lower()
+            and "fabric" not in version_id.lower()
+        ):
+            client_jar = version_dir / f"{version_id}.jar"
+            if not client_jar.is_file() or client_jar.stat().st_size < 10000000:
+                logger.warning(
+                    f"Vanilla version '{version_id}' missing or incomplete client jar ({client_jar}). "
+                    f"Marking as not installed."
+                )
+                return False
+
+        return True
 
     def install_vanilla(
         self,
@@ -115,6 +189,7 @@ class Installer:
         neoforge_version: str,
         java_path: Path,
         installer_url: Optional[str] = None,
+        installer_sha256: Optional[str] = None,
         progress_callback: Optional[Callable[[int, int, str], None]] = None,
     ) -> str:
         """
@@ -126,19 +201,35 @@ class Installer:
             logger.info(f"NeoForge {neoforge_version} is already installed.")
             return installed_version_id
 
+        # If previous installation was interrupted or left incomplete, wipe the broken version dir
+        broken_dir = self.versions_dir / installed_version_id
+        if broken_dir.exists():
+            logger.warning(f"Purging incomplete NeoForge directory before clean install: {broken_dir}")
+            shutil.rmtree(broken_dir, ignore_errors=True)
+
         # 1. Ensure vanilla is installed first
         if not self.is_version_installed(minecraft_version):
             if progress_callback:
                 progress_callback(0, 100, f"Установка базового Minecraft {minecraft_version}...")
             self.install_vanilla(minecraft_version, progress_callback)
 
-        # 2. Check for pre-existing local installer jar (in instance neoforge directory)
-        local_installer = self.game_dir / "neoforge" / f"neoforge-{neoforge_version}-installer.jar"
-        if not local_installer.is_file():
+        # 2. Check for pre-existing local installer jar (in instance or app resources)
+        candidate_local = [
+            self.game_dir / "neoforge" / f"neoforge-{neoforge_version}-installer.jar",
+            self.game_dir.parent.parent / "neoforge" / f"neoforge-{neoforge_version}-installer.jar",
+            Path(__file__).resolve().parent.parent / "neoforge" / f"neoforge-{neoforge_version}-installer.jar",
+        ]
+        local_installer = None
+        for cand in candidate_local:
+            if cand.is_file() and cand.stat().st_size > 500000:
+                local_installer = cand
+                break
+
+        if not local_installer:
             neoforge_dir = self.game_dir / "neoforge"
             if neoforge_dir.is_dir():
                 for f in neoforge_dir.glob("*.jar"):
-                    if "installer" in f.name.lower():
+                    if "installer" in f.name.lower() and f.stat().st_size > 500000:
                         local_installer = f
                         break
 
@@ -163,7 +254,7 @@ class Installer:
             download_success = False
             last_error = None
 
-            if local_installer.is_file() and local_installer.stat().st_size > 500000:
+            if local_installer and local_installer.is_file() and local_installer.stat().st_size > 500000:
                 logger.info(f"Using local pre-bundled NeoForge installer: {local_installer} ({local_installer.stat().st_size} bytes)")
                 shutil.copy2(local_installer, temp_installer)
                 download_success = True
@@ -191,6 +282,34 @@ class Installer:
                                             if progress_callback and total_size > 0:
                                                 progress_callback(downloaded, total_size, "Скачивание NeoForge...")
                                 if temp_installer.stat().st_size > 500000:
+                                    # Verify SHA-256 hash if available or fetch from official mirrors
+                                    target_sha = (installer_sha256 or "").strip().lower()
+                                    if not target_sha:
+                                        for sha_url in [
+                                            f"{url}.sha256",
+                                            f"https://maven.neoforged.net/releases/net/neoforged/neoforge/{neoforge_version}/neoforge-{neoforge_version}-installer.jar.sha256",
+                                            f"https://bmclapi2.bangbang93.com/maven/net/neoforged/neoforge/{neoforge_version}/neoforge-{neoforge_version}-installer.jar.sha256",
+                                        ]:
+                                            try:
+                                                sr = requests.get(sha_url, timeout=4, headers=headers)
+                                                if sr.status_code == 200:
+                                                    cand_hash = sr.text.strip().lower()
+                                                    if len(cand_hash) == 64 and all(c in "0123456789abcdef" for c in cand_hash):
+                                                        target_sha = cand_hash
+                                                        break
+                                            except Exception:
+                                                pass
+
+                                    if target_sha:
+                                        actual_hash = compute_file_sha256(temp_installer)
+                                        if actual_hash != target_sha:
+                                            logger.warning(
+                                                f"NeoForge installer hash mismatch ({url})! Expected {target_sha}, got {actual_hash}"
+                                            )
+                                            temp_installer.unlink(missing_ok=True)
+                                            continue
+                                        logger.info(f"NeoForge installer SHA-256 verified successfully: {actual_hash}")
+
                                     download_success = True
                                     logger.info(f"Successfully downloaded NeoForge installer ({temp_installer.stat().st_size} bytes)")
                                     break
@@ -214,10 +333,16 @@ class Installer:
                 except Exception:
                     valid_profiles = False
             if not valid_profiles:
+                if profiles_json.exists():
+                    try:
+                        shutil.copy2(profiles_json, profiles_json.with_suffix(".json.bak"))
+                        logger.warning(f"Corrupted launcher_profiles.json backed up to {profiles_json.name}.bak")
+                    except Exception:
+                        pass
                 with open(profiles_json, "w", encoding="utf-8") as f:
                     f.write('{"profiles": {}}')
 
-            # 4. Run installer headlessly
+            # 4. Run installer headlessly with real-time output streaming
             if progress_callback:
                 progress_callback(50, 100, "Применение патчей NeoForge (может занять 1-2 мин)...")
 
@@ -235,18 +360,70 @@ class Installer:
             ]
             logger.info(f"Running NeoForge installer: {' '.join(cmd)}")
 
-            result = subprocess.run(
+            installer_proc = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 cwd=tempdir,
                 startupinfo=startupinfo,
             )
 
-            if result.returncode != 0:
-                logger.error(f"NeoForge installer failed: {result.stderr or result.stdout}")
-                raise RuntimeError(f"NeoForge installation failed: {result.stderr or result.stdout}")
+            import threading
+            import queue
+            import time
+
+            installer_lines = []
+            cur_pct = 50
+            last_output_at = time.monotonic()
+            line_queue = queue.Queue()
+
+            def stdout_reader():
+                try:
+                    if installer_proc.stdout:
+                        for raw_line in iter(installer_proc.stdout.readline, ""):
+                            line_queue.put(raw_line)
+                finally:
+                    line_queue.put(None)
+
+            reader_thread = threading.Thread(target=stdout_reader, daemon=True)
+            reader_thread.start()
+
+            while True:
+                try:
+                    raw_line = line_queue.get(timeout=0.3)
+                    if raw_line is None:
+                        break
+                    line = raw_line.strip()
+                    if not line:
+                        continue
+                    installer_lines.append(line)
+                    logger.info(f"[NeoForge Installer] {line}")
+                    last_output_at = time.monotonic()
+                    if progress_callback:
+                        cur_pct = min(96, cur_pct + 1 if len(installer_lines) % 5 == 0 else cur_pct)
+                        summary = line if len(line) < 55 else f"{line[:52]}..."
+                        progress_callback(cur_pct, 100, f"Патчи NeoForge: {summary}")
+                except queue.Empty:
+                    if installer_proc.poll() is not None:
+                        break
+                    if progress_callback and (time.monotonic() - last_output_at >= 3):
+                        cur_pct = min(95, cur_pct + 1)
+                        progress_callback(cur_pct, 100, "Патчи NeoForge: компиляция и проверка библиотек...")
+                        last_output_at = time.monotonic()
+
+            installer_proc.wait()
+
+            if installer_proc.returncode != 0:
+                err_summary = "\n".join(installer_lines[-15:]) if installer_lines else "Unknown error"
+                logger.error(f"NeoForge installer failed with code {installer_proc.returncode}:\n{err_summary}")
+                shutil.rmtree(self.versions_dir / installed_version_id, ignore_errors=True)
+                raise RuntimeError(
+                    f"Ошибка установки NeoForge (код {installer_proc.returncode}). "
+                    f"Пожалуйста, перезапустите лаунчер и повторите запуск."
+                )
 
         if not self.is_version_installed(installed_version_id):
             # Check if directory name contains the version and has valid json

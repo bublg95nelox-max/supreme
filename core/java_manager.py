@@ -296,16 +296,24 @@ class JavaManager:
             if filename.endswith(".zip"):
                 with zipfile.ZipFile(final_archive, "r") as zf:
                     for member in zf.infolist():
+                        clean_name = member.filename.replace("\\", "/").strip()
+                        if clean_name.startswith("/") or ":" in clean_name:
+                            raise ValueError(f"Unsafe file path in ZIP: {member.filename}")
                         target = (self.java21_dir / member.filename).resolve()
-                        target.relative_to(root)
+                        try:
+                            target.relative_to(root)
+                        except ValueError as exc:
+                            raise ValueError(f"Path traversal detected in ZIP: {member.filename}") from exc
                     zf.extractall(self.java21_dir)
             elif filename.endswith(".tar.gz") or filename.endswith(".tgz"):
                 with tarfile.open(final_archive, "r:gz") as tf:
                     for member in tf.getmembers():
                         target = (self.java21_dir / member.name).resolve()
                         if not str(target).startswith(str(root)):
-                            raise ValueError(f"Path traversal detected: {member.name}")
+                            raise ValueError(f"Path traversal detected in TAR: {member.name}")
                         if member.issym() or member.islnk():
+                            if sys.platform == "win32" and member.islnk():
+                                raise ValueError(f"Hard links in TAR archives are not supported on Windows: {member.name}")
                             link_target = (target.parent / member.linkname).resolve()
                             if not str(link_target).startswith(str(root)):
                                 raise ValueError(f"Unsafe symlink target: {member.linkname}")

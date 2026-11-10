@@ -92,7 +92,8 @@ def calculate_recommended_ram_mb() -> int:
     """
     Calculates recommended RAM allocation:
     - Default is half of total system RAM.
-    - If system has > 24 GB, cap recommended at 12 GB (12 * 1024 MB = 12288 MB).
+    - If system has >= 30 GB, allow up to 16 GB (16 * 1024 MB = 16384 MB).
+    - If system has > 24 GB, allow up to 12 GB (12 * 1024 MB = 12288 MB).
     - Minimum sensible allocation is 3072 MB for NeoForge 1.21.1.
     """
     total_mb = get_total_system_ram_mb()
@@ -101,7 +102,11 @@ def calculate_recommended_ram_mb() -> int:
     # Snap to nearest 512 MB step
     half_mb = (half_mb // 512) * 512
 
-    max_recommended = 12 * 1024  # 12288 MB (12 GB)
+    if total_mb >= 30000:
+        max_recommended = 16 * 1024  # 16384 MB (16 GB)
+    else:
+        max_recommended = 12 * 1024  # 12288 MB (12 GB)
+
     recommended = min(half_mb, max_recommended)
     return max(3072, recommended)
 
@@ -172,7 +177,10 @@ class ConfigManager:
 
     @property
     def username(self) -> str:
-        return self._data.get("username", "Player")
+        value = self._data.get("username")
+        if not isinstance(value, str) or not value.strip():
+            return "Player"
+        return value.strip()
 
     @username.setter
     def username(self, val: str) -> None:
@@ -180,7 +188,11 @@ class ConfigManager:
 
     @property
     def allocated_ram_mb(self) -> int:
-        val = int(self._data.get("allocated_ram_mb", 0))
+        value = self._data.get("allocated_ram_mb")
+        try:
+            val = int(value)
+        except (TypeError, ValueError):
+            val = 0
         if val <= 0:
             val = calculate_recommended_ram_mb()
             self._data["allocated_ram_mb"] = val
@@ -188,11 +200,16 @@ class ConfigManager:
 
     @allocated_ram_mb.setter
     def allocated_ram_mb(self, val: int) -> None:
-        self.set("allocated_ram_mb", int(val))
+        try:
+            int_val = int(val)
+        except (TypeError, ValueError):
+            int_val = 0
+        self.set("allocated_ram_mb", int_val)
 
     @property
     def manifest_url(self) -> str:
-        return self._data.get("manifest_url", "")
+        value = self._data.get("manifest_url")
+        return value.strip() if isinstance(value, str) else ""
 
     @manifest_url.setter
     def manifest_url(self, val: str) -> None:

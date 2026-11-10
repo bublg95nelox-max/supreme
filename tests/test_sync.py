@@ -283,6 +283,66 @@ class TestSyncEngine(unittest.TestCase):
         self.assertTrue(custom_mod.exists(), "Custom user mod must NEVER be deleted during sync!")
         self.assertEqual(custom_mod.read_text(), "custom-mod-content")
 
+    def test_safe_resolve_path_rejects_windows_drive_letters_and_colons(self):
+        r"""
+        Verify that Windows drive-letters (C:\, C:/, /C:/) and colons are strictly rejected.
+        """
+        from core.sync_engine import safe_resolve_path
+        bad_paths = [
+            "C:\\folder\\mod.jar",
+            "C:/folder/mod.jar",
+            "/C:/folder/mod.jar",
+            "\\C:\\folder\\mod.jar",
+            "mods/something:bad.jar",
+            "d:/escaped.jar",
+            "D:\\outside.jar",
+            ":invalid.jar",
+        ]
+        for bad_p in bad_paths:
+            with self.subTest(path=bad_p):
+                with self.assertRaises(ValueError):
+                    safe_resolve_path(self.client_dir, bad_p)
+
+    def test_file_url_to_path_rejects_unc(self):
+        """
+        Verify that UNC network shares (file://server/share) are rejected with clear error.
+        """
+        from core.sync_engine import file_url_to_path
+        with self.assertRaises(ValueError) as ctx:
+            file_url_to_path("file://server/share/mod.jar")
+        self.assertIn("UNC", str(ctx.exception))
+
+    def test_obsolete_detection_with_mixed_separators_and_malicious_old_manifest(self):
+        """
+        Verify that obsolete detection safely handles backslashes and ignores malicious
+        traversal entries (.., :) in .last_manifest.json.
+        """
+        mods_dir = self.client_dir / "mods"
+        mods_dir.mkdir(parents=True, exist_ok=True)
+        old_win_mod = mods_dir / "old-win-mod.jar"
+        old_win_mod.write_text("old-win")
+
+        # Previous manifest has mixed backslashes and a malicious traversal attempt
+        with open(self.client_dir / ".last_manifest.json", "w", encoding="utf-8") as f:
+            json.dump({
+                "files": [
+                    {"path": "mods\\old-win-mod.jar"},
+                    {"path": "../custom/evil.jar"},
+                    {"path": "C:\\Windows\\system.jar"},
+                ]
+            }, f)
+
+        engine = SyncEngine(self.client_dir)
+        manifest = {
+            "minecraft_version": "1.21.1",
+            "files": []
+        }
+        _, obsolete = engine.plan_sync(manifest)
+        obsolete_names = [o.name for o in obsolete]
+        self.assertIn("old-win-mod.jar", obsolete_names)
+        # Malicious paths must not appear in obsolete list
+        self.assertEqual(len(obsolete), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

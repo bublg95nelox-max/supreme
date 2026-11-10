@@ -92,7 +92,8 @@ def calculate_recommended_ram_mb() -> int:
     """
     Calculates recommended RAM allocation:
     - Default is half of total system RAM.
-    - If system has > 24 GB, cap recommended at 12 GB (12 * 1024 MB = 12288 MB).
+    - If system has >= 30 GB, allow up to 16 GB (16 * 1024 MB = 16384 MB).
+    - If system has > 24 GB, allow up to 12 GB (12 * 1024 MB = 12288 MB).
     - Minimum sensible allocation is 3072 MB for NeoForge 1.21.1.
     """
     total_mb = get_total_system_ram_mb()
@@ -101,7 +102,11 @@ def calculate_recommended_ram_mb() -> int:
     # Snap to nearest 512 MB step
     half_mb = (half_mb // 512) * 512
 
-    max_recommended = 12 * 1024  # 12288 MB (12 GB)
+    if total_mb >= 30000:
+        max_recommended = 16 * 1024  # 16384 MB (16 GB)
+    else:
+        max_recommended = 12 * 1024  # 12288 MB (12 GB)
+
     recommended = min(half_mb, max_recommended)
     return max(3072, recommended)
 

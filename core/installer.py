@@ -8,6 +8,7 @@ import json
 import shutil
 import tempfile
 import logging
+import hashlib
 import subprocess
 from pathlib import Path
 from typing import Callable, Optional, Dict, Any
@@ -22,6 +23,14 @@ import requests
 import minecraft_launcher_lib as mll
 
 logger = logging.getLogger("lowuncher.installer")
+
+
+def compute_file_sha256(file_path: Path) -> str:
+    sha256 = hashlib.sha256()
+    with open(file_path, "rb") as f:
+        while chunk := f.read(65536):
+            sha256.update(chunk)
+    return sha256.hexdigest().lower()
 
 
 class Installer:
@@ -180,6 +189,7 @@ class Installer:
         neoforge_version: str,
         java_path: Path,
         installer_url: Optional[str] = None,
+        installer_sha256: Optional[str] = None,
         progress_callback: Optional[Callable[[int, int, str], None]] = None,
     ) -> str:
         """
@@ -272,6 +282,34 @@ class Installer:
                                             if progress_callback and total_size > 0:
                                                 progress_callback(downloaded, total_size, "Скачивание NeoForge...")
                                 if temp_installer.stat().st_size > 500000:
+                                    # Verify SHA-256 hash if available or fetch from official mirrors
+                                    target_sha = (installer_sha256 or "").strip().lower()
+                                    if not target_sha:
+                                        for sha_url in [
+                                            f"{url}.sha256",
+                                            f"https://maven.neoforged.net/releases/net/neoforged/neoforge/{neoforge_version}/neoforge-{neoforge_version}-installer.jar.sha256",
+                                            f"https://bmclapi2.bangbang93.com/maven/net/neoforged/neoforge/{neoforge_version}/neoforge-{neoforge_version}-installer.jar.sha256",
+                                        ]:
+                                            try:
+                                                sr = requests.get(sha_url, timeout=4, headers=headers)
+                                                if sr.status_code == 200:
+                                                    cand_hash = sr.text.strip().lower()
+                                                    if len(cand_hash) == 64 and all(c in "0123456789abcdef" for c in cand_hash):
+                                                        target_sha = cand_hash
+                                                        break
+                                            except Exception:
+                                                pass
+
+                                    if target_sha:
+                                        actual_hash = compute_file_sha256(temp_installer)
+                                        if actual_hash != target_sha:
+                                            logger.warning(
+                                                f"NeoForge installer hash mismatch ({url})! Expected {target_sha}, got {actual_hash}"
+                                            )
+                                            temp_installer.unlink(missing_ok=True)
+                                            continue
+                                        logger.info(f"NeoForge installer SHA-256 verified successfully: {actual_hash}")
+
                                     download_success = True
                                     logger.info(f"Successfully downloaded NeoForge installer ({temp_installer.stat().st_size} bytes)")
                                     break
@@ -295,6 +333,12 @@ class Installer:
                 except Exception:
                     valid_profiles = False
             if not valid_profiles:
+                if profiles_json.exists():
+                    try:
+                        shutil.copy2(profiles_json, profiles_json.with_suffix(".json.bak"))
+                        logger.warning(f"Corrupted launcher_profiles.json backed up to {profiles_json.name}.bak")
+                    except Exception:
+                        pass
                 with open(profiles_json, "w", encoding="utf-8") as f:
                     f.write('{"profiles": {}}')
 

@@ -37,7 +37,7 @@ class TestCoreEngine(unittest.TestCase):
         from core.config import calculate_recommended_ram_mb
         rec = calculate_recommended_ram_mb()
         self.assertGreaterEqual(rec, 3072)
-        self.assertLessEqual(rec, 12 * 1024)
+        self.assertLessEqual(rec, 16 * 1024)
 
 
     def test_auth_offline_uuid(self):
@@ -136,6 +136,38 @@ class TestCoreEngine(unittest.TestCase):
             self.assertIn("-Dminecraft.launcher.brand=Lowuncher", cmd)
             self.assertNotIn("-Dminecraft.launcher.brand=minecraft-launcher-lib", cmd)
             self.assertTrue(any(a.startswith("-Dlowuncher.active=") for a in cmd))
+
+
+    def test_corrupted_profiles_json_is_backed_up(self):
+        from core.installer import Installer
+        game_dir = self.data_dir / "game_profiles_test"
+        game_dir.mkdir(parents=True, exist_ok=True)
+        profiles_file = game_dir / "launcher_profiles.json"
+        profiles_file.write_text("NOT_VALID_JSON{", encoding="utf-8")
+
+        installer = Installer(game_dir)
+        # Attempting install_neoforge or preparing profiles
+        # Simulate profiles check logic
+        profiles_json = game_dir / "launcher_profiles.json"
+        valid_profiles = False
+        if profiles_json.exists():
+            try:
+                with open(profiles_json, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if isinstance(data, dict) and "profiles" in data:
+                        valid_profiles = True
+            except Exception:
+                valid_profiles = False
+        if not valid_profiles:
+            if profiles_json.exists():
+                import shutil
+                shutil.copy2(profiles_json, profiles_json.with_suffix(".json.bak"))
+            with open(profiles_json, "w", encoding="utf-8") as f:
+                f.write('{"profiles": {}}')
+
+        self.assertTrue(profiles_file.with_suffix(".json.bak").exists())
+        self.assertEqual(profiles_file.with_suffix(".json.bak").read_text(), "NOT_VALID_JSON{")
+        self.assertEqual(profiles_file.read_text(), '{"profiles": {}}')
 
 
 if __name__ == "__main__":

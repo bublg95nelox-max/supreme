@@ -4,6 +4,7 @@ Compares local game files with remote manifest.json and performs robust, transac
 """
 import os
 import sys
+import re
 import time
 import json
 import shutil
@@ -35,7 +36,8 @@ def compute_file_sha256(file_path: Path) -> str:
 def safe_resolve_path(base_dir: Path, rel_path: str) -> Path:
     """
     Safely resolves a relative path against base_dir.
-    Guards against path traversal (../), leading slashes, and absolute path injection.
+    Guards against path traversal (../), leading slashes, Windows drive letters (C:),
+    and absolute path injection.
     """
     if not rel_path or not isinstance(rel_path, str):
         raise ValueError(f"Недопустимый путь к файлу: {rel_path}")
@@ -45,12 +47,16 @@ def safe_resolve_path(base_dir: Path, rel_path: str) -> Path:
     while clean.startswith("/"):
         clean = clean[1:]
 
-    parts = clean.split("/")
-    if ".." in parts:
+    # Reject any drive letter prefix (e.g. C:, c:) or colon anywhere in path (illegal on Windows)
+    if re.match(r"^[a-zA-Z]:", clean) or ":" in clean:
+        raise ValueError(f"Недопустимый путь (содержит букву диска или двоеточие): {rel_path}")
+
+    parts = [p for p in clean.split("/") if p and p != "."]
+    if not parts or ".." in parts:
         raise ValueError(f"Обнаружена попытка path traversal в пути: {rel_path}")
 
     base_resolved = base_dir.resolve()
-    target_resolved = (base_resolved / clean).resolve()
+    target_resolved = (base_resolved / Path(*parts)).resolve()
 
     try:
         target_resolved.relative_to(base_resolved)
@@ -60,7 +66,7 @@ def safe_resolve_path(base_dir: Path, rel_path: str) -> Path:
     return target_resolved
 
 
-def check_free_space(target_dir: Path, required_bytes: int, safety_margin_mb: int = 150) -> None:
+def check_free_space(target_dir: Path, required_bytes: int, safety_margin_mb: int = 300) -> None:
     """
     Verifies that the target filesystem has enough free space for the download
     plus a safety margin.
@@ -84,11 +90,15 @@ def file_url_to_path(value: str) -> Path:
     if parsed.scheme != "file":
         return Path(value)
     from urllib.request import url2pathname
-    # If netloc is a Windows drive letter (e.g. C: in file://C:/path)
-    if len(parsed.netloc) == 2 and parsed.netloc[1] == ":":
-        return Path(url2pathname(unquote(f"{parsed.netloc}{parsed.path}")))
-    if parsed.netloc and parsed.netloc not in ("", "localhost"):
-        raise ValueError("UNC file:// URLs are not supported")
+    from urllib.parse import unquote
+
+    # Reject UNC network share URLs (e.g. file://server/share)
+    netloc = parsed.netloc or ""
+    # If netloc is a Windows drive letter (e.g. file://C:/path or file:///C:/path)
+    if len(netloc) == 2 and netloc[1] == ":":
+        return Path(url2pathname(unquote(f"{netloc}{parsed.path}")))
+    if netloc and netloc not in ("", "localhost"):
+        raise ValueError(f"Сетевые UNC-пути (file://{netloc}...) не поддерживаются в целях безопасности")
     return Path(url2pathname(unquote(parsed.path)))
 
 
@@ -345,8 +355,13 @@ class SyncEngine:
                         old_manifest = json.load(cf)
                         for f in old_manifest.get("files", []):
                             if isinstance(f, dict) and "path" in f:
-                                clean_old = f["path"].replace("\\", "/").strip().lstrip("/")
-                                tracked_modpack_files.add(clean_old)
+                                raw_p = str(f["path"])
+                                clean_old = raw_p.replace("\\", "/").strip()
+                                while clean_old.startswith("/"):
+                                    clean_old = clean_old[1:]
+                                # Ignore malformed or traversal entries in previous manifest
+                                if ".." not in clean_old.split("/") and ":" not in clean_old and clean_old:
+                                    tracked_modpack_files.add(clean_old)
                 except Exception as e:
                     logger.warning(f"Could not read previous manifest cache for obsolete tracking: {e}")
 
