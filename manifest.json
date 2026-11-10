@@ -7,8 +7,16 @@
     "installer_url": ""
   },
   "java_version": 21,
-  "total_files": 107,
+  "total_files": 108,
   "files": [
+    {
+      "path": "mods/frontier-1.0.1.jar",
+      "sha256": "5f043154231e08f84a6161f30eeb9f0275faf20bef0fbdaff639a4d0772cf6fb",
+      "size": 14256704,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/frontier-1.0.1.jar",
+      "required": true,
+      "overwrite": true
+    },
     {
       "path": "mods/yeetusexperimentus-neoforge-87.0.0.jar",
       "sha256": "9117db8b5905abf18f64fdf8f8d8ca5a91c23abd0a7fa2c9986c21aa17d74e75",
