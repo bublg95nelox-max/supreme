@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "C": {
+      "item": "minecraft:copper_ingot"
+    },
+    "M": {
+      "item": "minecraft:compass"
+    },
+    "S": {
+      "item": "minecraft:stick"
+    }
+  },
+  "pattern": [
+    " C ",
+    "CMC",
+    " S "
+  ],
+  "result": {
+    "count": 1,
+    "id": "frontier:surveyor_tool"
+  }
+}

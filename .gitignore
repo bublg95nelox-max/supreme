@@ -16,3 +16,9 @@ dist/
 .lowuncher/
 launcher_config.json
 launcher.log
+
+# Gradle & Mods
+.gradle/
+frontier/.gradle/
+frontier/libs/
+

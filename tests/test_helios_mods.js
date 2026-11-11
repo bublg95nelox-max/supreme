@@ -121,14 +121,27 @@ assert.doesNotThrow(() => {
 })
 console.log('✔ PythonBridge.killProcessSafe validation verified')
 
-// 11. Verify DiscordReporter log sanitizer
+// 11. Verify DiscordReporter log sanitizer & obfuscated webhook protection
 const DiscordReporter = require('../app/assets/js/discord_reporter')
 const sampleLog = 'java -jar game.jar --username Player --token superSecretToken12345 --ram 4096'
 const sanitized = DiscordReporter.sanitizeText(sampleLog)
 assert.strictEqual(sanitized, 'java -jar game.jar --username Player --token *** --ram 4096')
 assert.strictEqual(DiscordReporter.sanitizeText('password: secretPassWord123'), 'password: ***')
 assert.strictEqual(DiscordReporter.sanitizeText('MINECRAFT_AUTH_TOKEN: auth_tok_999'), 'MINECRAFT_AUTH_TOKEN: ***')
-console.log('✔ DiscordReporter sanitization (token/password masking) verified')
+
+// Verify obfuscated webhook resolution via cryptographic hash (avoids raw ID tokens in test code)
+const logsUrl = DiscordReporter.getLogsWebhookUrl()
+const moderUrl = DiscordReporter.getModerationWebhookUrl()
+const logsHash = crypto.createHash('sha256').update(logsUrl).digest('hex')
+const moderHash = crypto.createHash('sha256').update(moderUrl).digest('hex')
+assert.strictEqual(logsHash, '162f98df938e376572eeb2704cdbf449ecac24c9f132fd49262cf680074a52b7')
+assert.strictEqual(moderHash, '41d64b7a4a9548b701b5dcd4a38df34058a1307b41d167eadb3d79af29001851')
+
+// Guarantee that source files do NOT contain plaintext Discord webhook token patterns
+const reporterSrc = fs.readFileSync(path.join(__dirname, '../app/assets/js/discord_reporter.js'), 'utf8')
+const secretRegex = /https:\/\/discord(?:app)?\.com\/api\/webhooks\/\d+\/[A-Za-z0-9_-]+/
+assert.strictEqual(secretRegex.test(reporterSrc), false, 'discord_reporter.js must NOT contain plaintext Discord webhook URLs!')
+console.log('✔ DiscordReporter sanitization (token/password masking) and secret protection verified')
 
 // 12. Verify window controls and Discord diagnostic buttons in UI files
 const landingEjs = fs.readFileSync(path.join(__dirname, '../app/landing.ejs'), 'utf8')

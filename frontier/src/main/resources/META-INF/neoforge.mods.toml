@@ -1,0 +1,34 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="All Rights Reserved"
+issueTrackerURL=""
+
+[[mods]]
+modId="frontier"
+version="1.0.1"
+displayName="Frontier"
+authors="Saidbl"
+description='''
+Frontier: Semi-anarchy SMP mod with territories, organic states, clues & forensics, legislation, and diplomacy.
+'''
+
+[[dependencies.frontier]]
+modId="neoforge"
+type="required"
+versionRange="[21.1.0,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.frontier]]
+modId="minecraft"
+type="required"
+versionRange="[1.21.1,1.21.2)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.frontier]]
+modId="xaeroworldmap"
+type="optional"
+versionRange="[1.39.0,)"
+ordering="AFTER"
+side="CLIENT"

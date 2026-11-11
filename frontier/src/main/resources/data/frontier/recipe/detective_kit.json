@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "G": {
+      "item": "minecraft:gold_ingot"
+    },
+    "P": {
+      "item": "minecraft:glass_pane"
+    },
+    "B": {
+      "item": "minecraft:book"
+    },
+    "L": {
+      "item": "minecraft:leather"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    }
+  },
+  "pattern": [
+    " G ",
+    "PBL",
+    " I "
+  ],
+  "result": {
+    "count": 1,
+    "id": "frontier:detective_kit"
+  }
+}
