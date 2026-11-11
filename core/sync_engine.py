@@ -34,11 +34,45 @@ def compute_file_sha256(file_path: Path) -> str:
     return sha256.hexdigest().lower()
 
 
+def strip_win_extended_prefix(path_obj: Path | str) -> str:
+    """Strips Windows extended-length prefix (\\\\?\\ or \\\\?\\UNC\\) if present."""
+    s = str(path_obj)
+    if s.startswith("\\\\?\\UNC\\"):
+        return "\\\\" + s[8:]
+    if s.startswith("\\\\?\\"):
+        return s[4:]
+    return s
+
+
+def safe_relative_to(target: Path | str, base: Path | str) -> str:
+    """Computes a relative POSIX path safely across Windows extended prefixes and case variations."""
+    t_clean = strip_win_extended_prefix(target).replace("\\", "/")
+    b_clean = strip_win_extended_prefix(base).replace("\\", "/")
+
+    if sys.platform == "win32" or re.match(r"^[a-zA-Z]:", t_clean):
+        if t_clean.lower().startswith(b_clean.lower()):
+            rel = t_clean[len(b_clean):].lstrip("/")
+            return rel
+
+    from pathlib import PurePosixPath
+    try:
+        return PurePosixPath(t_clean).relative_to(PurePosixPath(b_clean)).as_posix()
+    except ValueError:
+        pass
+
+    try:
+        return Path(strip_win_extended_prefix(target)).relative_to(Path(strip_win_extended_prefix(base))).as_posix()
+    except ValueError:
+        rel = os.path.relpath(strip_win_extended_prefix(target), strip_win_extended_prefix(base))
+        return rel.replace("\\", "/")
+
+
 def safe_resolve_path(base_dir: Path, rel_path: str) -> Path:
     """
     Safely resolves a relative path against base_dir.
-    Guards against path traversal (../), leading slashes, Windows drive letters (C:),
-    and absolute path injection.
+    Guards strictly against path traversal (../), leading slashes, Windows drive letters (C:),
+    and absolute path injection. Normalizes extended Windows prefixes (\\\\?\\) to prevent
+    pathlib relative_to mismatches.
     """
     if not rel_path or not isinstance(rel_path, str):
         raise ValueError(f"Недопустимый путь к файлу: {rel_path}")
@@ -59,12 +93,25 @@ def safe_resolve_path(base_dir: Path, rel_path: str) -> Path:
     base_resolved = base_dir.resolve()
     target_resolved = (base_resolved / Path(*parts)).resolve()
 
-    try:
-        target_resolved.relative_to(base_resolved)
-    except ValueError:
-        raise ValueError(f"Путь выходит за пределы каталога игры: {rel_path}")
+    base_clean_str = strip_win_extended_prefix(base_resolved)
+    target_clean_str = strip_win_extended_prefix(target_resolved)
 
-    return target_resolved
+    base_clean = Path(base_clean_str)
+    target_clean = Path(target_clean_str)
+
+    try:
+        target_clean.relative_to(base_clean)
+    except ValueError:
+        try:
+            norm_base = os.path.normcase(os.path.abspath(base_clean_str))
+            norm_target = os.path.normcase(os.path.abspath(target_clean_str))
+            common = os.path.normcase(os.path.commonpath([norm_base, norm_target]))
+            if common != norm_base:
+                raise ValueError(f"Путь выходит за пределы каталога игры: {rel_path}")
+        except Exception:
+            raise ValueError(f"Путь выходит за пределы каталога игры: {rel_path}")
+
+    return target_clean
 
 
 def check_free_space(target_dir: Path, required_bytes: int, safety_margin_mb: int = 300) -> None:
@@ -313,7 +360,7 @@ class SyncEngine:
 
             # Path traversal check
             local_path = safe_resolve_path(self.game_dir, raw_path)
-            clean_rel = local_path.relative_to(self.game_dir.resolve()).as_posix()
+            clean_rel = safe_relative_to(local_path, self.game_dir)
             if clean_rel in manifest_relative_paths:
                 raise ValueError(f"Дублирующийся путь в manifest: {clean_rel}")
             manifest_relative_paths.add(clean_rel)
@@ -376,7 +423,7 @@ class SyncEngine:
                     if local_mod.name.endswith(".download") or ".sync_staging" in local_mod.as_posix():
                         continue
                     try:
-                        mod_rel = local_mod.relative_to(self.game_dir.resolve()).as_posix()
+                        mod_rel = safe_relative_to(local_mod, self.game_dir)
                         if mod_rel in tracked_modpack_files and mod_rel not in manifest_relative_paths:
                             obsolete_files.append(local_mod)
                     except ValueError:
@@ -582,6 +629,9 @@ class SyncEngine:
                 logger.warning(f"Could not initialize pooled HTTP session: {e}")
                 session = None
 
+        import threading
+        progress_lock = threading.Lock()
+        last_progress_time = 0.0
         downloaded_bytes = 0
         total_files = len(to_download)
         completed_files = 0
@@ -590,13 +640,22 @@ class SyncEngine:
             progress_callback(0, max(1, total_bytes), f"Загрузка сборки (0/{total_files})...")
 
         def on_chunk(bytes_count: int):
-            nonlocal downloaded_bytes
-            downloaded_bytes += bytes_count
+            nonlocal downloaded_bytes, last_progress_time
+            with progress_lock:
+                downloaded_bytes += bytes_count
+                now = time.time()
+                # Throttle progress callbacks to at most once per 120ms to prevent flooding stdout and IPC
+                if now - last_progress_time < 0.12:
+                    return
+                last_progress_time = now
+                curr_dl = downloaded_bytes
+                curr_comp = completed_files
+
             if progress_callback:
                 progress_callback(
-                    downloaded_bytes,
-                    max(downloaded_bytes, total_bytes),
-                    f"Загрузка файлов ({completed_files}/{total_files})...",
+                    curr_dl,
+                    max(curr_dl, total_bytes),
+                    f"Загрузка файлов ({curr_comp}/{total_files})...",
                 )
 
         # Phase 1: Download all files into staging directory
@@ -613,12 +672,15 @@ class SyncEngine:
                     staged_path = future.result()
                     final_path = safe_resolve_path(self.game_dir, entry["path"])
                     staged_files.append((staged_path, final_path))
-                    completed_files += 1
+                    with progress_lock:
+                        completed_files += 1
+                        curr_dl = downloaded_bytes
+                        curr_comp = completed_files
                     if progress_callback:
                         progress_callback(
-                            downloaded_bytes,
-                            max(downloaded_bytes, total_bytes),
-                            f"Загрузка файлов ({completed_files}/{total_files})...",
+                            curr_dl,
+                            max(curr_dl, total_bytes),
+                            f"Загрузка файлов ({curr_comp}/{total_files})...",
                         )
 
             # Phase 2: Transactional Commit (All files verified!)

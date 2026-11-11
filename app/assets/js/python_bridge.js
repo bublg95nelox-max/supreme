@@ -251,32 +251,37 @@ class PythonBridge {
 
                 for (const line of lines) {
                     const trimmed = line.trim()
-                    if (trimmed.startsWith('[BRIDGE_EVENT] ')) {
-                        try {
-                            const event = JSON.parse(trimmed.substring(15))
-                            if (event.type === 'progress') {
-                                LauncherLogger.info(`[Progress ${event.percent}%] ${event.status}`)
-                                if (opts.onProgress) opts.onProgress(event.percent, event.status)
-                            } else if (event.type === 'started') {
-                                PythonBridge.gamePid = event.pid
-                                LauncherLogger.info(`[Started] Game PID: ${event.pid}, Version: ${event.version || '1.21.1'}`)
-                                if (opts.onStarted) {
-                                    opts.onStarted(event.pid, event.version)
+                    if (trimmed.includes('[BRIDGE_EVENT] ')) {
+                        const rawEvents = trimmed.split(/(?=\[BRIDGE_EVENT\] )/)
+                        for (const rawEvt of rawEvents) {
+                            const evtTrimmed = rawEvt.trim()
+                            if (!evtTrimmed.startsWith('[BRIDGE_EVENT] ')) continue
+                            try {
+                                const event = JSON.parse(evtTrimmed.substring(15))
+                                if (event.type === 'progress') {
+                                    LauncherLogger.info(`[Progress ${event.percent}%] ${event.status}`)
+                                    if (opts.onProgress) opts.onProgress(event.percent, event.status)
+                                } else if (event.type === 'started') {
+                                    PythonBridge.gamePid = event.pid
+                                    LauncherLogger.info(`[Started] Game PID: ${event.pid}, Version: ${event.version || '1.21.1'}`)
+                                    if (opts.onStarted) {
+                                        opts.onStarted(event.pid, event.version)
+                                    }
+                                } else if (event.type === 'log') {
+                                    if (opts.onLog) opts.onLog(event.line)
+                                    logger.info(`[MC] ${event.line}`)
+                                    LauncherLogger.info(`[MC] ${event.line}`)
+                                } else if (event.type === 'error') {
+                                    logger.error(`Bridge error: ${event.message}`)
+                                    LauncherLogger.error(`Bridge error: ${event.message}`)
+                                    lastErrorMsg = event.message
+                                    if (opts.onLog) opts.onLog(`[ERROR] ${event.message}`)
+                                    rejectOnce(new Error(event.message))
                                 }
-                            } else if (event.type === 'log') {
-                                if (opts.onLog) opts.onLog(event.line)
-                                logger.info(`[MC] ${event.line}`)
-                                LauncherLogger.info(`[MC] ${event.line}`)
-                            } else if (event.type === 'error') {
-                                logger.error(`Bridge error: ${event.message}`)
-                                LauncherLogger.error(`Bridge error: ${event.message}`)
-                                lastErrorMsg = event.message
-                                if (opts.onLog) opts.onLog(`[ERROR] ${event.message}`)
-                                rejectOnce(new Error(event.message))
+                            } catch (_err) {
+                                logger.warn('Failed to parse bridge event:', evtTrimmed)
+                                LauncherLogger.warn(`Failed to parse bridge event: ${evtTrimmed}`)
                             }
-                        } catch (_err) {
-                            logger.warn('Failed to parse bridge event:', trimmed)
-                            LauncherLogger.warn(`Failed to parse bridge event: ${trimmed}`)
                         }
                     } else if (trimmed) {
                         logger.info(`[Bridge] ${trimmed}`)

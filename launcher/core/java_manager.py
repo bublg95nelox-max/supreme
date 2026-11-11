@@ -27,6 +27,15 @@ from urllib3.util.retry import Retry
 logger = logging.getLogger("lowuncher.java")
 
 
+def strip_win_extended_prefix(path_obj) -> str:
+    s = str(path_obj)
+    if s.startswith("\\\\?\\UNC\\"):
+        return "\\\\" + s[8:]
+    if s.startswith("\\\\?\\"):
+        return s[4:]
+    return s
+
+
 class JavaManager:
     """Manages portable Java 21 installation."""
 
@@ -292,14 +301,16 @@ class JavaManager:
 
         logger.info(f"Extracting {final_archive} to {self.java21_dir}")
         try:
-            root = self.java21_dir.resolve()
+            root_str = strip_win_extended_prefix(self.java21_dir.resolve())
+            root = Path(root_str)
             if filename.endswith(".zip"):
                 with zipfile.ZipFile(final_archive, "r") as zf:
                     for member in zf.infolist():
                         clean_name = member.filename.replace("\\", "/").strip()
                         if clean_name.startswith("/") or ":" in clean_name:
                             raise ValueError(f"Unsafe file path in ZIP: {member.filename}")
-                        target = (self.java21_dir / member.filename).resolve()
+                        target_str = strip_win_extended_prefix((self.java21_dir / member.filename).resolve())
+                        target = Path(target_str)
                         try:
                             target.relative_to(root)
                         except ValueError as exc:
@@ -320,6 +331,13 @@ class JavaManager:
                     tf.extractall(self.java21_dir)
             else:
                 raise ValueError(f"Unknown archive format: {filename}")
+
+            if sys.platform != "win32":
+                for bin_file in self.java21_dir.glob("**/bin/*"):
+                    try:
+                        bin_file.chmod(bin_file.stat().st_mode | 0o755)
+                    except Exception:
+                        pass
         except ValueError as exc:
             raise RuntimeError(f"Unsafe Java archive: {exc}") from exc
         finally:

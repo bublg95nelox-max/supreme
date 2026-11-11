@@ -25,6 +25,7 @@ import hashlib
 import argparse
 import logging
 import signal
+import threading
 from pathlib import Path
 from typing import Optional, Callable, Dict, Any, List
 
@@ -52,7 +53,7 @@ import urllib.error
 
 from core.java_manager import JavaManager
 from core.installer import Installer
-from core.sync_engine import SyncEngine, SyncNetworkError
+from core.sync_engine import SyncEngine, SyncNetworkError, strip_win_extended_prefix
 from core.launcher import GameLauncher
 from core.auth import AuthManager
 
@@ -67,13 +68,18 @@ FALLBACK_MODPACK_URLS = [
     "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.7/modpack-supreme-1.21.1.zip",
     "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.8/modpack-supreme-1.21.1.zip",
 ]
-MODPACK_VERSION = "1.0.8"
+MODPACK_VERSION = "1.0.9"
+
+_emit_lock = threading.Lock()
 
 
 def emit_event(event_type: str, data: dict):
-    """Outputs a JSON event line to stdout for Electron IPC reading."""
+    """Outputs a JSON event line to stdout for Electron IPC reading in a thread-safe manner."""
     payload = {"type": event_type, **data}
-    print(f"[BRIDGE_EVENT] {json.dumps(payload, ensure_ascii=False)}", flush=True)
+    line = f"[BRIDGE_EVENT] {json.dumps(payload, ensure_ascii=False)}\n"
+    with _emit_lock:
+        sys.stdout.write(line)
+        sys.stdout.flush()
 
 
 def _handle_unhandled_exception(exc_type, exc_value, exc_traceback):
@@ -172,12 +178,14 @@ def safe_extract_zip(
     Safely extracts a ZIP archive guarding against Path Traversal (Zip Slip).
     Reports progress for extracted files to prevent UI freeze.
     """
-    root = destination.resolve()
+    root_str = strip_win_extended_prefix(destination.resolve())
+    root = Path(root_str)
     members = [info for info in zf.infolist() if not info.is_dir() and not info.filename.startswith(("/", "\\"))]
     total_files = max(1, len(members))
 
     for idx, info in enumerate(members, 1):
-        target = (destination / info.filename).resolve()
+        target_str = strip_win_extended_prefix((destination / info.filename).resolve())
+        target = Path(target_str)
         try:
             target.relative_to(root)
         except ValueError as exc:
@@ -459,8 +467,8 @@ def handle_run(args):
     try:
         sync_engine.sync(manifest_url, progress_callback=on_sync_progress)
         emit_event("progress", {"percent": 90, "status": "Файлы сборки синхронизированы"})
-    except (SyncNetworkError, TimeoutError, OSError, urllib.error.URLError) as e:
-        logger.warning(f"Modpack sync encountered network issue: {e}. Checking local verified files...")
+    except Exception as e:
+        logger.warning(f"Modpack sync encountered an issue: {e}. Checking local verified files...")
         manifest_cache = game_dir / ".last_manifest.json"
         is_locally_verified = False
         if manifest_cache.is_file():

@@ -343,6 +343,19 @@ class TestSyncEngine(unittest.TestCase):
         # Malicious paths must not appear in obsolete list
         self.assertEqual(len(obsolete), 1)
 
+    def test_strip_win_extended_prefix(self):
+        from core.sync_engine import strip_win_extended_prefix
+        self.assertEqual(strip_win_extended_prefix(r"\\?\C:\Games\Lowuncher"), r"C:\Games\Lowuncher")
+        self.assertEqual(strip_win_extended_prefix(r"\\?\UNC\server\share\file.jar"), r"\\server\share\file.jar")
+        self.assertEqual(strip_win_extended_prefix("/home/user/.lowuncher"), "/home/user/.lowuncher")
+
+    def test_safe_relative_to(self):
+        from core.sync_engine import safe_relative_to
+        rel = safe_relative_to(r"\\?\C:\Users\test\game\mods\sample.jar", r"C:\Users\test\game")
+        self.assertEqual(rel, "mods/sample.jar")
+        rel2 = safe_relative_to("/home/user/game/mods/sample.jar", "/home/user/game")
+        self.assertEqual(rel2, "mods/sample.jar")
+
 
 if __name__ == "__main__":
     unittest.main()

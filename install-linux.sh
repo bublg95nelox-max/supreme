@@ -40,6 +40,8 @@ APPIMAGE_SOURCE=""
 # 1. Locate local tar.gz or AppImage if available
 if [ -n "$SCRIPT_DIR" ]; then
     for candidate in \
+        "$SCRIPT_DIR/dist/Lowuncher-1.0.9-linux-x64.tar.gz" \
+        "$SCRIPT_DIR"/Lowuncher-1.0.9-linux-x64.tar.gz \
         "$SCRIPT_DIR/dist/Lowuncher-1.0.8-linux-x64.tar.gz" \
         "$SCRIPT_DIR"/Lowuncher-1.0.8-linux-x64.tar.gz \
         "$SCRIPT_DIR/dist/Lowuncher-1.0.7-linux-x64.tar.gz" \
@@ -57,6 +59,7 @@ fi
 
 if [ -z "$ARCHIVE_SOURCE" ] && [ -z "$APPIMAGE_SOURCE" ]; then
     for candidate in \
+        "/mnt/games/lowuncher/dist/Lowuncher-1.0.9-linux-x64.tar.gz" \
         "/mnt/games/lowuncher/dist/Lowuncher-1.0.8-linux-x64.tar.gz" \
         "/mnt/games/lowuncher/dist/Lowuncher-1.0.7-linux-x64.tar.gz" \
         "/mnt/games/lowuncher/dist/Lowuncher-1.0.6-linux-x64.tar.gz" \
@@ -72,12 +75,15 @@ fi
 if [ -z "$ARCHIVE_SOURCE" ] && [ -z "$APPIMAGE_SOURCE" ]; then
     echo -e "${CYAN}▶ Загрузка актуального релиза Lowuncher с GitHub...${RESET}"
     if command -v curl &>/dev/null; then
+        curl -fSL "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.9/Lowuncher-1.0.9-linux-x64.tar.gz" -o "$INSTALL_DIR/Lowuncher.tar.gz" || \
         curl -fSL "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.8/Lowuncher-1.0.8-linux-x64.tar.gz" -o "$INSTALL_DIR/Lowuncher.tar.gz" || \
         curl -fSL "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.7/Lowuncher-1.0.7-linux-x64.tar.gz" -o "$INSTALL_DIR/Lowuncher.tar.gz" || \
         curl -fSL "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.6/Lowuncher-1.0.6-linux-x64.tar.gz" -o "$INSTALL_DIR/Lowuncher.tar.gz" || \
         curl -fSL "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.5/Lowuncher-1.0.5-linux-x64.tar.gz" -o "$INSTALL_DIR/Lowuncher.tar.gz" || \
         curl -fSL "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.5/Lowuncher-1.0.5-linux-x86_64.AppImage" -o "$INSTALL_DIR/Lowuncher.AppImage"
     elif command -v wget &>/dev/null; then
+        wget -q --show-progress "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.9/Lowuncher-1.0.9-linux-x64.tar.gz" -O "$INSTALL_DIR/Lowuncher.tar.gz" || \
+        wget -q --show-progress "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.8/Lowuncher-1.0.8-linux-x64.tar.gz" -O "$INSTALL_DIR/Lowuncher.tar.gz" || \
         wget -q --show-progress "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.7/Lowuncher-1.0.7-linux-x64.tar.gz" -O "$INSTALL_DIR/Lowuncher.tar.gz" || \
         wget -q --show-progress "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.6/Lowuncher-1.0.6-linux-x64.tar.gz" -O "$INSTALL_DIR/Lowuncher.tar.gz" || \
         wget -q --show-progress "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.5/Lowuncher-1.0.5-linux-x64.tar.gz" -O "$INSTALL_DIR/Lowuncher.tar.gz" || \
