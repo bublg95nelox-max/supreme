@@ -7,6 +7,11 @@ const LauncherLogger = require('./launcher_logger')
 
 const logger = LoggerUtil.getLogger('PythonBridge')
 
+function cleanBridgeString(str) {
+    if (!str || typeof str !== 'string') return ''
+    return str.replace(/\uFFFD+/g, ' ').replace(/\s{2,}/g, ' ').trim()
+}
+
 class PythonBridge {
 
     static activeProc = null
@@ -149,6 +154,7 @@ class PythonBridge {
             const rootDir = PythonBridge.resolveRootDir()
 
             const args = [
+                '-X', 'utf8',
                 '-m', 'core.bridge_cli', 'run',
                 '--game-dir', opts.gameDir,
                 '--mc-version', opts.mcVersion || '1.21.1',
@@ -280,18 +286,21 @@ class PythonBridge {
                 }
             })
 
+            let stderrBuffer = ''
             proc.stderr.on('data', (data) => {
-                const text = stderrDecoder.write(data).trim()
+                const chunk = stderrDecoder.write(data)
+                stderrBuffer += chunk
+                const text = chunk.trim()
                 if (text) {
                     logger.warn(`[Bridge ERR] ${text}`)
                     LauncherLogger.warn(`[Bridge ERR] ${text}`)
                     if (opts.onLog) opts.onLog(`[Bridge ERR] ${text}`)
-                    if (!lastErrorMsg) lastErrorMsg = text
                 }
             })
 
             proc.on('close', (code) => {
                 lineBuffer += stdoutDecoder.end()
+                stderrBuffer += stderrDecoder.end()
                 const tail = lineBuffer.trim()
                 if (tail) {
                     if (tail.startsWith('[BRIDGE_EVENT] ')) {
@@ -306,12 +315,24 @@ class PythonBridge {
                     }
                     LauncherLogger.info(`[Bridge Tail] ${tail}`)
                 }
+
+                // If no structured error event occurred, extract the actual exception line from stderrBuffer
+                if (!lastErrorMsg && stderrBuffer.trim()) {
+                    const errLines = stderrBuffer.trim().split(/\r?\n/).map(l => l.trim()).filter(Boolean)
+                    const lastLine = errLines[errLines.length - 1]
+                    if (lastLine && !lastLine.startsWith('File ') && !lastLine.startsWith('Traceback')) {
+                        lastErrorMsg = lastLine
+                    } else {
+                        lastErrorMsg = errLines.slice(-3).join(' | ')
+                    }
+                }
                 logger.info(`Python bridge exited with code ${code}`)
                 LauncherLogger.info(`Python bridge exited with code ${code}`)
                 if (code === 0) {
                     resolveOnce(code)
                 } else {
-                    const desc = lastErrorMsg ? `: ${lastErrorMsg}` : ''
+                    const cleanDesc = cleanBridgeString(lastErrorMsg)
+                    const desc = cleanDesc ? `: ${cleanDesc}` : ''
                     rejectOnce(new Error(`Minecraft process or bridge exited with error code ${code}${desc}`))
                 }
             })

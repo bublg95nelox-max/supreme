@@ -2,6 +2,7 @@
 Modpack synchronization engine for Lowuncher.
 Compares local game files with remote manifest.json and performs robust, transactional sync.
 """
+from __future__ import annotations
 import os
 import sys
 import re
@@ -11,7 +12,7 @@ import shutil
 import logging
 import hashlib
 from pathlib import Path
-from typing import Callable, Optional, Dict, Any, List, Tuple
+from typing import Callable, Optional, Dict, Any, List, Tuple, Set
 from concurrent.futures import ThreadPoolExecutor, as_completed
 try:
     import requests
@@ -429,9 +430,9 @@ class SyncEngine:
 
         candidate_urls = [url]
         if "raw.githubusercontent.com" in url:
-            # Fallback mirror for raw.githubusercontent to bypass ISP throttling or packet drops
+            # Fallback mirrors for raw.githubusercontent to bypass ISP throttling or packet drops
             candidate_urls.append(f"https://ghproxy.net/{url}")
-            candidate_urls.append(url.replace("raw.githubusercontent.com", "raw.gitmirror.com"))
+            candidate_urls.append(f"https://gh-proxy.com/{url}")
 
         last_error = None
 

@@ -108,7 +108,7 @@ class GameLauncher:
             if arg.startswith("-Dminecraft.launcher.brand="):
                 sanitized_command.append("-Dminecraft.launcher.brand=Lowuncher")
             elif arg.startswith("-Dminecraft.launcher.version="):
-                sanitized_command.append("-Dminecraft.launcher.version=1.0.4")
+                sanitized_command.append("-Dminecraft.launcher.version=1.0.8")
             else:
                 sanitized_command.append(arg)
 
@@ -134,12 +134,11 @@ class GameLauncher:
         command = self.build_command(version_id, java_path, options)
         logger.info(f"Launching Minecraft with command: {' '.join(command[:5])} ...")
 
-        # Startupinfo to hide console window on Windows if desired
+        # Prevent console window from popping up on Windows without hiding Minecraft's GLFW window
         startupinfo = None
         creationflags = 0
         if sys.platform == "win32":
-            startupinfo = subprocess.STARTUPINFO()
-            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
 
         proc = subprocess.Popen(
             command,

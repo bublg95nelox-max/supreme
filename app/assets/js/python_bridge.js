@@ -286,18 +286,21 @@ class PythonBridge {
                 }
             })
 
+            let stderrBuffer = ''
             proc.stderr.on('data', (data) => {
-                const text = stderrDecoder.write(data).trim()
+                const chunk = stderrDecoder.write(data)
+                stderrBuffer += chunk
+                const text = chunk.trim()
                 if (text) {
                     logger.warn(`[Bridge ERR] ${text}`)
                     LauncherLogger.warn(`[Bridge ERR] ${text}`)
                     if (opts.onLog) opts.onLog(`[Bridge ERR] ${text}`)
-                    if (!lastErrorMsg) lastErrorMsg = text
                 }
             })
 
             proc.on('close', (code) => {
                 lineBuffer += stdoutDecoder.end()
+                stderrBuffer += stderrDecoder.end()
                 const tail = lineBuffer.trim()
                 if (tail) {
                     if (tail.startsWith('[BRIDGE_EVENT] ')) {
@@ -311,6 +314,17 @@ class PythonBridge {
                         lastErrorMsg = tail
                     }
                     LauncherLogger.info(`[Bridge Tail] ${tail}`)
+                }
+
+                // If no structured error event occurred, extract the actual exception line from stderrBuffer
+                if (!lastErrorMsg && stderrBuffer.trim()) {
+                    const errLines = stderrBuffer.trim().split(/\r?\n/).map(l => l.trim()).filter(Boolean)
+                    const lastLine = errLines[errLines.length - 1]
+                    if (lastLine && !lastLine.startsWith('File ') && !lastLine.startsWith('Traceback')) {
+                        lastErrorMsg = lastLine
+                    } else {
+                        lastErrorMsg = errLines.slice(-3).join(' | ')
+                    }
                 }
                 logger.info(`Python bridge exited with code ${code}`)
                 LauncherLogger.info(`Python bridge exited with code ${code}`)

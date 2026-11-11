@@ -2,6 +2,7 @@
 Modpack synchronization engine for Lowuncher.
 Compares local game files with remote manifest.json and performs robust, transactional sync.
 """
+from __future__ import annotations
 import os
 import sys
 import re
@@ -11,7 +12,7 @@ import shutil
 import logging
 import hashlib
 from pathlib import Path
-from typing import Callable, Optional, Dict, Any, List, Tuple
+from typing import Callable, Optional, Dict, Any, List, Tuple, Set
 from concurrent.futures import ThreadPoolExecutor, as_completed
 try:
     import requests

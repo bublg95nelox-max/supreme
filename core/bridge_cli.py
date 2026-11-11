@@ -65,14 +65,27 @@ FALLBACK_MODPACK_URLS = [
     "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.5/modpack-supreme-1.21.1.zip",
     "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.6/modpack-supreme-1.21.1.zip",
     "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.7/modpack-supreme-1.21.1.zip",
+    "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.8/modpack-supreme-1.21.1.zip",
 ]
-MODPACK_VERSION = "1.0.7"
+MODPACK_VERSION = "1.0.8"
 
 
 def emit_event(event_type: str, data: dict):
     """Outputs a JSON event line to stdout for Electron IPC reading."""
     payload = {"type": event_type, **data}
     print(f"[BRIDGE_EVENT] {json.dumps(payload, ensure_ascii=False)}", flush=True)
+
+
+def _handle_unhandled_exception(exc_type, exc_value, exc_traceback):
+    """Ensures any unhandled exception emits a structured error event for Electron."""
+    try:
+        emit_event("error", {"message": f"{exc_type.__name__}: {exc_value}"})
+    except Exception:
+        pass
+    sys.__excepthook__(exc_type, exc_value, exc_traceback)
+
+
+sys.excepthook = _handle_unhandled_exception
 
 
 def ensure_servers_dat(game_dir: Path):
@@ -291,7 +304,7 @@ def ensure_modpack(
         try:
             req = urllib.request.Request(
                 target_url,
-                headers={"User-Agent": "Lowuncher/1.0.7"}
+                headers={"User-Agent": "Lowuncher/1.0.8"}
             )
             with urllib.request.urlopen(req, timeout=60) as resp:
                 total_bytes = int(resp.headers.get("Content-Length", 0))
@@ -511,7 +524,7 @@ def handle_run(args):
         session_file = game_dir / ".lowuncher_session.json"
         session_payload = {
             "launcher": "Lowuncher",
-            "version": "1.0.7",
+            "version": "1.0.8",
             "username": args.username,
             "uuid": args.uuid,
             "token": hashlib.sha256(f"Lowuncher-Verified:{args.username}:{args.uuid}:6233".encode("utf-8")).hexdigest(),
