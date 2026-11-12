@@ -435,6 +435,11 @@ exports.addOfflineAccount = async function(username) {
         return Promise.reject(new Error('Никнейм не может быть пустым'))
     }
     const cleanUser = username.trim()
+    const lowerUser = cleanUser.toLowerCase()
+    const storedHash = ConfigManager.getUserPasswordHash ? ConfigManager.getUserPasswordHash(lowerUser) : null
+    if(storedHash){
+        return Promise.reject(new Error(`Никнейм «${cleanUser}» защищён паролем! Используйте вход с паролем.`))
+    }
     const uuid = generateOfflineUUID(cleanUser)
     const ret = ConfigManager.addOfflineAuthAccount(uuid, cleanUser)
     ConfigManager.save()
@@ -470,8 +475,8 @@ exports.addCommunityAccount = async function(username, password) {
         }
     }
 
-    // Check stored password in account or in persistent userPasswords database
-    const storedHash = (existingAccount && existingAccount.passwordHash) || (ConfigManager.getUserPasswordHash ? ConfigManager.getUserPasswordHash(lowerUser) : null)
+    // Check stored password in persistent userPasswords database or in account
+    const storedHash = (ConfigManager.getUserPasswordHash ? ConfigManager.getUserPasswordHash(lowerUser) : null) || (existingAccount && existingAccount.passwordHash)
 
     if(storedHash && storedHash !== passwordHash){
         return Promise.reject(new Error(`Неверный пароль для никнейма «${cleanUser}»!`))

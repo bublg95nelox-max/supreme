@@ -11,8 +11,8 @@
   "files": [
     {
       "path": "mods/frontier-1.0.1.jar",
-      "sha256": "e5598a095f4027d00d25521e38e5f99cc129626fe002b2fbd3021327d2996c8f",
-      "size": 14263345,
+      "sha256": "a2ab9b51ed663a6afe260a9b211ecefd4e9cf81f273e220553b4f895e9bbb9d3",
+      "size": 14269945,
       "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/frontier-1.0.1.jar",
       "required": true,
       "overwrite": true
@@ -50,10 +50,10 @@
       "overwrite": true
     },
     {
-      "path": "mods/upgraded-iron-chests-1.5.1.jar",
-      "sha256": "14f524920c7333389570b89117fc831435af16a80a1982aaf0eb3d88f1320491",
-      "size": 580895,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/upgraded-iron-chests-1.5.1.jar",
+      "path": "mods/ironchest-1.21-neoforge-16.0.7.jar",
+      "sha256": "dae66a38a33c2adac6ca0b7a4fbf4b365ba37a6a1f7a10961028617965c1fcaf",
+      "size": 305975,
+      "url": "https://edge.forgecdn.net/files/5491/156/ironchest-1.21-neoforge-16.0.7.jar",
       "required": true,
       "overwrite": true
     },

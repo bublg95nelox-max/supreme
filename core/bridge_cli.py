@@ -68,7 +68,7 @@ FALLBACK_MODPACK_URLS = [
     "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.7/modpack-supreme-1.21.1.zip",
     "https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.8/modpack-supreme-1.21.1.zip",
 ]
-MODPACK_VERSION = "1.0.9"
+MODPACK_VERSION = "1.0.10"
 
 _emit_lock = threading.Lock()
 
@@ -99,7 +99,6 @@ def ensure_servers_dat(game_dir: Path):
     try:
         servers_file = game_dir / "servers.dat"
         import struct
-        import gzip
 
         def enc_str(s: str) -> bytes:
             raw = s.encode("utf-8")
@@ -108,8 +107,8 @@ def ensure_servers_dat(game_dir: Path):
         should_write = not servers_file.exists()
         if servers_file.exists():
             try:
-                raw_decomp = gzip.decompress(servers_file.read_bytes())
-                if b"89.248.236.145" not in raw_decomp:
+                raw_data = servers_file.read_bytes()
+                if b"89.248.236.145" not in raw_data:
                     should_write = True
             except Exception:
                 should_write = True
@@ -119,16 +118,18 @@ def ensure_servers_dat(game_dir: Path):
                 {"name": "Supreme (Основной)", "ip": "89.248.236.145:27160"},
                 {"name": "Supreme (Резерв)", "ip": "ozdangalla.netmc.ru"},
             ]
+            # Minecraft 1.20.2+ / 1.21 servers.dat is uncompressed NBT:
+            # Root TAG_Compound (tag 10, empty name length 0) -> List 'servers' (tag 9) of TAG_Compound (tag 10)
             payload = b"\x0a\x00\x00\x09" + enc_str("servers") + b"\x0a" + struct.pack(">i", len(servers))
             for s in servers:
                 payload += b"\x08" + enc_str("name") + enc_str(s["name"])
                 payload += b"\x08" + enc_str("ip") + enc_str(s["ip"])
-                payload += b"\x00"
-            payload += b"\x00"
+                payload += b"\x00"  # End TAG_Compound for this server
+            payload += b"\x00"      # End root TAG_Compound
 
             with open(servers_file, "wb") as f:
-                f.write(gzip.compress(payload))
-            logger.info(f"Pre-populated servers.dat in {servers_file}")
+                f.write(payload)
+            logger.info(f"Pre-populated servers.dat (uncompressed NBT) in {servers_file}")
     except Exception as e:
         logger.warning(f"Could not ensure servers.dat: {e}")
 
@@ -532,7 +533,7 @@ def handle_run(args):
         session_file = game_dir / ".lowuncher_session.json"
         session_payload = {
             "launcher": "Lowuncher",
-            "version": "1.0.8",
+            "version": "1.0.10",
             "username": args.username,
             "uuid": args.uuid,
             "token": hashlib.sha256(f"Lowuncher-Verified:{args.username}:{args.uuid}:6233".encode("utf-8")).hexdigest(),

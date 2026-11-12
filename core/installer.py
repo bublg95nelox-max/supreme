@@ -72,10 +72,24 @@ class Installer:
                     / nf_ver
                     / f"neoforge-{nf_ver}-universal.jar"
                 )
+                client_jar = (
+                    self.game_dir
+                    / "libraries"
+                    / "net"
+                    / "neoforged"
+                    / "neoforge"
+                    / nf_ver
+                    / f"neoforge-{nf_ver}-client.jar"
+                )
                 if not universal_jar.is_file() or universal_jar.stat().st_size < 1000000:
                     logger.warning(
                         f"NeoForge version '{version_id}' has JSON ({version_json.stat().st_size} bytes) "
                         f"but missing or incomplete universal jar ({universal_jar}). Marking as not installed."
+                    )
+                    return False
+                if not client_jar.is_file() or client_jar.stat().st_size < 1000000:
+                    logger.warning(
+                        f"NeoForge version '{version_id}' has JSON but missing or incomplete client jar ({client_jar}). Marking as not installed."
                     )
                     return False
 

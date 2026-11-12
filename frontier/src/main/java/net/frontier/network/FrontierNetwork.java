@@ -5,7 +5,6 @@ import net.frontier.api.JurisdictionType;
 import net.frontier.api.LawStatus;
 import net.frontier.api.RelationType;
 import net.frontier.api.Role;
-import net.frontier.client.network.ClientPayloadHandler;
 import net.frontier.core.FrontierServerCache;
 import net.frontier.data.model.*;
 import net.frontier.network.payloads.*;
@@ -16,6 +15,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -32,29 +32,35 @@ public class FrontierNetwork {
     public static void register(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar("frontier").versioned("1.0.1");
 
-        registrar.playToClient(
-                SyncTerritoryDataPayload.TYPE,
-                SyncTerritoryDataPayload.STREAM_CODEC,
-                ClientPayloadHandler::handleSyncTerritoryData
-        );
-
-        registrar.playToClient(
-                OpenFrontierScreenPayload.TYPE,
-                OpenFrontierScreenPayload.STREAM_CODEC,
-                ClientPayloadHandler::handleOpenScreen
-        );
-
-        registrar.playToClient(
-                SyncCasesAndLawsPayload.TYPE,
-                SyncCasesAndLawsPayload.STREAM_CODEC,
-                ClientPayloadHandler::handleSyncCasesAndLaws
-        );
-
-        registrar.playToClient(
-                SyncAdminPetitionsPayload.TYPE,
-                SyncAdminPetitionsPayload.STREAM_CODEC,
-                ClientPayloadHandler::handleSyncAdminPetitions
-        );
+        if (FMLEnvironment.dist.isClient()) {
+            net.frontier.client.network.ClientPayloadRegistrar.register(registrar);
+        } else {
+            registrar.playToClient(
+                    SyncTerritoryDataPayload.TYPE,
+                    SyncTerritoryDataPayload.STREAM_CODEC,
+                    (p, c) -> {}
+            );
+            registrar.playToClient(
+                    OpenFrontierScreenPayload.TYPE,
+                    OpenFrontierScreenPayload.STREAM_CODEC,
+                    (p, c) -> {}
+            );
+            registrar.playToClient(
+                    SyncCasesAndLawsPayload.TYPE,
+                    SyncCasesAndLawsPayload.STREAM_CODEC,
+                    (p, c) -> {}
+            );
+            registrar.playToClient(
+                    SyncAdminPetitionsPayload.TYPE,
+                    SyncAdminPetitionsPayload.STREAM_CODEC,
+                    (p, c) -> {}
+            );
+            registrar.playToClient(
+                    SyncAuthLockPayload.TYPE,
+                    SyncAuthLockPayload.STREAM_CODEC,
+                    (p, c) -> {}
+            );
+        }
 
         registrar.playToServer(
                 ClientRequestActionPayload.TYPE,

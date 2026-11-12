@@ -1895,6 +1895,8 @@ if (btnCommunityLogin && inputCommunityUser && inputCommunityPass) {
                 switchModernTab('tabHome')
             }
         } catch (err) {
+            inputCommunityPass.focus()
+            inputCommunityPass.style.borderColor = '#ef4444'
             if (communityAuthStatus) {
                 communityAuthStatus.style.display = 'block'
                 communityAuthStatus.style.color = '#ef4444'

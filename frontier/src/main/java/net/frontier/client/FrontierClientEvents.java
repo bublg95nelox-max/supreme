@@ -11,6 +11,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 
 public class FrontierClientEvents {
@@ -25,6 +26,21 @@ public class FrontierClientEvents {
     private static int lastChunkX = Integer.MIN_VALUE;
     private static int lastChunkZ = Integer.MIN_VALUE;
     private static int tickCounter = 0;
+    private static volatile boolean authLocked = false;
+
+    public static void setAuthLocked(boolean locked) {
+        authLocked = locked;
+        if (locked) {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.getDebugOverlay() != null && mc.getDebugOverlay().showDebugScreen()) {
+                mc.getDebugOverlay().reset();
+            }
+        }
+    }
+
+    public static boolean isAuthLocked() {
+        return authLocked;
+    }
 
     public static void registerKeys(RegisterKeyMappingsEvent event) {
         event.register(OPEN_GUI_KEY);
@@ -32,7 +48,17 @@ public class FrontierClientEvents {
 
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null) return;
+        if (mc.player == null) {
+            authLocked = false;
+            return;
+        }
+
+        // Suppress F3 debug screen immediately if authentication is locked
+        if (authLocked) {
+            if (mc.getDebugOverlay() != null && mc.getDebugOverlay().showDebugScreen()) {
+                mc.getDebugOverlay().reset();
+            }
+        }
 
         if (++tickCounter % 20 == 0) {
             net.frontier.client.compat.XaeroMapCompat.checkAndRegisterHighlighter();
@@ -73,6 +99,13 @@ public class FrontierClientEvents {
             } else if (claim != null && claim.jurisdictionType() == JurisdictionType.NEUTRAL) {
                 mc.gui.setOverlayMessage(Component.literal("§b§lНейтральная территория §7(Общая зона)"), false);
             }
+        }
+    }
+
+    public static void onCustomizeDebugText(CustomizeGuiOverlayEvent.DebugText event) {
+        if (authLocked) {
+            event.getLeft().clear();
+            event.getRight().clear();
         }
     }
 }

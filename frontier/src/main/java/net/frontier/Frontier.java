@@ -44,6 +44,7 @@ public class Frontier {
         if (FMLEnvironment.dist.isClient()) {
             modEventBus.addListener(FrontierClientEvents::registerKeys);
             NeoForge.EVENT_BUS.addListener(FrontierClientEvents::onClientTick);
+            NeoForge.EVENT_BUS.addListener(FrontierClientEvents::onCustomizeDebugText);
             XaeroMapCompat.init();
         }
 
@@ -53,6 +54,9 @@ public class Frontier {
         NeoForge.EVENT_BUS.addListener(this::onServerStopping);
         NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
         NeoForge.EVENT_BUS.addListener(this::onPlayerLogin);
+        NeoForge.EVENT_BUS.addListener(net.frontier.core.AuthEventListener::onPlayerLoggedIn);
+        NeoForge.EVENT_BUS.addListener(net.frontier.core.AuthEventListener::onPlayerLoggedOut);
+        NeoForge.EVENT_BUS.addListener(net.frontier.core.AuthEventListener::onPlayerTick);
     }
 
     private void onServerStarting(ServerStartingEvent event) {

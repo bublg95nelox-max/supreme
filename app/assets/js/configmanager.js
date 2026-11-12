@@ -100,6 +100,7 @@ const DEFAULT_CONFIG = {
     selectedServer: null, // Resolved
     selectedAccount: null,
     authenticationDatabase: {},
+    userPasswords: {},
     modConfigurations: [],
     javaConfig: {}
 }
@@ -155,6 +156,13 @@ exports.load = function(){
             exports.save()
         }
     }
+    try {
+        const passFile = path.join(exports.getDataDirectory(), 'user_passwords.json')
+        if (fs.existsSync(passFile)) {
+            const externalPass = JSON.parse(fs.readFileSync(passFile, 'UTF-8'))
+            config.userPasswords = Object.assign({}, externalPass, config.userPasswords || {})
+        }
+    } catch (_e) {}
     logger.info('Successfully Loaded')
 }
 
@@ -177,7 +185,7 @@ function validateKeySet(srcObj, destObj){
     if(srcObj == null){
         srcObj = {}
     }
-    const validationBlacklist = ['authenticationDatabase', 'javaConfig']
+    const validationBlacklist = ['authenticationDatabase', 'javaConfig', 'userPasswords']
     const keys = Object.keys(srcObj)
     for(let i=0; i<keys.length; i++){
         if(typeof destObj[keys[i]] === 'undefined'){
@@ -380,10 +388,20 @@ exports.addOfflineAuthAccount = function(uuid, username){
  * @param {string} passwordHash SHA-256 hash of user password.
  * @returns {Object} The account object.
  */
+function saveUserPasswordsBackup() {
+    try {
+        if (!config || !config.userPasswords) return
+        const passFile = path.join(exports.getDataDirectory(), 'user_passwords.json')
+        fs.ensureDirSync(path.dirname(passFile))
+        fs.writeFileSync(passFile, JSON.stringify(config.userPasswords, null, 2), { encoding: 'UTF-8', mode: 0o600 })
+    } catch (_e) {}
+}
+
 exports.addCommunityAuthAccount = function(uuid, username, passwordHash){
     config.selectedAccount = uuid
     config.userPasswords = config.userPasswords || {}
     config.userPasswords[username.trim().toLowerCase()] = passwordHash
+    saveUserPasswordsBackup()
     config.authenticationDatabase[uuid] = {
         type: 'community',
         accessToken: '0',
@@ -404,7 +422,19 @@ exports.addCommunityAuthAccount = function(uuid, username, passwordHash){
 exports.getUserPasswordHash = function(username){
     if(!username) return null
     config.userPasswords = config.userPasswords || {}
-    return config.userPasswords[username.trim().toLowerCase()] || null
+    const lower = username.trim().toLowerCase()
+    if (config.userPasswords[lower]) return config.userPasswords[lower]
+    try {
+        const passFile = path.join(exports.getDataDirectory(), 'user_passwords.json')
+        if (fs.existsSync(passFile)) {
+            const externalPass = JSON.parse(fs.readFileSync(passFile, 'UTF-8'))
+            if (externalPass && externalPass[lower]) {
+                config.userPasswords[lower] = externalPass[lower]
+                return externalPass[lower]
+            }
+        }
+    } catch (_e) {}
+    return null
 }
 
 /**
@@ -417,6 +447,7 @@ exports.setUserPasswordHash = function(username, hash){
     if(!username || !hash) return
     config.userPasswords = config.userPasswords || {}
     config.userPasswords[username.trim().toLowerCase()] = hash
+    saveUserPasswordsBackup()
 }
 
 /**
