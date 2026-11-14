@@ -3,17 +3,17 @@
   "minecraft_version": "1.21.1",
   "loader": {
     "type": "neoforge",
-    "version": "21.1.72",
+    "version": "21.1.265",
     "installer_url": ""
   },
   "java_version": 21,
-  "total_files": 108,
+  "total_files": 109,
   "files": [
     {
-      "path": "mods/frontier-1.0.1.jar",
-      "sha256": "a2ab9b51ed663a6afe260a9b211ecefd4e9cf81f273e220553b4f895e9bbb9d3",
-      "size": 14269945,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/frontier-1.0.1.jar",
+      "path": "mods/frontier-1.0.2.jar",
+      "sha256": "d3aac9329e9209a6577e6c28b192744de621e153ae472e3d640764db3acf6762",
+      "size": 14282315,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/frontier-1.0.2.jar",
       "required": true,
       "overwrite": true
     },
@@ -870,6 +870,14 @@
       "sha256": "b524ccdace2ef8fd19f5b2074f7de1103ac5065c52553f064c00e098346c293e",
       "size": 18382,
       "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/Clumps-neoforge-1.21.1-19.0.0.1.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/DungeonsArise-1.21.1-2.1.68-release.jar",
+      "sha256": "7eee1eca7e3b2c6c1bede055934f391ae2e8349ffe33e106f451176d2cfcf0e4",
+      "size": 11842679,
+      "url": "https://cdn.modrinth.com/data/8DfbfASn/versions/XIRJSFQ0/DungeonsArise-1.21.1-2.1.68-release.jar",
       "required": true,
       "overwrite": true
     }

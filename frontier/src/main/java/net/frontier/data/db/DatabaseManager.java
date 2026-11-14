@@ -433,10 +433,56 @@ public class DatabaseManager {
 
     public void deleteState(UUID stateId) {
         executeAsync(() -> {
-            String sql = "DELETE FROM frontier_states WHERE id = ?";
+            String sid = stateId.toString();
+            try {
+                try (PreparedStatement ps = connection.prepareStatement("DELETE FROM frontier_states WHERE id = ?")) {
+                    ps.setString(1, sid);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = connection.prepareStatement("DELETE FROM frontier_members WHERE state_id = ?")) {
+                    ps.setString(1, sid);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = connection.prepareStatement("DELETE FROM frontier_claims WHERE state_id = ?")) {
+                    ps.setString(1, sid);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = connection.prepareStatement("DELETE FROM frontier_zones WHERE state_id = ?")) {
+                    ps.setString(1, sid);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = connection.prepareStatement("DELETE FROM frontier_relations WHERE state_a = ? OR state_b = ?")) {
+                    ps.setString(1, sid);
+                    ps.setString(2, sid);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = connection.prepareStatement("DELETE FROM frontier_vassals WHERE suzerain_id = ? OR vassal_id = ?")) {
+                    ps.setString(1, sid);
+                    ps.setString(2, sid);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = connection.prepareStatement("DELETE FROM frontier_laws WHERE state_id = ?")) {
+                    ps.setString(1, sid);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = connection.prepareStatement("DELETE FROM frontier_cases WHERE state_id = ?")) {
+                    ps.setString(1, sid);
+                    ps.executeUpdate();
+                }
+            } catch (SQLException e) {
+                LOGGER.error("Failed to delete state {} from DB", stateId, e);
+            }
+        });
+    }
+
+    public void deleteClaimsForState(UUID stateId) {
+        executeAsync(() -> {
+            String sql = "DELETE FROM frontier_claims WHERE state_id = ?";
             try (PreparedStatement ps = connection.prepareStatement(sql)) {
                 ps.setString(1, stateId.toString());
                 ps.executeUpdate();
+            } catch (SQLException e) {
+                LOGGER.error("Failed to delete claims for state {} from DB", stateId, e);
             }
         });
     }

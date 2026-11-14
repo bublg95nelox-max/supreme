@@ -46,6 +46,9 @@ public class FrontierScreen extends Screen {
     private EditBox vassalTitleBox;
     private EditBox vassalTributeBox;
 
+    // Admin Panel Sub-UI state
+    private int adminSubTab = 0; // 0 = Petitions, 1 = States Registry
+
     // Map Pan/Zoom (smooth sub-pixel)
     private double mapCenterX;
     private double mapCenterZ;
@@ -372,27 +375,57 @@ public class FrontierScreen extends Screen {
             case 6 -> { // Admin / Curator Panel
                 if (isAdmin) {
                     List<SyncAdminPetitionsPayload.AdminPetitionData> petitions = cache.getAdminPetitions();
-                    int petY = contentY + 44;
-                    for (SyncAdminPetitionsPayload.AdminPetitionData p : petitions) {
-                        if (!"PENDING".equals(p.status())) continue;
-                        if (petY > contentY + contentH - 45) break;
+                    long pendingCount = petitions.stream().filter(p -> "PENDING".equals(p.status())).count();
+                    Collection<SyncTerritoryDataPayload.ClientStateData> allStates = cache.getAllStates();
 
-                        final int pId = p.id();
-                        // 1-Click Approve
-                        addRenderableWidget(Button.builder(Component.literal("✔ Утвердить государство"), b -> {
-                            PacketDistributor.sendToServer(new ClientRequestActionPayload(
-                                    ClientRequestActionPayload.ACTION_APPROVE_PETITION, pId, 0, "", "", "", null
-                            ));
-                        }).bounds(contentX + contentW - 240, petY, 140, 20).build());
+                    // Sub-tab switcher buttons
+                    addRenderableWidget(Button.builder(Component.literal((adminSubTab == 0 ? "● " : "") + "Заявки (" + pendingCount + ")"), b -> {
+                        adminSubTab = 0;
+                        initTabWidgets();
+                    }).bounds(contentX + 15, contentY + 28, 120, 20).build());
 
-                        // 1-Click Reject
-                        addRenderableWidget(Button.builder(Component.literal("✖ Отклонить"), b -> {
-                            PacketDistributor.sendToServer(new ClientRequestActionPayload(
-                                    ClientRequestActionPayload.ACTION_REJECT_PETITION, pId, 0, "", "", "", null
-                            ));
-                        }).bounds(contentX + contentW - 95, petY, 80, 20).build());
+                    addRenderableWidget(Button.builder(Component.literal((adminSubTab == 1 ? "● " : "") + "Государства (" + allStates.size() + ")"), b -> {
+                        adminSubTab = 1;
+                        initTabWidgets();
+                    }).bounds(contentX + 140, contentY + 28, 160, 20).build());
 
-                        petY += 36;
+                    if (adminSubTab == 0) {
+                        int petY = contentY + 54;
+                        for (SyncAdminPetitionsPayload.AdminPetitionData p : petitions) {
+                            if (!"PENDING".equals(p.status())) continue;
+                            if (petY > contentY + contentH - 45) break;
+
+                            final int pId = p.id();
+                            // 1-Click Approve
+                            addRenderableWidget(Button.builder(Component.literal("✔ Утвердить"), b -> {
+                                PacketDistributor.sendToServer(new ClientRequestActionPayload(
+                                        ClientRequestActionPayload.ACTION_APPROVE_PETITION, pId, 0, "", "", "", null
+                                ));
+                            }).bounds(contentX + contentW - 215, petY, 115, 20).build());
+
+                            // 1-Click Reject
+                            addRenderableWidget(Button.builder(Component.literal("✖ Отклонить"), b -> {
+                                PacketDistributor.sendToServer(new ClientRequestActionPayload(
+                                        ClientRequestActionPayload.ACTION_REJECT_PETITION, pId, 0, "", "", "", null
+                                ));
+                            }).bounds(contentX + contentW - 95, petY, 80, 20).build());
+
+                            petY += 36;
+                        }
+                    } else {
+                        int stY = contentY + 54;
+                        for (SyncTerritoryDataPayload.ClientStateData st : allStates) {
+                            if (stY > contentY + contentH - 45) break;
+
+                            final UUID sId = st.id();
+                            addRenderableWidget(Button.builder(Component.literal("✖ Упразднить"), b -> {
+                                PacketDistributor.sendToServer(new ClientRequestActionPayload(
+                                        ClientRequestActionPayload.ACTION_ADMIN_DISBAND_STATE, 0, 0, "", "", "", sId
+                                ));
+                            }).bounds(contentX + contentW - 120, stY, 105, 20).build());
+
+                            stY += 36;
+                        }
                     }
                 }
             }
@@ -848,30 +881,54 @@ public class FrontierScreen extends Screen {
     private void renderAdminTab(GuiGraphics g, int x, int y, int w, int h) {
         FrontierClientCache cache = FrontierClientCache.get();
 
-        g.drawString(font, "§6§lПанель Куратора (Администрация сервера)", x + 15, y + 10, 0xFFFFAA00, true);
-        g.drawString(font, "§7Рассмотрение заявок на регистрацию государств и разметка территорий", x + 15, y + 22, 0xFFAAAAAA, true);
+        g.drawString(font, "§6§lПанель Куратора (Администрация сервера)", x + 15, y + 8, 0xFFFFAA00, true);
 
-        List<SyncAdminPetitionsPayload.AdminPetitionData> petitions = cache.getAdminPetitions();
-        int petY = y + 40;
-        boolean hasPending = false;
+        if (adminSubTab == 0) {
+            List<SyncAdminPetitionsPayload.AdminPetitionData> petitions = cache.getAdminPetitions();
+            int petY = y + 54;
+            boolean hasPending = false;
 
-        for (SyncAdminPetitionsPayload.AdminPetitionData p : petitions) {
-            if (!"PENDING".equals(p.status())) continue;
-            hasPending = true;
-            if (petY > y + h - 40) break;
+            for (SyncAdminPetitionsPayload.AdminPetitionData p : petitions) {
+                if (!"PENDING".equals(p.status())) continue;
+                hasPending = true;
+                if (petY > y + h - 40) break;
 
-            g.fill(x + 15, petY - 2, x + w - 15, petY + 26, 0xFF20222A);
-            g.renderOutline(x + 15, petY - 2, w - 30, 28, 0xFF5A5E70);
+                g.fill(x + 15, petY - 2, x + w - 15, petY + 26, 0xFF20222A);
+                g.renderOutline(x + 15, petY - 2, w - 30, 28, 0xFF5A5E70);
 
-            g.drawString(font, "§6«" + p.stateName() + "» §7[" + p.stateTag() + "]", x + 25, petY + 2, 0xFFFFFFFF, true);
-            g.drawString(font, "§7Заявитель: §b" + p.requesterName() + " §7| Столица: §e[" + p.capitalChunkX() + ", " + p.capitalChunkZ() + "]", x + 25, petY + 14, 0xFFCCCCCC, true);
+                g.drawString(font, "§6«" + p.stateName() + "» §7[" + p.stateTag() + "]", x + 25, petY + 2, 0xFFFFFFFF, true);
+                g.drawString(font, "§7Заявитель: §b" + p.requesterName() + " §7| Столица: §e[" + p.capitalChunkX() + ", " + p.capitalChunkZ() + "]", x + 25, petY + 14, 0xFFCCCCCC, true);
 
-            petY += 36;
-        }
+                petY += 36;
+            }
 
-        if (!hasPending) {
-            g.drawString(font, "§a✔ Ожидающих заявок на создание государств нет.", x + 20, y + 50, 0xFF55FF55, true);
-            g.drawString(font, "§7Когда игрок подаст заявку, здесь появится карточка с кнопками утверждения в 1 клик.", x + 20, y + 65, 0xFFAAAAAA, true);
+            if (!hasPending) {
+                g.drawString(font, "§a✔ Ожидающих заявок на создание государств нет.", x + 20, y + 60, 0xFF55FF55, true);
+                g.drawString(font, "§7Новые заявки игроков на создание стран будут отображаться здесь.", x + 20, y + 74, 0xFFAAAAAA, true);
+            }
+        } else {
+            Collection<SyncTerritoryDataPayload.ClientStateData> allStates = cache.getAllStates();
+            int stY = y + 54;
+
+            if (allStates.isEmpty()) {
+                g.drawString(font, "§7На сервере пока нет зарегистрированных государств.", x + 20, y + 60, 0xFFAAAAAA, true);
+            } else {
+                for (SyncTerritoryDataPayload.ClientStateData st : allStates) {
+                    if (stY > y + h - 40) break;
+
+                    long claimsCount = cache.getAllClaims().values().stream().filter(c -> st.id().equals(c.stateId())).count();
+
+                    g.fill(x + 15, stY - 2, x + w - 15, stY + 26, 0xFF20222A);
+                    g.renderOutline(x + 15, stY - 2, w - 30, 28, 0xFF000000 | st.color());
+
+                    g.drawString(font, "§6«" + st.name() + "» §7[" + st.tag() + "]", x + 25, stY + 2, 0xFFFFFFFF, true);
+                    g.drawString(font, "§7Лидер: §f" + st.leaderName() + " §7| Чанков: §a" + claimsCount + " §7| Девиз: §o" + (st.motd().isEmpty() ? "—" : st.motd()), x + 25, stY + 14, 0xFFCCCCCC, true);
+
+                    stY += 36;
+                }
+            }
+
+            g.drawString(font, "§8Консоль: /frontier admin disband <тег> | /frontier admin states | /frontier admin rename | /frontier admin setleader", x + 15, y + h - 14, 0xFF888888, false);
         }
     }
 

@@ -54,9 +54,21 @@ public class Frontier {
         NeoForge.EVENT_BUS.addListener(this::onServerStopping);
         NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
         NeoForge.EVENT_BUS.addListener(this::onPlayerLogin);
+        NeoForge.EVENT_BUS.register(new net.frontier.core.MaceRarityManager());
         NeoForge.EVENT_BUS.addListener(net.frontier.core.AuthEventListener::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener(net.frontier.core.AuthEventListener::onPlayerLoggedOut);
         NeoForge.EVENT_BUS.addListener(net.frontier.core.AuthEventListener::onPlayerTick);
+        NeoForge.EVENT_BUS.addListener(Frontier::onEntityJoinLevel);
+    }
+
+    public static void onEntityJoinLevel(net.neoforged.neoforge.event.entity.EntityJoinLevelEvent event) {
+        if (event.getEntity() != null) {
+            net.minecraft.resources.ResourceLocation key = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(event.getEntity().getType());
+            if (key != null && "alexsmobs".equals(key.getNamespace()) && "farseer".equals(key.getPath())) {
+                event.setCanceled(true);
+                event.getEntity().discard();
+            }
+        }
     }
 
     private void onServerStarting(ServerStartingEvent event) {

@@ -83,6 +83,41 @@ public class FrontierCommand {
                         .then(Commands.literal("approve")
                                 .then(Commands.argument("id", IntegerArgumentType.integer(1))
                                         .executes(ctx -> approvePetition(ctx.getSource(), IntegerArgumentType.getInteger(ctx, "id")))))
+                        .then(Commands.literal("states")
+                                .executes(ctx -> adminListStates(ctx.getSource())))
+                        .then(Commands.literal("list")
+                                .executes(ctx -> adminListStates(ctx.getSource())))
+                        .then(Commands.literal("info")
+                                .then(Commands.argument("state", StringArgumentType.greedyString())
+                                        .executes(ctx -> adminStateInfo(ctx.getSource(), StringArgumentType.getString(ctx, "state")))))
+                        .then(Commands.literal("disband")
+                                .then(Commands.argument("state", StringArgumentType.greedyString())
+                                        .executes(ctx -> adminDisbandState(ctx.getSource(), StringArgumentType.getString(ctx, "state")))))
+                        .then(Commands.literal("delete")
+                                .then(Commands.argument("state", StringArgumentType.greedyString())
+                                        .executes(ctx -> adminDisbandState(ctx.getSource(), StringArgumentType.getString(ctx, "state")))))
+                        .then(Commands.literal("rename")
+                                .then(Commands.argument("state_tag", StringArgumentType.word())
+                                        .then(Commands.argument("new_name", StringArgumentType.greedyString())
+                                                .executes(ctx -> adminRenameState(ctx.getSource(), StringArgumentType.getString(ctx, "state_tag"), StringArgumentType.getString(ctx, "new_name"))))))
+                        .then(Commands.literal("settag")
+                                .then(Commands.argument("old_tag", StringArgumentType.word())
+                                        .then(Commands.argument("new_tag", StringArgumentType.word())
+                                                .executes(ctx -> adminSetTag(ctx.getSource(), StringArgumentType.getString(ctx, "old_tag"), StringArgumentType.getString(ctx, "new_tag"))))))
+                        .then(Commands.literal("setleader")
+                                .then(Commands.argument("state_tag", StringArgumentType.word())
+                                        .then(Commands.argument("player_name", StringArgumentType.word())
+                                                .executes(ctx -> adminSetLeader(ctx.getSource(), StringArgumentType.getString(ctx, "state_tag"), StringArgumentType.getString(ctx, "player_name"))))))
+                        .then(Commands.literal("kick")
+                                .then(Commands.argument("player_name", StringArgumentType.word())
+                                        .executes(ctx -> adminKickPlayer(ctx.getSource(), StringArgumentType.getString(ctx, "player_name")))))
+                        .then(Commands.literal("setrole")
+                                .then(Commands.argument("player_name", StringArgumentType.word())
+                                        .then(Commands.argument("role", StringArgumentType.word())
+                                                .executes(ctx -> adminSetRole(ctx.getSource(), StringArgumentType.getString(ctx, "player_name"), StringArgumentType.getString(ctx, "role"))))))
+                        .then(Commands.literal("clearclaims")
+                                .then(Commands.argument("state_tag", StringArgumentType.word())
+                                        .executes(ctx -> adminClearClaims(ctx.getSource(), StringArgumentType.getString(ctx, "state_tag")))))
                         .then(Commands.literal("neutral")
                                 .executes(ctx -> setNeutral(ctx.getSource())))
                         .then(Commands.literal("unclaim")
@@ -639,6 +674,287 @@ public class FrontierCommand {
         for (TerritoryZone z : all) {
             String owner = z.getStateId() != null ? cache.getState(z.getStateId()).getName() : "Нейтральная";
             source.sendSuccess(() -> Component.literal(" §e• " + z.getName() + " §7(" + owner + ") [" + z.getMinX() + "," + z.getMinZ() + " → " + z.getMaxX() + "," + z.getMaxZ() + "] — §a" + z.getArea() + " м²"), false);
+        }
+        return 1;
+    }
+
+    private static int adminDisbandState(CommandSourceStack source, String query) {
+        FrontierServerCache cache = FrontierServerCache.get();
+        FrontierState target = cache.getStateByTagOrName(query);
+        if (target == null) {
+            source.sendFailure(Component.literal("§c[Frontier-Admin] Государство '" + query + "' не найдено. Проверьте список: /frontier admin states"));
+            return 0;
+        }
+
+        String name = target.getName();
+        String tag = target.getTag();
+        cache.disbandState(target.getId());
+
+        source.sendSuccess(() -> Component.literal("§a[Frontier-Admin] Государство «" + name + "» [" + tag + "] успешно упразднено."), true);
+        if (source.getServer() != null) {
+            source.getServer().getPlayerList().broadcastSystemMessage(
+                    Component.literal("§6§l[Frontier-Куратор] §eГосударство «§6" + name + "§e» [" + tag + "] было упразднено администратором!"), false
+            );
+            FrontierNetwork.broadcastTerritoryUpdate(source.getServer());
+            FrontierNetwork.broadcastAdminPetitions(source.getServer());
+        }
+        return 1;
+    }
+
+    private static int adminListStates(CommandSourceStack source) {
+        FrontierServerCache cache = FrontierServerCache.get();
+        Collection<FrontierState> all = cache.getAllStates();
+        source.sendSuccess(() -> Component.literal("§6=== Реестр государств сервера (" + all.size() + ") ==="), false);
+        if (all.isEmpty()) {
+            source.sendSuccess(() -> Component.literal("§7На сервере пока нет созданных государств."), false);
+            return 1;
+        }
+        for (FrontierState s : all) {
+            int claims = cache.getStateClaimsCount(s.getId());
+            int members = cache.getStateMembersCount(s.getId());
+            source.sendSuccess(() -> Component.literal(" §e• §6«" + s.getName() + "» §7[" + s.getTag() + "] §f| Лидер: §b" + s.getLeaderName() + " §7| Чанков: §a" + claims + " §7| Граждан: §d" + members + " §8(ID: " + s.getId() + ")"), false);
+            source.sendSuccess(() -> Component.literal("   §7Действия: §c/frontier admin disband " + s.getTag() + " §7| §e/frontier admin info " + s.getTag()), false);
+        }
+        return 1;
+    }
+
+    private static int adminStateInfo(CommandSourceStack source, String query) {
+        FrontierServerCache cache = FrontierServerCache.get();
+        FrontierState s = cache.getStateByTagOrName(query);
+        if (s == null) {
+            source.sendFailure(Component.literal("§c[Frontier-Admin] Государство '" + query + "' не найдено."));
+            return 0;
+        }
+        int claims = cache.getStateClaimsCount(s.getId());
+        Collection<StateMember> members = cache.getStateMembers(s.getId());
+        source.sendSuccess(() -> Component.literal("§6=== Государство «" + s.getName() + "» [" + s.getTag() + "] ==="), false);
+        source.sendSuccess(() -> Component.literal(" §7Лидер: §b" + s.getLeaderName() + " §8(" + s.getLeaderUuid() + ")"), false);
+        source.sendSuccess(() -> Component.literal(" §7Девиз: §f" + (s.getMotd().isEmpty() ? "—" : s.getMotd())), false);
+        source.sendSuccess(() -> Component.literal(" §7Цвет: §f#" + Integer.toHexString(s.getColor() & 0xFFFFFF)), false);
+        source.sendSuccess(() -> Component.literal(" §7Территория: §a" + claims + " чанков"), false);
+        source.sendSuccess(() -> Component.literal(" §7Граждане (" + members.size() + "):"), false);
+        for (StateMember m : members) {
+            source.sendSuccess(() -> Component.literal("   §7- §f" + m.getPlayerName() + " §8[" + m.getRole().getDisplayName() + "§8]"), false);
+        }
+        return 1;
+    }
+
+    private static int adminRenameState(CommandSourceStack source, String query, String newName) {
+        FrontierServerCache cache = FrontierServerCache.get();
+        FrontierState s = cache.getStateByTagOrName(query);
+        if (s == null) {
+            source.sendFailure(Component.literal("§c[Frontier-Admin] Государство '" + query + "' не найдено."));
+            return 0;
+        }
+        String trimmed = newName.trim();
+        if (trimmed.isEmpty()) {
+            source.sendFailure(Component.literal("§c[Frontier-Admin] Новое имя не может быть пустым."));
+            return 0;
+        }
+        String oldName = s.getName();
+        s.setName(trimmed);
+        cache.updateState(s);
+        source.sendSuccess(() -> Component.literal("§a[Frontier-Admin] Государство «" + oldName + "» переименовано в «" + trimmed + "»."), true);
+        if (source.getServer() != null) {
+            FrontierNetwork.broadcastTerritoryUpdate(source.getServer());
+        }
+        return 1;
+    }
+
+    private static int adminSetTag(CommandSourceStack source, String query, String newTag) {
+        FrontierServerCache cache = FrontierServerCache.get();
+        FrontierState s = cache.getStateByTagOrName(query);
+        if (s == null) {
+            source.sendFailure(Component.literal("§c[Frontier-Admin] Государство '" + query + "' не найдено."));
+            return 0;
+        }
+        String tag = newTag.trim().toUpperCase(java.util.Locale.ROOT);
+        if (tag.length() < 2 || tag.length() > 6) {
+            source.sendFailure(Component.literal("§c[Frontier-Admin] Тег должен быть от 2 до 6 символов."));
+            return 0;
+        }
+        FrontierState existing = cache.getStateByTag(tag);
+        if (existing != null && !existing.getId().equals(s.getId())) {
+            source.sendFailure(Component.literal("§c[Frontier-Admin] Тег [" + tag + "] уже занят другим государством."));
+            return 0;
+        }
+        String oldTag = s.getTag();
+        s.setTag(tag);
+        cache.updateState(s);
+        source.sendSuccess(() -> Component.literal("§a[Frontier-Admin] Тег государства «" + s.getName() + "» изменён с [" + oldTag + "] на [" + tag + "]."), true);
+        if (source.getServer() != null) {
+            FrontierNetwork.broadcastTerritoryUpdate(source.getServer());
+        }
+        return 1;
+    }
+
+    private static int adminSetLeader(CommandSourceStack source, String query, String newLeaderName) {
+        FrontierServerCache cache = FrontierServerCache.get();
+        FrontierState s = cache.getStateByTagOrName(query);
+        if (s == null) {
+            source.sendFailure(Component.literal("§c[Frontier-Admin] Государство '" + query + "' не найдено."));
+            return 0;
+        }
+
+        UUID targetUuid = null;
+        if (source.getServer() != null) {
+            ServerPlayer online = source.getServer().getPlayerList().getPlayerByName(newLeaderName);
+            if (online != null) {
+                targetUuid = online.getUUID();
+            } else {
+                java.util.Optional<com.mojang.authlib.GameProfile> profile = source.getServer().getProfileCache().get(newLeaderName);
+                if (profile.isPresent()) {
+                    targetUuid = profile.get().getId();
+                }
+            }
+        }
+        if (targetUuid == null) {
+            for (StateMember m : cache.getStateMembers(s.getId())) {
+                if (m.getPlayerName().equalsIgnoreCase(newLeaderName)) {
+                    targetUuid = m.getPlayerUuid();
+                    break;
+                }
+            }
+        }
+        if (targetUuid == null) {
+            source.sendFailure(Component.literal("§c[Frontier-Admin] Игрок '" + newLeaderName + "' не найден в профилях сервера."));
+            return 0;
+        }
+
+        cache.changeStateLeader(s.getId(), targetUuid, newLeaderName);
+        source.sendSuccess(() -> Component.literal("§a[Frontier-Admin] Новым лидером «" + s.getName() + "» назначен §b" + newLeaderName + "§a."), true);
+        if (source.getServer() != null) {
+            source.getServer().getPlayerList().broadcastSystemMessage(
+                    Component.literal("§6§l[Frontier] Лидером государства «§e" + s.getName() + "§6» назначен §b" + newLeaderName + "!"), false
+            );
+            FrontierNetwork.broadcastTerritoryUpdate(source.getServer());
+        }
+        return 1;
+    }
+
+    private static int adminKickPlayer(CommandSourceStack source, String playerName) {
+        FrontierServerCache cache = FrontierServerCache.get();
+        UUID targetUuid = null;
+        if (source.getServer() != null) {
+            ServerPlayer online = source.getServer().getPlayerList().getPlayerByName(playerName);
+            if (online != null) {
+                targetUuid = online.getUUID();
+            } else {
+                java.util.Optional<com.mojang.authlib.GameProfile> profile = source.getServer().getProfileCache().get(playerName);
+                if (profile.isPresent()) {
+                    targetUuid = profile.get().getId();
+                }
+            }
+        }
+        if (targetUuid == null) {
+            for (FrontierState s : cache.getAllStates()) {
+                for (StateMember m : cache.getStateMembers(s.getId())) {
+                    if (m.getPlayerName().equalsIgnoreCase(playerName)) {
+                        targetUuid = m.getPlayerUuid();
+                        break;
+                    }
+                }
+                if (targetUuid != null) break;
+            }
+        }
+        if (targetUuid == null) {
+            source.sendFailure(Component.literal("§c[Frontier-Admin] Игрок '" + playerName + "' не найден."));
+            return 0;
+        }
+
+        FrontierState s = cache.getPlayerState(targetUuid);
+        if (s == null) {
+            source.sendFailure(Component.literal("§c[Frontier-Admin] Игрок '" + playerName + "' не состоит в государстве."));
+            return 0;
+        }
+        if (targetUuid.equals(s.getLeaderUuid())) {
+            source.sendFailure(Component.literal("§c[Frontier-Admin] Нельзя исключить лидера государства. Сначала смените лидера через /frontier admin setleader или упраздните государство /frontier admin disband."));
+            return 0;
+        }
+
+        cache.removeMember(s.getId(), targetUuid);
+        source.sendSuccess(() -> Component.literal("§a[Frontier-Admin] Игрок §b" + playerName + " §aисключён из «" + s.getName() + "»."), true);
+        if (source.getServer() != null) {
+            ServerPlayer p = source.getServer().getPlayerList().getPlayer(targetUuid);
+            if (p != null) {
+                p.sendSystemMessage(Component.literal("§c[Frontier] Вы были исключены из государства «" + s.getName() + "» администрацией сервера."));
+            }
+            FrontierNetwork.broadcastTerritoryUpdate(source.getServer());
+        }
+        return 1;
+    }
+
+    private static int adminSetRole(CommandSourceStack source, String playerName, String roleStr) {
+        FrontierServerCache cache = FrontierServerCache.get();
+        Role role;
+        try {
+            role = Role.valueOf(roleStr.toUpperCase(java.util.Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            source.sendFailure(Component.literal("§c[Frontier-Admin] Недопустимая роль '" + roleStr + "'. Допустимые: CITIZEN, OFFICER, JUDGE, LEADER"));
+            return 0;
+        }
+
+        UUID targetUuid = null;
+        if (source.getServer() != null) {
+            ServerPlayer online = source.getServer().getPlayerList().getPlayerByName(playerName);
+            if (online != null) {
+                targetUuid = online.getUUID();
+            } else {
+                java.util.Optional<com.mojang.authlib.GameProfile> profile = source.getServer().getProfileCache().get(playerName);
+                if (profile.isPresent()) {
+                    targetUuid = profile.get().getId();
+                }
+            }
+        }
+        if (targetUuid == null) {
+            for (FrontierState s : cache.getAllStates()) {
+                for (StateMember m : cache.getStateMembers(s.getId())) {
+                    if (m.getPlayerName().equalsIgnoreCase(playerName)) {
+                        targetUuid = m.getPlayerUuid();
+                        break;
+                    }
+                }
+                if (targetUuid != null) break;
+            }
+        }
+        if (targetUuid == null) {
+            source.sendFailure(Component.literal("§c[Frontier-Admin] Игрок '" + playerName + "' не найден."));
+            return 0;
+        }
+
+        FrontierState s = cache.getPlayerState(targetUuid);
+        if (s == null) {
+            source.sendFailure(Component.literal("§c[Frontier-Admin] Игрок '" + playerName + "' не состоит в государстве."));
+            return 0;
+        }
+
+        if (role == Role.LEADER) {
+            return adminSetLeader(source, s.getTag(), playerName);
+        }
+
+        StateMember existing = cache.getMember(s.getId(), targetUuid);
+        long joinedAt = existing != null ? existing.getJoinedAt() : System.currentTimeMillis();
+        StateMember updated = new StateMember(s.getId(), targetUuid, playerName, role, joinedAt);
+        cache.addMember(updated);
+        source.sendSuccess(() -> Component.literal("§a[Frontier-Admin] Игроку §b" + playerName + " §aв «" + s.getName() + "» присвоена роль §e" + role.getDisplayName() + "§a."), true);
+        if (source.getServer() != null) {
+            FrontierNetwork.broadcastTerritoryUpdate(source.getServer());
+        }
+        return 1;
+    }
+
+    private static int adminClearClaims(CommandSourceStack source, String query) {
+        FrontierServerCache cache = FrontierServerCache.get();
+        FrontierState s = cache.getStateByTagOrName(query);
+        if (s == null) {
+            source.sendFailure(Component.literal("§c[Frontier-Admin] Государство '" + query + "' не найдено."));
+            return 0;
+        }
+        int countBefore = cache.getStateClaimsCount(s.getId());
+        cache.clearStateClaims(s.getId());
+        source.sendSuccess(() -> Component.literal("§a[Frontier-Admin] Освобождено всех (" + countBefore + ") чанков государства «" + s.getName() + "»."), true);
+        if (source.getServer() != null) {
+            FrontierNetwork.broadcastTerritoryUpdate(source.getServer());
         }
         return 1;
     }

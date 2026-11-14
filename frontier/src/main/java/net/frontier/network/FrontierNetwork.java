@@ -324,6 +324,29 @@ public class FrontierNetwork {
                     broadcastTerritoryUpdate(player.server);
                 }
 
+                case ClientRequestActionPayload.ACTION_ADMIN_DISBAND_STATE -> {
+                    if (!player.hasPermissions(2)) {
+                        player.sendSystemMessage(Component.literal("§c[Frontier] Отказано в доступе: требуются права администратора.").withStyle(ChatFormatting.RED));
+                        return;
+                    }
+                    UUID targetStateId = payload.uuidParam1();
+                    if (targetStateId == null) return;
+                    FrontierState target = cache.getState(targetStateId);
+                    if (target == null) {
+                        player.sendSystemMessage(Component.literal("§c[Frontier] Государство не найдено.").withStyle(ChatFormatting.RED));
+                        return;
+                    }
+                    String stName = target.getName();
+                    String stTag = target.getTag();
+                    cache.disbandState(targetStateId);
+                    player.sendSystemMessage(Component.literal("§a[Frontier-Admin] Государство «" + stName + "» [" + stTag + "] успешно упразднено.").withStyle(ChatFormatting.GREEN));
+                    player.server.getPlayerList().broadcastSystemMessage(
+                            Component.literal("§6§l[Frontier-Куратор] §eГосударство «§6" + stName + "§e» [" + stTag + "] было упразднено администрацией сервера!"), false
+                    );
+                    broadcastTerritoryUpdate(player.server);
+                    broadcastAdminPetitions(player.server);
+                }
+
                 case ClientRequestActionPayload.ACTION_CREATE_LAW -> {
                     FrontierState pState = cache.getPlayerState(player.getUUID());
                     if (pState == null) return;

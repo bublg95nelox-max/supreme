@@ -43,6 +43,7 @@ public record ClientRequestActionPayload(
     public static final int ACTION_RELEASE_VASSAL = 14;
     public static final int ACTION_REJECT_PETITION = 15;
     public static final int ACTION_ADMIN_ASSIGN_CHUNK = 16;
+    public static final int ACTION_ADMIN_DISBAND_STATE = 17;
 
     @Override
     public Type<? extends CustomPacketPayload> type() {

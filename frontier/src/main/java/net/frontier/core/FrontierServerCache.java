@@ -440,6 +440,77 @@ public class FrontierServerCache {
         databaseManager.removeMember(stateId, playerUuid);
     }
 
+    public FrontierState getStateByTagOrName(String query) {
+        if (query == null) return null;
+        String q = query.trim();
+        if (q.isEmpty()) return null;
+        for (FrontierState state : states.values()) {
+            if (state.getTag().equalsIgnoreCase(q) || state.getName().equalsIgnoreCase(q)) {
+                return state;
+            }
+        }
+        try {
+            UUID id = UUID.fromString(q);
+            return states.get(id);
+        } catch (IllegalArgumentException ignored) {
+        }
+        return null;
+    }
+
+    public int getStateClaimsCount(UUID stateId) {
+        if (stateId == null) return 0;
+        int count = 0;
+        for (Long2ObjectMap<TerritoryChunk> grid : territoryGrids.values()) {
+            for (TerritoryChunk c : grid.values()) {
+                if (stateId.equals(c.getStateId())) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    public int getStateMembersCount(UUID stateId) {
+        Map<UUID, StateMember> m = stateMembers.get(stateId);
+        return m != null ? m.size() : 0;
+    }
+
+    public synchronized void updateState(FrontierState state) {
+        states.put(state.getId(), state);
+        databaseManager.saveOrUpdateState(state);
+    }
+
+    public synchronized void clearStateClaims(UUID stateId) {
+        for (Long2ObjectMap<TerritoryChunk> grid : territoryGrids.values()) {
+            grid.values().removeIf(chunk -> stateId.equals(chunk.getStateId()));
+        }
+        databaseManager.deleteClaimsForState(stateId);
+    }
+
+    public synchronized boolean changeStateLeader(UUID stateId, UUID newLeaderUuid, String newLeaderName) {
+        FrontierState state = states.get(stateId);
+        if (state == null) return false;
+
+        UUID oldLeaderUuid = state.getLeaderUuid();
+        state.setLeaderUuid(newLeaderUuid);
+        state.setLeaderName(newLeaderName);
+        updateState(state);
+
+        Map<UUID, StateMember> members = stateMembers.computeIfAbsent(stateId, k -> new ConcurrentHashMap<>());
+        StateMember oldLeaderMember = members.get(oldLeaderUuid);
+        if (oldLeaderMember != null) {
+            StateMember demoted = new StateMember(stateId, oldLeaderUuid, oldLeaderMember.getPlayerName(), Role.OFFICER, oldLeaderMember.getJoinedAt());
+            addMember(demoted);
+        }
+
+        StateMember newLeaderMember = members.get(newLeaderUuid);
+        long joinedAt = newLeaderMember != null ? newLeaderMember.getJoinedAt() : System.currentTimeMillis();
+        StateMember promoted = new StateMember(stateId, newLeaderUuid, newLeaderName, Role.LEADER, joinedAt);
+        addMember(promoted);
+
+        return true;
+    }
+
     public synchronized void disbandState(UUID stateId) {
         FrontierState state = states.remove(stateId);
         if (state != null) {
@@ -457,6 +528,18 @@ public class FrontierServerCache {
             for (Long2ObjectMap<TerritoryChunk> grid : territoryGrids.values()) {
                 grid.values().removeIf(chunk -> stateId.equals(chunk.getStateId()));
             }
+
+            // Remove all zones of this state
+            List<TerritoryZone> stateZones = getZonesOfState(stateId);
+            for (TerritoryZone z : stateZones) {
+                removeZone(z.getId());
+            }
+
+            // Remove relations involving this state
+            relations.values().removeIf(r -> stateId.equals(r.getStateA()) || stateId.equals(r.getStateB()));
+
+            // Remove vassal pacts involving this state
+            vassalPacts.values().removeIf(p -> stateId.equals(p.getSuzerainId()) || stateId.equals(p.getVassalId()));
 
             databaseManager.deleteState(stateId);
         }

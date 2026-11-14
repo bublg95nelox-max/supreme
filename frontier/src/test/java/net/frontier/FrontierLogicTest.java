@@ -293,4 +293,55 @@ public class FrontierLogicTest {
         File propFile = tempDir.resolve("frontier/discord.properties").toFile();
         assertTrue(propFile.exists(), "discord.properties template must be generated for server admins");
     }
+
+    @Test
+    public void testAdminStateManagementAndDisband() throws Exception {
+        UUID stateId = UUID.randomUUID();
+        UUID leaderUuid = UUID.randomUUID();
+        FrontierState state = new FrontierState(stateId, "Империя", "EMP", 0xFF0000, leaderUuid, "Emperor", System.currentTimeMillis(), "Империя навек");
+        StateMember leader = new StateMember(stateId, leaderUuid, "Emperor", Role.LEADER, System.currentTimeMillis());
+        serverCache.registerState(state, leader);
+
+        String dim = "minecraft:overworld";
+        TerritoryChunk chunk = new TerritoryChunk(dim, 5, 5, stateId, JurisdictionType.NATIONAL, leaderUuid, System.currentTimeMillis());
+        serverCache.setClaim(chunk);
+
+        UUID zoneId = UUID.randomUUID();
+        TerritoryZone zone = new TerritoryZone(zoneId, stateId, "Дворец", dim, 80, 60, 80, 100, 80, 100, JurisdictionType.NATIONAL, leaderUuid, System.currentTimeMillis());
+        serverCache.addZone(zone);
+
+        // 1. Lookup
+        assertEquals(stateId, serverCache.getStateByTagOrName("EMP").getId());
+        assertEquals(stateId, serverCache.getStateByTagOrName("империя").getId());
+        assertEquals(stateId, serverCache.getStateByTagOrName(stateId.toString()).getId());
+        assertEquals(4, serverCache.getStateClaimsCount(stateId));
+        assertEquals(1, serverCache.getStateMembersCount(stateId));
+
+        // 2. Change Leader
+        UUID newLeaderUuid = UUID.randomUUID();
+        assertTrue(serverCache.changeStateLeader(stateId, newLeaderUuid, "NewTsar"));
+        assertEquals("NewTsar", serverCache.getState(stateId).getLeaderName());
+        assertEquals(Role.LEADER, serverCache.getMember(stateId, newLeaderUuid).getRole());
+        assertEquals(Role.OFFICER, serverCache.getMember(stateId, leaderUuid).getRole());
+
+        // 3. Clear claims
+        serverCache.clearStateClaims(stateId);
+        assertEquals(0, serverCache.getStateClaimsCount(stateId));
+        assertNull(serverCache.getStateAt(dim, 5, 5));
+
+        // 4. Disband State
+        serverCache.disbandState(stateId);
+        assertNull(serverCache.getState(stateId));
+        assertNull(serverCache.getPlayerState(newLeaderUuid));
+        assertNull(serverCache.getPlayerState(leaderUuid));
+        assertNull(serverCache.getZoneById(zoneId));
+
+        // 5. Verification after DB reload
+        Thread.sleep(150);
+        FrontierServerCache reloaded = new FrontierServerCache(databaseManager);
+        reloaded.loadFromDatabase();
+        assertNull(reloaded.getState(stateId));
+        assertNull(reloaded.getPlayerState(newLeaderUuid));
+        assertNull(reloaded.getZoneById(zoneId));
+    }
 }
