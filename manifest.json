@@ -7,7 +7,7 @@
     "installer_url": ""
   },
   "java_version": 21,
-  "total_files": 110,
+  "total_files": 111,
   "files": [
     {
       "path": "mods/Clumps-neoforge-1.21.1-19.0.0.1.jar",
@@ -126,6 +126,14 @@
       "sha256": "f693092c4bc54e8ef427ff98f93926fd85875e45d2697b9db7c45f551ae24feb",
       "size": 15614268,
       "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/Quark-4.1-488.jar",
+      "required": true,
+      "overwrite": true
+    },
+    {
+      "path": "mods/QuarkOddities-1.21.1.jar",
+      "sha256": "c8db22ff8f57d9b60201c8fe87497d2890030373f7abc91a5ffcf8fa9245039c",
+      "size": 936,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/QuarkOddities-1.21.1.jar",
       "required": true,
       "overwrite": true
     },
