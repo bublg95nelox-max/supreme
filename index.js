@@ -80,6 +80,121 @@ ipcMain.handle('window-get-maximize-state', (event) => {
     return Boolean(targetWin && !targetWin.isDestroyed() && targetWin.isMaximized())
 })
 
+// Linux Unpacked Self-Updater (handles tar.gz installations without FUSE/AppImage)
+let linuxUpdateTarGzPath = null
+let isLinuxUpdating = false
+
+async function handleLinuxUnpackedUpdate(event) {
+    if (isLinuxUpdating) return
+    isLinuxUpdating = true
+    try {
+        event.sender.send('autoUpdateNotification', 'checking-for-update')
+        const resp = await fetch('https://api.github.com/repos/bublg95nelox-max/supreme/releases/latest', {
+            headers: { 'Accept': 'application/vnd.github.v3+json' }
+        })
+        if (!resp.ok) {
+            throw new Error(`GitHub API returned status ${resp.status}`)
+        }
+        const rel = await resp.json()
+        const remoteVersion = (rel.tag_name || '').replace(/^v/, '').trim()
+        const currentVersion = app.getVersion()
+
+        if (!remoteVersion || semver.lte(remoteVersion, currentVersion)) {
+            event.sender.send('autoUpdateNotification', 'update-not-available')
+            isLinuxUpdating = false
+            return
+        }
+
+        const asset = (rel.assets || []).find(a => a.name.endsWith('linux-x64.tar.gz'))
+        if (!asset || !asset.browser_download_url) {
+            throw new Error('Linux release archive not found in latest release')
+        }
+
+        event.sender.send('autoUpdateNotification', 'update-available', {
+            version: remoteVersion,
+            releaseName: rel.name,
+            releaseDate: rel.published_at
+        })
+
+        const downloadDest = path.join('/tmp', `lowuncher-update-${remoteVersion}.tar.gz`)
+        const dlResp = await fetch(asset.browser_download_url)
+        if (!dlResp.ok) {
+            throw new Error(`Failed to download update: HTTP ${dlResp.status}`)
+        }
+
+        const totalBytes = parseInt(dlResp.headers.get('content-length') || '0', 10)
+        const fileStream = fs.createWriteStream(downloadDest)
+        const reader = dlResp.body.getReader()
+        let receivedBytes = 0
+        let lastReportTime = Date.now()
+        let lastReportBytes = 0
+
+        while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            fileStream.write(Buffer.from(value))
+            receivedBytes += value.length
+
+            const now = Date.now()
+            if (now - lastReportTime >= 400 || receivedBytes === totalBytes) {
+                const elapsedSec = (now - lastReportTime) / 1000
+                const speed = elapsedSec > 0 ? (receivedBytes - lastReportBytes) / elapsedSec : 0
+                const percent = totalBytes > 0 ? (receivedBytes / totalBytes) * 100 : 0
+
+                event.sender.send('autoUpdateNotification', 'download-progress', {
+                    percent: percent,
+                    bytesPerSecond: speed,
+                    transferred: receivedBytes,
+                    total: totalBytes
+                })
+                lastReportTime = now
+                lastReportBytes = receivedBytes
+            }
+        }
+
+        await new Promise((resolve, reject) => {
+            fileStream.end((err) => {
+                if (err) reject(err)
+                else resolve()
+            })
+        })
+
+        linuxUpdateTarGzPath = downloadDest
+        isLinuxUpdating = false
+        event.sender.send('autoUpdateNotification', 'update-downloaded', {
+            version: remoteVersion
+        })
+    } catch (err) {
+        isLinuxUpdating = false
+        console.error('[LinuxUpdater] Error updating:', err)
+        event.sender.send('autoUpdateNotification', 'realerror', err)
+    }
+}
+
+function installLinuxUnpackedUpdate() {
+    if (!linuxUpdateTarGzPath || !fs.existsSync(linuxUpdateTarGzPath)) {
+        console.error('[LinuxUpdater] No downloaded update archive found at', linuxUpdateTarGzPath)
+        return
+    }
+    const appDir = path.dirname(process.execPath)
+    const scriptPath = path.join('/tmp', 'apply_lowuncher_update.sh')
+    const scriptContent = `#!/bin/bash
+sleep 1
+tar -xzf "${linuxUpdateTarGzPath}" -C "${appDir}" --strip-components=1
+chmod +x "${path.join(appDir, 'lowuncher')}"
+rm -f "${linuxUpdateTarGzPath}"
+exec "${path.join(appDir, 'lowuncher')}" &
+`
+    fs.writeFileSync(scriptPath, scriptContent, { mode: 0o755 })
+    const { spawn } = require('child_process')
+    const child = spawn('/bin/bash', [scriptPath], {
+        detached: true,
+        stdio: 'ignore'
+    })
+    child.unref()
+    app.quit()
+}
+
 // Open channel to listen for update actions.
 ipcMain.on('autoUpdateAction', (event, arg, data) => {
     switch(arg){
@@ -89,10 +204,14 @@ ipcMain.on('autoUpdateAction', (event, arg, data) => {
             event.sender.send('autoUpdateNotification', 'ready')
             break
         case 'checkForUpdate':
-            autoUpdater.checkForUpdates()
-                .catch(err => {
-                    event.sender.send('autoUpdateNotification', 'realerror', err)
-                })
+            if (process.platform === 'linux' && !process.env.APPIMAGE && !isDev) {
+                handleLinuxUnpackedUpdate(event)
+            } else {
+                autoUpdater.checkForUpdates()
+                    .catch(err => {
+                        event.sender.send('autoUpdateNotification', 'realerror', err)
+                    })
+            }
             break
         case 'allowPrereleaseChange':
             if(!data){
@@ -107,7 +226,11 @@ ipcMain.on('autoUpdateAction', (event, arg, data) => {
             }
             break
         case 'installUpdateNow':
-            autoUpdater.quitAndInstall()
+            if (process.platform === 'linux' && !process.env.APPIMAGE && linuxUpdateTarGzPath) {
+                installLinuxUnpackedUpdate()
+            } else {
+                autoUpdater.quitAndInstall()
+            }
             break
         default:
             console.log('Unknown argument', arg)
@@ -144,13 +267,11 @@ ipcMain.handle(SHELL_OPCODE.TRASH_ITEM, async (event, ...args) => {
     }
 })
 
-// Hardware acceleration control.
-// By default, GPU acceleration is active for smooth 60fps rendering and DWM/X11 compositing.
-// Users on broken graphics drivers can pass --disable-gpu or LOWUNCHER_DISABLE_GPU=1.
-if (process.argv.includes('--disable-gpu') || process.env.LOWUNCHER_DISABLE_GPU === '1') {
-    console.log('[Main] Hardware acceleration disabled by user flag (--disable-gpu or LOWUNCHER_DISABLE_GPU=1).')
-    app.disableHardwareAcceleration()
-}
+// Disable hardware acceleration.
+// On Linux (especially Wayland/NVIDIA/Mesa) and systems with proprietary drivers,
+// hardware acceleration causes GPU process crash loops, black screens, or window launch failures.
+// Software rendering is fast, smooth, and 100% stable across all desktop environments.
+app.disableHardwareAcceleration()
 
 
 const REDIRECT_URI_PREFIX = 'https://login.microsoftonline.com/common/oauth2/nativeclient?'
