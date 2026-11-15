@@ -466,10 +466,10 @@
       "overwrite": true
     },
     {
-      "path": "mods/frontier-1.0.2.jar",
-      "sha256": "d3aac9329e9209a6577e6c28b192744de621e153ae472e3d640764db3acf6762",
-      "size": 14282315,
-      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/frontier-1.0.2.jar",
+      "path": "mods/frontier-1.0.3.jar",
+      "sha256": "04234ea42800f62d2b0baa82baf456ef0f7d2c7344e9905c4e144e0fd3a58306",
+      "size": 14282927,
+      "url": "https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/mods/frontier-1.0.3.jar",
       "required": true,
       "overwrite": true
     },

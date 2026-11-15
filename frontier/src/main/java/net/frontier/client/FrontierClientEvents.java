@@ -25,6 +25,9 @@ public class FrontierClientEvents {
 
     private static int lastChunkX = Integer.MIN_VALUE;
     private static int lastChunkZ = Integer.MIN_VALUE;
+    private static java.util.UUID lastStateId = null;
+    private static boolean lastWasNeutral = false;
+    private static String lastStateName = null;
     private static int tickCounter = 0;
     private static volatile boolean authLocked = false;
 
@@ -50,6 +53,11 @@ public class FrontierClientEvents {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) {
             authLocked = false;
+            lastChunkX = Integer.MIN_VALUE;
+            lastChunkZ = Integer.MIN_VALUE;
+            lastStateId = null;
+            lastWasNeutral = false;
+            lastStateName = null;
             return;
         }
 
@@ -70,7 +78,7 @@ public class FrontierClientEvents {
             }
         }
 
-        // Territory HUD Notification
+        // Territory HUD Notification (Triggered only on entering and exiting territories)
         int currentCx = mc.player.blockPosition().getX() >> 4;
         int currentCz = mc.player.blockPosition().getZ() >> 4;
 
@@ -81,23 +89,47 @@ public class FrontierClientEvents {
             FrontierClientCache cache = FrontierClientCache.get();
             SyncTerritoryDataPayload.ClientClaimData claim = cache.getClaim(currentCx, currentCz);
 
-            if (claim != null && claim.stateId() != null) {
-                SyncTerritoryDataPayload.ClientStateData st = cache.getState(claim.stateId());
-                String name = st != null ? st.name() : "Государство";
-                String tag = st != null ? (" [" + st.tag() + "]") : "";
+            java.util.UUID currentStateId = (claim != null) ? claim.stateId() : null;
+            boolean currentIsNeutral = (claim != null && (claim.jurisdictionType() == JurisdictionType.NEUTRAL
+                    || (claim.stateId() == null && claim.jurisdictionType() != null && claim.jurisdictionType() != JurisdictionType.WILD)));
 
-                SyncTerritoryDataPayload.ClientVassalData vPact = cache.getSuzerainPact(claim.stateId());
-                String suzInfo = "";
-                if (vPact != null) {
-                    SyncTerritoryDataPayload.ClientStateData suz = cache.getState(vPact.suzerainId());
-                    if (suz != null) {
-                        suzInfo = " §8[Вассал: §e" + suz.name() + "§8]";
+            boolean stateChanged = !java.util.Objects.equals(lastStateId, currentStateId);
+            boolean neutralChanged = (lastWasNeutral != currentIsNeutral);
+
+            if (stateChanged || neutralChanged) {
+                if (currentStateId != null) {
+                    SyncTerritoryDataPayload.ClientStateData st = cache.getState(currentStateId);
+                    String name = st != null ? st.name() : "Государство";
+                    String tag = (st != null && st.tag() != null && !st.tag().isEmpty()) ? (" [" + st.tag() + "]") : "";
+
+                    SyncTerritoryDataPayload.ClientVassalData vPact = cache.getSuzerainPact(currentStateId);
+                    String suzInfo = "";
+                    if (vPact != null) {
+                        SyncTerritoryDataPayload.ClientStateData suz = cache.getState(vPact.suzerainId());
+                        if (suz != null) {
+                            suzInfo = " §8[Вассал: §e" + suz.name() + "§8]";
+                        }
                     }
+
+                    String jurLabel = (claim != null && claim.jurisdictionType() != null) ? claim.jurisdictionType().getLabel() : "Территория государства";
+                    mc.gui.setOverlayMessage(Component.literal("§6§l" + name + tag + suzInfo + " §7(Юрисдикция: §a" + jurLabel + "§7)"), false);
+                    lastStateName = name + tag;
+                } else if (currentIsNeutral) {
+                    mc.gui.setOverlayMessage(Component.literal("§b§lНейтральная территория §7(Общая зона)"), false);
+                    lastStateName = null;
+                } else {
+                    // Exited into wilderness
+                    if (lastStateId != null) {
+                        String exName = lastStateName != null ? lastStateName : "государства";
+                        mc.gui.setOverlayMessage(Component.literal("§7Вы покинули территорию §6" + exName + " §8[Дикие земли]"), false);
+                    } else if (lastWasNeutral) {
+                        mc.gui.setOverlayMessage(Component.literal("§7Вы покинули нейтральную территорию §8[Дикие земли]"), false);
+                    }
+                    lastStateName = null;
                 }
 
-                mc.gui.setOverlayMessage(Component.literal("§6§l" + name + tag + suzInfo + " §7(Юрисдикция: §a" + claim.jurisdictionType().getLabel() + "§7)"), false);
-            } else if (claim != null && claim.jurisdictionType() == JurisdictionType.NEUTRAL) {
-                mc.gui.setOverlayMessage(Component.literal("§b§lНейтральная территория §7(Общая зона)"), false);
+                lastStateId = currentStateId;
+                lastWasNeutral = currentIsNeutral;
             }
         }
     }
