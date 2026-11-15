@@ -227,6 +227,63 @@ class Installer:
                 progress_callback(0, 100, f"Установка базового Minecraft {minecraft_version}...")
             self.install_vanilla(minecraft_version, progress_callback)
 
+        # 1.5. FAST PREBUILT BUNDLE: Check local / remote prebuilt archive to bypass heavy --install-client
+        prebuilt_candidates = [
+            self.game_dir / "neoforge" / f"neoforge-{neoforge_version}-prebuilt.zip",
+            self.game_dir.parent.parent / "neoforge" / f"neoforge-{neoforge_version}-prebuilt.zip",
+            Path(__file__).resolve().parent.parent / "neoforge" / f"neoforge-{neoforge_version}-prebuilt.zip",
+        ]
+        local_prebuilt = None
+        for pb in prebuilt_candidates:
+            if pb.is_file() and pb.stat().st_size > 1000000:
+                local_prebuilt = pb
+                break
+
+        if local_prebuilt:
+            logger.info(f"Extracting local prebuilt NeoForge bundle: {local_prebuilt}")
+            if progress_callback:
+                progress_callback(50, 100, f"Быстрая установка NeoForge {neoforge_version}...")
+            import zipfile
+            with zipfile.ZipFile(local_prebuilt, "r") as zf:
+                zf.extractall(self.game_dir)
+            if self.is_version_installed(installed_version_id):
+                logger.info(f"NeoForge {neoforge_version} successfully installed from local prebuilt bundle.")
+                if progress_callback:
+                    progress_callback(100, 100, f"NeoForge {neoforge_version} готов")
+                return installed_version_id
+
+        # Try downloading prebuilt bundle from GitHub
+        remote_prebuilt_urls = [
+            f"https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/neoforge/neoforge-{neoforge_version}-prebuilt.zip",
+            f"https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.12/neoforge-{neoforge_version}-prebuilt.zip",
+        ]
+        for pb_url in remote_prebuilt_urls:
+            try:
+                logger.info(f"Attempting fast NeoForge prebuilt download from: {pb_url}")
+                if progress_callback:
+                    progress_callback(30, 100, "Скачивание готового пакета NeoForge...")
+                with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp_pb:
+                    tmp_pb_path = Path(tmp_pb.name)
+                resp = requests.get(pb_url, stream=True, timeout=(5, 30), headers={"User-Agent": "Mozilla/5.0 Lowuncher/1.0"})
+                if resp.status_code == 200:
+                    with open(tmp_pb_path, "wb") as pf:
+                        for chunk in resp.iter_content(chunk_size=1024 * 64):
+                            if chunk:
+                                pf.write(chunk)
+                    if tmp_pb_path.stat().st_size > 1000000:
+                        import zipfile
+                        with zipfile.ZipFile(tmp_pb_path, "r") as zf:
+                            zf.extractall(self.game_dir)
+                        tmp_pb_path.unlink(missing_ok=True)
+                        if self.is_version_installed(installed_version_id):
+                            logger.info(f"NeoForge {neoforge_version} successfully installed from remote prebuilt bundle.")
+                            if progress_callback:
+                                progress_callback(100, 100, f"NeoForge {neoforge_version} готов")
+                            return installed_version_id
+                tmp_pb_path.unlink(missing_ok=True)
+            except Exception as e:
+                logger.warning(f"Remote prebuilt NeoForge download failed ({pb_url}): {e}")
+
         # 2. Check for pre-existing local installer jar (in instance or app resources)
         candidate_local = [
             self.game_dir / "neoforge" / f"neoforge-{neoforge_version}-installer.jar",

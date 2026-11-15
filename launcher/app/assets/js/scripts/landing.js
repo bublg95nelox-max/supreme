@@ -1591,81 +1591,191 @@ if(statPlaytimeCard) {
 }
 
 // ==========================================================================
-// SERVER STATUS CHECK (Non-blocking TCP with 2.5s timeout)
+// SERVER STATUS CHECK (Real Minecraft Server List Ping / SLP protocol)
 // ==========================================================================
 const nodeNet = require('net')
 
-const PRIMARY_SERVER = '89.248.236.145:27160'
-const BACKUP_SERVER = 'ozdangalla.netmc.ru:25565'
+function writeSLPVarInt(val) {
+    const bytes = []
+    while (true) {
+        let b = val & 0x7F
+        val >>>= 7
+        if (val !== 0) {
+            bytes.push(b | 0x80)
+        } else {
+            bytes.push(b)
+            break
+        }
+    }
+    return Buffer.from(bytes)
+}
+
+function readSLPVarInt(buf, offset) {
+    let result = 0
+    let shift = 0
+    let readBytes = 0
+    while (true) {
+        if (offset + readBytes >= buf.length) {
+            return { error: 'Buffer underflow' }
+        }
+        const b = buf[offset + readBytes++]
+        result |= (b & 0x7F) << shift
+        if ((b & 0x80) === 0) break
+        shift += 7
+        if (shift >= 35) return { error: 'VarInt too big' }
+    }
+    return { value: result, bytesRead: readBytes }
+}
+
+function pingMinecraftSLP(host, port = 25565, timeoutMs = 3500) {
+    return new Promise((resolve) => {
+        const socket = new nodeNet.Socket()
+        let finished = false
+        let incomingBuffer = Buffer.alloc(0)
+
+        const done = (res) => {
+            if (!finished) {
+                finished = true
+                socket.destroy()
+                resolve(res)
+            }
+        }
+
+        const timer = setTimeout(() => {
+            done({ online: false, error: 'Таймаут соединения' })
+        }, timeoutMs)
+
+        socket.connect(port, host, () => {
+            try {
+                const hostBuf = Buffer.from(host, 'utf8')
+                const portBuf = Buffer.alloc(2)
+                portBuf.writeUInt16BE(port)
+
+                const handshakePayload = Buffer.concat([
+                    Buffer.from([0x00]),
+                    writeSLPVarInt(767), // Minecraft 1.21.1
+                    writeSLPVarInt(hostBuf.length),
+                    hostBuf,
+                    portBuf,
+                    writeSLPVarInt(1)    // next state: status (1)
+                ])
+
+                const handshakePacket = Buffer.concat([
+                    writeSLPVarInt(handshakePayload.length),
+                    handshakePayload
+                ])
+
+                const requestPacket = Buffer.from([0x01, 0x00])
+
+                socket.write(handshakePacket)
+                socket.write(requestPacket)
+            } catch (e) {
+                done({ online: false, error: e.message })
+            }
+        })
+
+        socket.on('data', (chunk) => {
+            incomingBuffer = Buffer.concat([incomingBuffer, chunk])
+            try {
+                let offset = 0
+                const pktLen = readSLPVarInt(incomingBuffer, offset)
+                if (pktLen.error) return
+                offset += pktLen.bytesRead
+
+                const pktId = readSLPVarInt(incomingBuffer, offset)
+                if (pktId.error) return
+                offset += pktId.bytesRead
+
+                if (pktId.value !== 0x00) {
+                    done({ online: false, error: `Invalid packet: ${pktId.value}` })
+                    return
+                }
+
+                const strLen = readSLPVarInt(incomingBuffer, offset)
+                if (strLen.error) return
+                offset += strLen.bytesRead
+
+                if (incomingBuffer.length - offset < strLen.value) {
+                    return
+                }
+
+                const jsonStr = incomingBuffer.toString('utf8', offset, offset + strLen.value)
+                const data = JSON.parse(jsonStr)
+                clearTimeout(timer)
+                done({
+                    online: true,
+                    playersOnline: data.players?.online || 0,
+                    playersMax: data.players?.max || 0,
+                    version: data.version?.name || '',
+                    description: typeof data.description === 'string' ? data.description : (data.description?.text || '')
+                })
+            } catch (_e) {}
+        })
+
+        socket.on('error', (err) => {
+            clearTimeout(timer)
+            done({ online: false, error: err.message })
+        })
+    })
+}
 
 async function checkLiveServerStatus() {
     const statStatusVal = document.getElementById('statStatusVal')
     const statStatusDot = document.getElementById('statStatusDot')
+    const statStatusCard = document.getElementById('statStatusCard')
+    const statIpText = document.querySelector('.statIpText')
+
     if (statStatusDot) statStatusDot.className = 'statusDot statusDotChecking'
     if (statStatusVal) statStatusVal.innerText = 'Проверка...'
 
-    function pingEndpoint(endpoint) {
-        let host = endpoint.trim()
-        let port = 25565
-        if (host.includes(':')) {
-            const parts = host.split(':')
-            host = parts[0]
-            port = Number.parseInt(parts[1], 10) || 25565
+    let host = '89.248.236.145'
+    let port = 27160
+    try {
+        const distro = await DistroAPI.getDistribution()
+        const serv = distro ? distro.getServerById(ConfigManager.getSelectedServer()) : null
+        if (serv?.rawServer?.address) {
+            const addr = serv.rawServer.address.trim()
+            if (addr.includes(':')) {
+                const parts = addr.split(':')
+                host = parts[0]
+                port = Number.parseInt(parts[1], 10) || 27160
+            } else {
+                host = addr
+            }
         }
+    } catch (_e) {}
 
-        return new Promise(resolve => {
-            const socket = new nodeNet.Socket()
-            let done = false
-            const timer = setTimeout(() => {
-                if (!done) {
-                    done = true
-                    socket.destroy()
-                    resolve(false)
-                }
-            }, 2500)
+    const displayAddr = port !== 25565 ? `${host}:${port}` : host
+    if (statIpText) statIpText.innerText = displayAddr
+    if (statStatusCard) statStatusCard.title = `Нажмите, чтобы скопировать IP сервера: ${displayAddr}`
 
-            socket.connect(port, host, () => {
-                if (!done) {
-                    done = true
-                    clearTimeout(timer)
-                    socket.destroy()
-                    resolve(true)
-                }
-            })
-
-            socket.on('error', () => {
-                if (!done) {
-                    done = true
-                    clearTimeout(timer)
-                    socket.destroy()
-                    resolve(false)
-                }
-            })
-        })
+    let status = await pingMinecraftSLP(host, port, 3500)
+    if (!status.online) {
+        status = await pingMinecraftSLP('ozdangalla.netmc.ru', 25565, 3500)
     }
 
-    let isOnline = await pingEndpoint(PRIMARY_SERVER)
-    if (!isOnline) {
-        isOnline = await pingEndpoint(BACKUP_SERVER)
-    }
-
-    if (isOnline) {
+    if (status.online) {
         if (statStatusDot) statStatusDot.className = 'statusDot statusDotOnline'
-        if (statStatusVal) statStatusVal.innerText = 'Онлайн'
+        if (statStatusVal) {
+            statStatusVal.innerText = `${status.playersOnline}/${status.playersMax} онлайн`
+        }
     } else {
         if (statStatusDot) statStatusDot.className = 'statusDot statusDotOffline'
-        if (statStatusVal) statStatusVal.innerText = 'Выключен'
+        if (statStatusVal) statStatusVal.innerText = 'Оффлайн'
     }
 }
 
-// Initial status ping and card click handler
+// Initial status ping & periodic 25s auto-refresh
 checkLiveServerStatus()
+setInterval(checkLiveServerStatus, 25000)
 
 const statStatusCard = document.getElementById('statStatusCard')
 if(statStatusCard) {
     statStatusCard.onclick = () => {
         try {
-            clipboard.writeText('89.248.236.145:27160')
+            const ipEl = document.querySelector('.statIpText')
+            const textToCopy = ipEl ? ipEl.innerText.trim() : '89.248.236.145:27160'
+            clipboard.writeText(textToCopy)
         } catch (e) {
             console.warn('Clipboard write failed:', e)
         }
@@ -1673,7 +1783,7 @@ if(statStatusCard) {
         const statCopyPrompt = document.getElementById('statCopyPrompt')
         if (statCopyPrompt && statCopyHintText) {
             statCopyPrompt.classList.add('statCopySuccess')
-            statCopyHintText.innerText = '✓ Скопировано в буфер!'
+            statCopyHintText.innerText = '✓ IP скопирован в буфер!'
             setTimeout(() => {
                 statCopyPrompt.classList.remove('statCopySuccess')
                 statCopyHintText.innerText = 'Нажмите для копирования IP'
@@ -2249,12 +2359,85 @@ function loadModernSettings() {
         btnRefreshMods.onclick = refreshLocalModsUI
     }
 
-    // Auto-update controls in About tab & header
+    // Auto-update controls in About tab & header & Main Banner
     const btnCheckUpdates = document.getElementById('modernBtnCheckUpdates')
     const btnInstallUpdate = document.getElementById('modernBtnInstallUpdate')
     const updateStatusBox = document.getElementById('modernUpdateStatusBox')
     const updateHeaderPill = document.getElementById('modernUpdateHeaderPill')
     const updateHeaderPillText = document.getElementById('modernUpdateHeaderPillText')
+
+    // Main Prominent Banner Elements
+    const modernUpdateBanner = document.getElementById('modernUpdateBanner')
+    const modernUpdateBannerTitle = document.getElementById('modernUpdateBannerTitle')
+    const modernUpdateBannerDesc = document.getElementById('modernUpdateBannerDesc')
+    const modernUpdateBannerBtn = document.getElementById('modernUpdateBannerBtn')
+    const modernUpdateBannerBtnText = document.getElementById('modernUpdateBannerBtnText')
+    const modernUpdateDismissBtn = document.getElementById('modernUpdateDismissBtn')
+
+    let updateState = 'available' // 'available' | 'downloading' | 'downloaded' | 'error'
+    let latestReleaseUrl = 'https://github.com/bublg95nelox-max/supreme/releases/latest'
+
+    function setUpdateBannerState(state, info = {}) {
+        updateState = state
+        const ver = info.version ? `v${info.version}` : ''
+
+        if (modernUpdateBanner && modernUpdateBanner.style.display === 'none') {
+            modernUpdateBanner.style.display = 'flex'
+        }
+
+        if (state === 'available') {
+            if (modernUpdateBannerTitle) modernUpdateBannerTitle.innerText = `Доступно обновление Lowuncher ${ver}!`
+            if (modernUpdateBannerDesc) modernUpdateBannerDesc.innerText = 'Нажмите «Обновить сейчас», чтобы установить новую версию в 1 клик.'
+            if (modernUpdateBannerBtnText) modernUpdateBannerBtnText.innerText = 'Обновить сейчас'
+            if (modernUpdateBannerBtn) {
+                modernUpdateBannerBtn.disabled = false
+                modernUpdateBannerBtn.classList.remove('installReady')
+            }
+        } else if (state === 'downloading') {
+            const pct = typeof info.percent === 'number' ? info.percent.toFixed(0) : '0'
+            const speed = info.bytesPerSecond ? ` (${(info.bytesPerSecond / 1048576).toFixed(1)} МБ/с)` : ''
+            if (modernUpdateBannerTitle) modernUpdateBannerTitle.innerText = `Загрузка обновления ${ver}...`
+            if (modernUpdateBannerDesc) modernUpdateBannerDesc.innerText = `Скачивание файлов обновления: ${pct}%${speed}. Пожалуйста, не закрывайте лаунчер.`
+            if (modernUpdateBannerBtnText) modernUpdateBannerBtnText.innerText = `Загрузка: ${pct}%`
+            if (modernUpdateBannerBtn) modernUpdateBannerBtn.disabled = true
+        } else if (state === 'downloaded') {
+            if (modernUpdateBannerTitle) modernUpdateBannerTitle.innerText = `Обновление ${ver} готово к установке!`
+            if (modernUpdateBannerDesc) modernUpdateBannerDesc.innerText = 'Файлы успешно загружены. Нажмите «Перезапустить и обновить» для применения.'
+            if (modernUpdateBannerBtnText) modernUpdateBannerBtnText.innerText = 'Перезапустить и обновить'
+            if (modernUpdateBannerBtn) {
+                modernUpdateBannerBtn.disabled = false
+                modernUpdateBannerBtn.classList.add('installReady')
+            }
+        } else if (state === 'error') {
+            if (modernUpdateBannerTitle) modernUpdateBannerTitle.innerText = `Доступно обновление Lowuncher ${ver}`
+            if (modernUpdateBannerDesc) modernUpdateBannerDesc.innerText = 'Автоматическая установка недоступна. Нажмите кнопку, чтобы скачать с GitHub.'
+            if (modernUpdateBannerBtnText) modernUpdateBannerBtnText.innerText = 'Скачать с GitHub'
+            if (modernUpdateBannerBtn) {
+                modernUpdateBannerBtn.disabled = false
+                modernUpdateBannerBtn.classList.remove('installReady')
+            }
+        }
+    }
+
+    if (modernUpdateBannerBtn) {
+        modernUpdateBannerBtn.onclick = () => {
+            if (updateState === 'downloaded') {
+                if (modernUpdateBannerBtnText) modernUpdateBannerBtnText.innerText = 'Перезапуск...'
+                ipcRenderer.send('autoUpdateAction', 'installUpdateNow')
+            } else if (updateState === 'available') {
+                setUpdateBannerState('downloading', { percent: 0 })
+                ipcRenderer.send('autoUpdateAction', 'checkForUpdate')
+            } else if (updateState === 'error') {
+                shell.openExternal(latestReleaseUrl)
+            }
+        }
+    }
+
+    if (modernUpdateDismissBtn && modernUpdateBanner) {
+        modernUpdateDismissBtn.onclick = () => {
+            modernUpdateBanner.style.display = 'none'
+        }
+    }
 
     if (btnCheckUpdates) {
         btnCheckUpdates.onclick = () => {
@@ -2271,7 +2454,7 @@ function loadModernSettings() {
 
     if (updateHeaderPill) {
         updateHeaderPill.onclick = () => {
-            if (btnInstallUpdate && btnInstallUpdate.style.display !== 'none') {
+            if (updateState === 'downloaded' || (btnInstallUpdate && btnInstallUpdate.style.display !== 'none')) {
                 ipcRenderer.send('autoUpdateAction', 'installUpdateNow')
             } else {
                 const navSettings = document.getElementById('navItemSettings')
@@ -2282,10 +2465,28 @@ function loadModernSettings() {
         }
     }
 
-    const curAppVersion = remote && remote.app ? remote.app.getVersion() : '1.0.6'
+    const curAppVersion = remote && remote.app ? remote.app.getVersion() : '1.0.12'
     const appVerLabel = document.getElementById('modernAppVersionLabel')
     if (appVerLabel) appVerLabel.innerText = `Версия ${curAppVersion} (Release)`
-    if (updateStatusBox) updateStatusBox.innerText = `Текущая версия актуальна (${curAppVersion}).`
+    if (updateStatusBox) updateStatusBox.innerText = `Текущая версия: ${curAppVersion}`
+
+    // Lightweight startup check to guarantee the user sees the update notification
+    async function checkRemoteGitHubRelease() {
+        try {
+            const resp = await fetch('https://api.github.com/repos/bublg95nelox-max/supreme/releases/latest', {
+                headers: { 'Accept': 'application/vnd.github.v3+json' }
+            })
+            if (resp.ok) {
+                const rel = await resp.json()
+                const remoteTag = (rel.tag_name || '').replace(/^v/, '').trim()
+                if (remoteTag && remoteTag !== curAppVersion) {
+                    latestReleaseUrl = rel.html_url || latestReleaseUrl
+                    setUpdateBannerState('available', { version: remoteTag })
+                }
+            }
+        } catch (_e) {}
+    }
+    checkRemoteGitHubRelease()
 
     window.addEventListener('lowuncher-autoupdate', (e) => {
         const { action, info } = e.detail || {}
@@ -2298,6 +2499,7 @@ function loadModernSettings() {
                 updateHeaderPill.style.display = 'flex'
                 if (updateHeaderPillText) updateHeaderPillText.innerText = `Загрузка обновления ${ver}...`
             }
+            setUpdateBannerState('available', info)
         } else if (action === 'download-progress') {
             const pct = info && typeof info.percent === 'number' ? info.percent.toFixed(0) : '0'
             const speed = info && info.bytesPerSecond ? `${(info.bytesPerSecond / 1048576).toFixed(1)} МБ/с` : ''
@@ -2307,6 +2509,7 @@ function loadModernSettings() {
                 updateHeaderPill.style.display = 'flex'
                 if (updateHeaderPillText) updateHeaderPillText.innerText = text
             }
+            setUpdateBannerState('downloading', info)
         } else if (action === 'update-downloaded') {
             const ver = info && info.version ? `v${info.version}` : ''
             if (updateStatusBox) updateStatusBox.innerText = `Обновление ${ver} готово к установке!`
@@ -2315,12 +2518,15 @@ function loadModernSettings() {
                 updateHeaderPill.style.display = 'flex'
                 if (updateHeaderPillText) updateHeaderPillText.innerText = `Обновление ${ver} готово (нажмите для установки)`
             }
+            setUpdateBannerState('downloaded', info)
         } else if (action === 'update-not-available') {
-            const curVer = remote && remote.app ? remote.app.getVersion() : '1.0.6'
-            if (updateStatusBox) updateStatusBox.innerText = `У вас установлена актуальная версия (${curVer}).`
+            if (updateStatusBox) updateStatusBox.innerText = `У вас установлена актуальная версия (${curAppVersion}).`
             if (updateHeaderPill) updateHeaderPill.style.display = 'none'
         } else if (action === 'realerror') {
-            if (updateStatusBox) updateStatusBox.innerText = 'Сервер обновлений временно недоступен. Актуальные релизы доступны на GitHub.'
+            if (updateStatusBox) updateStatusBox.innerText = 'Сервер автообновлений недоступен. Доступна ручная загрузка.'
+            if (updateState === 'available' || updateState === 'downloading') {
+                setUpdateBannerState('error', info || {})
+            }
         }
     })
 }

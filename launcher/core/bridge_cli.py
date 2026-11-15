@@ -94,8 +94,8 @@ def _handle_unhandled_exception(exc_type, exc_value, exc_traceback):
 sys.excepthook = _handle_unhandled_exception
 
 
-def ensure_servers_dat(game_dir: Path):
-    """Pre-populates servers.dat in the instance game directory with official servers."""
+def ensure_servers_dat(game_dir: Path, server_host: str = None, server_port: int = None):
+    """Pre-populates or updates servers.dat dynamically from manifest.json or arguments."""
     try:
         servers_file = game_dir / "servers.dat"
         import struct
@@ -104,20 +104,38 @@ def ensure_servers_dat(game_dir: Path):
             raw = s.encode("utf-8")
             return struct.pack(">H", len(raw)) + raw
 
+        # 1. Try reading servers dynamically from cached manifest
+        servers = []
+        manifest_cache = game_dir / ".last_manifest.json"
+        if manifest_cache.is_file():
+            try:
+                with open(manifest_cache, "r", encoding="utf-8") as mf:
+                    mdata = json.load(mf)
+                    if "servers" in mdata and isinstance(mdata["servers"], list):
+                        servers = mdata["servers"]
+            except Exception:
+                pass
+
+        if not servers:
+            s_host = str(server_host or "89.248.236.145").strip()
+            s_port = int(server_port or 27160)
+            main_ip = f"{s_host}:{s_port}" if s_port != 25565 else s_host
+            servers = [
+                {"name": "Supreme (Основной)", "ip": main_ip},
+                {"name": "Supreme (Резерв)", "ip": "ozdangalla.netmc.ru:25565"},
+            ]
+
         should_write = not servers_file.exists()
         if servers_file.exists():
             try:
                 raw_data = servers_file.read_bytes()
-                if b"89.248.236.145" not in raw_data:
+                primary_ip_bytes = servers[0]["ip"].encode("utf-8")
+                if primary_ip_bytes not in raw_data:
                     should_write = True
             except Exception:
                 should_write = True
 
         if should_write:
-            servers = [
-                {"name": "Supreme (Основной)", "ip": "89.248.236.145:27160"},
-                {"name": "Supreme (Резерв)", "ip": "ozdangalla.netmc.ru"},
-            ]
             # Minecraft 1.20.2+ / 1.21 servers.dat is uncompressed NBT:
             # Root TAG_Compound (tag 10, empty name length 0) -> List 'servers' (tag 9) of TAG_Compound (tag 10)
             payload = b"\x0a\x00\x00\x09" + enc_str("servers") + b"\x0a" + struct.pack(">i", len(servers))
@@ -129,7 +147,7 @@ def ensure_servers_dat(game_dir: Path):
 
             with open(servers_file, "wb") as f:
                 f.write(payload)
-            logger.info(f"Pre-populated servers.dat (uncompressed NBT) in {servers_file}")
+            logger.info(f"Updated servers.dat (uncompressed NBT) in {servers_file} with: {[s['ip'] for s in servers]}")
     except Exception as e:
         logger.warning(f"Could not ensure servers.dat: {e}")
 
@@ -544,7 +562,11 @@ def handle_run(args):
         logger.warning(f"Could not write lowuncher session marker: {e}")
 
     # Ensure official multiplayer servers are pre-loaded in game
-    ensure_servers_dat(game_dir)
+    ensure_servers_dat(
+        game_dir,
+        getattr(args, "server_host", None),
+        getattr(args, "server_port", None),
+    )
 
     # 5. Launch
     emit_event("progress", {"percent": 98, "status": "Запуск процесса Minecraft..."})
