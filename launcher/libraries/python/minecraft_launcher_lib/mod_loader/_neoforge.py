@@ -60,7 +60,7 @@ class Neoforge(ModLoaderBase):
 
     def get_installer_url(self, minecraft_version: str, loader_version: str) -> str:
         "Implements get_installer_url() for NeoForge"
-        return f"https://maven.neoforged.net/releases/net/neoforged/neoforge/{loader_version}/neoforge-{loader_version}-installer.jar"
+        return f"https://bmclapi2.bangbang93.com/maven/net/neoforged/neoforge/{loader_version}/neoforge-{loader_version}-installer.jar"
 
     def get_installed_version(self, minecraft_version: str, loader_version: str) -> str:
         "Implements get_installed_versions() for NeoForge"

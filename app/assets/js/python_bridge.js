@@ -172,6 +172,12 @@ class PythonBridge {
             if (opts.modpackUrl) {
                 args.push('--modpack-url', opts.modpackUrl)
             }
+            if (opts.neoforgeInstallerUrl) {
+                args.push('--neoforge-installer-url', opts.neoforgeInstallerUrl)
+            }
+            if (opts.neoforgePrebuiltUrl) {
+                args.push('--neoforge-prebuilt-url', opts.neoforgePrebuiltUrl)
+            }
             if (opts.serverHost) {
                 args.push('--server-host', opts.serverHost)
             }

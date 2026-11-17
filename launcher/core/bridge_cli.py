@@ -467,6 +467,8 @@ def handle_run(args):
             minecraft_version=mc_version,
             neoforge_version=loader_version,
             java_path=java_path,
+            installer_url=getattr(args, "neoforge_installer_url", None),
+            prebuilt_url=getattr(args, "neoforge_prebuilt_url", None),
             progress_callback=on_install_progress,
         )
     else:
@@ -626,6 +628,8 @@ def main():
     run_parser.add_argument("--server-host", default=None, help="Server IP to auto-connect")
     run_parser.add_argument("--server-port", type=int, default=None, help="Server port")
     run_parser.add_argument("--java-path", default=None, help="Explicit path to Java 21 executable")
+    run_parser.add_argument("--neoforge-installer-url", default=None, help="Direct URL to NeoForge installer jar")
+    run_parser.add_argument("--neoforge-prebuilt-url", default=None, help="Direct URL to NeoForge prebuilt bundle zip")
 
     args = parser.parse_args()
 

@@ -204,6 +204,7 @@ class Installer:
         java_path: Path,
         installer_url: Optional[str] = None,
         installer_sha256: Optional[str] = None,
+        prebuilt_url: Optional[str] = None,
         progress_callback: Optional[Callable[[int, int, str], None]] = None,
     ) -> str:
         """
@@ -252,11 +253,18 @@ class Installer:
                     progress_callback(100, 100, f"NeoForge {neoforge_version} готов")
                 return installed_version_id
 
-        # Try downloading prebuilt bundle from GitHub
-        remote_prebuilt_urls = [
-            f"https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/neoforge/neoforge-{neoforge_version}-prebuilt.zip",
+        # Try downloading prebuilt bundle from GitHub and fast mirrors (RKN bypass)
+        remote_prebuilt_urls = []
+        if prebuilt_url:
+            remote_prebuilt_urls.append(prebuilt_url)
+        env_pb_url = os.environ.get("LOWUNCHER_NEOFORGE_PREBUILT_URL")
+        if env_pb_url:
+            remote_prebuilt_urls.append(env_pb_url)
+        remote_prebuilt_urls.extend([
             f"https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.12/neoforge-{neoforge_version}-prebuilt.zip",
-        ]
+            f"https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/neoforge/neoforge-{neoforge_version}-prebuilt.zip",
+            f"https://cdn.jsdelivr.net/gh/bublg95nelox-max/supreme@main/neoforge/neoforge-{neoforge_version}-prebuilt.zip",
+        ])
         for pb_url in remote_prebuilt_urls:
             try:
                 logger.info(f"Attempting fast NeoForge prebuilt download from: {pb_url}")
@@ -304,15 +312,17 @@ class Installer:
                         local_installer = f
                         break
 
-        # 3. Determine installer download URLs with robust mirrors (including GitHub bypass)
+        # 3. Determine installer download URLs with robust mirrors (including GitHub bypass and BMCLAPI)
         candidate_urls = []
         if installer_url:
             candidate_urls.append(installer_url)
 
         mirror_base = os.environ.get("LOWUNCHER_NEOFORGE_MIRROR")
         candidate_urls.extend([
-            f"https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/neoforge/neoforge-{neoforge_version}-installer.jar",
             *( [mirror_base.rstrip("/") + f"/{neoforge_version}/neoforge-{neoforge_version}-installer.jar"] if mirror_base else [] ),
+            f"https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.12/neoforge-{neoforge_version}-installer.jar",
+            f"https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/neoforge/neoforge-{neoforge_version}-installer.jar",
+            f"https://cdn.jsdelivr.net/gh/bublg95nelox-max/supreme@main/neoforge/neoforge-{neoforge_version}-installer.jar",
             f"https://bmclapi2.bangbang93.com/maven/net/neoforged/neoforge/{neoforge_version}/neoforge-{neoforge_version}-installer.jar",
             f"https://maven.neoforged.net/releases/net/neoforged/neoforge/{neoforge_version}/neoforge-{neoforge_version}-installer.jar",
         ])
@@ -358,8 +368,10 @@ class Installer:
                                     if not target_sha:
                                         for sha_url in [
                                             f"{url}.sha256",
-                                            f"https://maven.neoforged.net/releases/net/neoforged/neoforge/{neoforge_version}/neoforge-{neoforge_version}-installer.jar.sha256",
+                                            f"https://raw.githubusercontent.com/bublg95nelox-max/supreme/main/neoforge/neoforge-{neoforge_version}-installer.jar.sha256",
+                                            f"https://github.com/bublg95nelox-max/supreme/releases/download/v1.0.12/neoforge-{neoforge_version}-installer.jar.sha256",
                                             f"https://bmclapi2.bangbang93.com/maven/net/neoforged/neoforge/{neoforge_version}/neoforge-{neoforge_version}-installer.jar.sha256",
+                                            f"https://maven.neoforged.net/releases/net/neoforged/neoforge/{neoforge_version}/neoforge-{neoforge_version}-installer.jar.sha256",
                                         ]:
                                             try:
                                                 sr = requests.get(sha_url, timeout=4, headers=headers)
@@ -428,6 +440,8 @@ class Installer:
                 str(temp_installer),
                 "--install-client",
                 str(self.game_dir),
+                "--mirror",
+                "https://bmclapi2.bangbang93.com/maven",
             ]
             logger.info(f"Running NeoForge installer: {' '.join(cmd)}")
 

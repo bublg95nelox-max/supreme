@@ -169,6 +169,25 @@ class TestCoreEngine(unittest.TestCase):
         self.assertEqual(profiles_file.with_suffix(".json.bak").read_text(), "NOT_VALID_JSON{")
         self.assertEqual(profiles_file.read_text(), '{"profiles": {}}')
 
+    def test_neoforge_prebuilt_bundle_integrity(self):
+        import zipfile
+        from core.installer import Installer
+        repo_root = Path(__file__).resolve().parent.parent
+        prebuilt_zip = repo_root / "neoforge" / "neoforge-21.1.265-prebuilt.zip"
+        self.assertTrue(prebuilt_zip.is_file(), "Prebuilt zip must exist")
+
+        test_dir = self.data_dir / "prebuilt_integrity_test"
+        vdir = test_dir / "versions" / "1.21.1"
+        vdir.mkdir(parents=True)
+        (vdir / "1.21.1.jar").write_bytes(b"0" * 15000000)
+        (vdir / "1.21.1.json").write_text("{}", encoding="utf-8")
+
+        with zipfile.ZipFile(prebuilt_zip, "r") as zf:
+            zf.extractall(test_dir)
+
+        installer = Installer(test_dir)
+        self.assertTrue(installer.is_version_installed("neoforge-21.1.265"))
+
 
 if __name__ == "__main__":
     unittest.main()
